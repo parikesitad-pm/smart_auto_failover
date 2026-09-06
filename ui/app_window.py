@@ -37,6 +37,7 @@ from .modals import (
     HelpFaqModal,
     SpeedtestModal,
     SystemDiagnosticsModal,
+    TelemetrySourcesModal,
 )
 
 
@@ -521,6 +522,20 @@ class AppWindow(ctk.CTk):
         )
         help_btn.pack(side="left", padx=2)
 
+        # Probing Targets & RFC 3550 Sources Info button
+        sources_btn = ctk.CTkButton(
+            center_footer,
+            text="🎯 Target & Jitter Info",
+            command=self._open_telemetry_sources,
+            font=("Segoe UI", 10),
+            fg_color="transparent",
+            hover_color=("#E2E8F0", "#2D3139"),
+            text_color=("#D97706", "#F59E0B"),
+            width=110,
+            height=22,
+        )
+        sources_btn.pack(side="left", padx=2)
+
         # Author Clickable Link to GitHub
         author_btn = ctk.CTkButton(
             center_footer,
@@ -787,6 +802,10 @@ class AppWindow(ctk.CTk):
     def _open_help_faq(self):
         SoundEngine.play(SoundType.ACTION)
         HelpFaqModal(self)
+
+    def _open_telemetry_sources(self):
+        SoundEngine.play(SoundType.ACTION)
+        TelemetrySourcesModal(self)
 
     def _open_github(self):
         SoundEngine.play(SoundType.ACTION)

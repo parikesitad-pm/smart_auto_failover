@@ -22,6 +22,18 @@ class ToastNotificationManager:
         if not self.is_showing:
             self._display_next()
 
+    def success(self, message: str, title: str = "Sukses", duration_ms: int = 2800):
+        self.show(title=title, message=message, icon="✅", level="success", duration_ms=duration_ms)
+
+    def error(self, message: str, title: str = "Peringatan", duration_ms: int = 3500):
+        self.show(title=title, message=message, icon="🚨", level="warning", duration_ms=duration_ms)
+
+    def warning(self, message: str, title: str = "Perhatian", duration_ms: int = 3000):
+        self.show(title=title, message=message, icon="⚠️", level="warning", duration_ms=duration_ms)
+
+    def info(self, message: str, title: str = "Informasi", duration_ms: int = 2800):
+        self.show(title=title, message=message, icon="ℹ️", level="info", duration_ms=duration_ms)
+
     def _display_next(self):
         if self.queue.empty():
             self.is_showing = False
