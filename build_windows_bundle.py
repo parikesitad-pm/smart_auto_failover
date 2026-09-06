@@ -1,7 +1,7 @@
 """
-MODULA - Smart Auto Failover v2.3
+MODULA - Smart Auto Failover v2.4
 Windows Release Packaging Script
-Produces: dist_app/MODULA-v2.3-windows-x64.zip and dist_app/MODULA/MODULA.exe
+Produces: dist_app/MODULA-v2.4-windows-x64.zip and dist_app/MODULA/MODULA.exe
 """
 import os
 import shutil
@@ -16,7 +16,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-VERSION = "v2.3"
+VERSION = "v2.4"
 ARCH = "windows-x64"
 BUNDLE_NAME = f"MODULA-{VERSION}-{ARCH}"
 

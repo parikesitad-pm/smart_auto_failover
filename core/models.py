@@ -5,27 +5,42 @@ import time
 
 
 class PriorityLevel(Enum):
-    P1 = 1  # Primary (LAN 1)
-    P2 = 2  # Secondary (LAN 2)
-    P3 = 3  # Fallback (Wi-Fi)
+    P1 = 1  # Priority 1 (Primary)
+    P2 = 2  # Priority 2 (Secondary)
+    P3 = 3  # Priority 3 (Tertiary / Fallback)
+    P4 = 4  # Priority 4
+    P5 = 5  # Priority 5
+    P6 = 6  # Priority 6
+    P7 = 7  # Priority 7
+    P8 = 8  # Priority 8
 
     @property
     def label(self) -> str:
-        if self == PriorityLevel.P1:
-            return "Priority 1 (Primary LAN)"
-        elif self == PriorityLevel.P2:
-            return "Priority 2 (Secondary LAN)"
-        else:
-            return "Priority 3 (Fallback Wi-Fi)"
+        labels = {
+            PriorityLevel.P1: "Priority 1 (Primary)",
+            PriorityLevel.P2: "Priority 2 (Secondary)",
+            PriorityLevel.P3: "Priority 3 (Tertiary)",
+            PriorityLevel.P4: "Priority 4 (Fallback 4)",
+            PriorityLevel.P5: "Priority 5 (Fallback 5)",
+            PriorityLevel.P6: "Priority 6 (Fallback 6)",
+            PriorityLevel.P7: "Priority 7 (Fallback 7)",
+            PriorityLevel.P8: "Priority 8 (Fallback 8)",
+        }
+        return labels.get(self, f"Priority {self.value}")
 
     @property
     def short_label(self) -> str:
-        if self == PriorityLevel.P1:
-            return "LAN 1"
-        elif self == PriorityLevel.P2:
-            return "LAN 2"
-        else:
-            return "Wi-Fi"
+        shorts = {
+            PriorityLevel.P1: "LAN 1",
+            PriorityLevel.P2: "LAN 2",
+            PriorityLevel.P3: "Wi-Fi",
+            PriorityLevel.P4: "Port 4",
+            PriorityLevel.P5: "Port 5",
+            PriorityLevel.P6: "Port 6",
+            PriorityLevel.P7: "Port 7",
+            PriorityLevel.P8: "Port 8",
+        }
+        return shorts.get(self, f"P{self.value}")
 
 
 class InterfaceStatus(Enum):
@@ -129,6 +144,7 @@ class FailoverConfig:
     ping_target_primary: str = "1.1.1.1"
     ping_target_secondary: str = "8.8.8.8"
     ping_target_tertiary: str = "9.9.9.9"
+    ping_target_quaternary: str = ""
     ping_interval_sec: float = 1.0
     ping_timeout_ms: int = 800
     failover_rto_threshold: int = 2
@@ -143,6 +159,11 @@ class FailoverConfig:
     p1_alias: str = ""
     p2_alias: str = ""
     p3_alias: str = ""
+    p4_alias: str = ""
+    p5_alias: str = ""
+    p6_alias: str = ""
+    p7_alias: str = ""
+    p8_alias: str = ""
     auto_start: bool = False
     theme_mode: str = "Dark"  # "Dark" or "Light"
     sound_enabled: bool = True
@@ -157,11 +178,21 @@ class FailoverConfig:
                 if k not in self.shortcuts:
                     self.shortcuts[k] = v
 
+    def get_configured_targets(self) -> List[str]:
+        """Return clean list of all non-empty active target IPs."""
+        targets = []
+        for t in [self.ping_target_primary, self.ping_target_secondary, self.ping_target_tertiary, self.ping_target_quaternary]:
+            val = (t or "").strip()
+            if val and val not in targets:
+                targets.append(val)
+        return targets or ["1.1.1.1", "8.8.8.8", "9.9.9.9"]
+
     def to_dict(self) -> dict:
         return {
             "ping_target_primary": self.ping_target_primary,
             "ping_target_secondary": self.ping_target_secondary,
             "ping_target_tertiary": self.ping_target_tertiary,
+            "ping_target_quaternary": self.ping_target_quaternary,
             "ping_interval_sec": self.ping_interval_sec,
             "ping_timeout_ms": self.ping_timeout_ms,
             "failover_rto_threshold": self.failover_rto_threshold,
@@ -176,6 +207,11 @@ class FailoverConfig:
             "p1_alias": self.p1_alias,
             "p2_alias": self.p2_alias,
             "p3_alias": self.p3_alias,
+            "p4_alias": self.p4_alias,
+            "p5_alias": self.p5_alias,
+            "p6_alias": self.p6_alias,
+            "p7_alias": self.p7_alias,
+            "p8_alias": self.p8_alias,
             "auto_start": self.auto_start,
             "theme_mode": self.theme_mode,
             "sound_enabled": self.sound_enabled,

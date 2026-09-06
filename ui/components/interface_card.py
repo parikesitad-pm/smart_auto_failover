@@ -47,9 +47,14 @@ class InterfaceCard(ctk.CTkFrame):
             PriorityLevel.P1: (("#FEF3C7", "#78350F"), ("#92400E", "#FDE68A"), "PRIORITY 1 • PRIMARY"),
             PriorityLevel.P2: (("#FFE4E6", "#881337"), ("#BE123C", "#FDA4AF"), "PRIORITY 2 • BACKUP"),
             PriorityLevel.P3: (("#CFFAFE", "#164E63"), ("#0E7490", "#67E8F9"), "PRIORITY 3 • FALLBACK"),
+            PriorityLevel.P4: (("#EDE9FE", "#4C1D95"), ("#7C3AED", "#C4B5FD"), "PRIORITY 4 • RESERVE"),
+            PriorityLevel.P5: (("#D1FAE5", "#064E3B"), ("#059669", "#6EE7B7"), "PRIORITY 5 • AUXILIARY"),
+            PriorityLevel.P6: (("#FCE7F3", "#831843"), ("#DB2777", "#F472B6"), "PRIORITY 6 • AUXILIARY"),
+            PriorityLevel.P7: (("#FEF9C3", "#713F12"), ("#CA8A04", "#FACC15"), "PRIORITY 7 • STANDBY"),
+            PriorityLevel.P8: (("#E0E7FF", "#312E81"), ("#4F46E5", "#A5B4FC"), "PRIORITY 8 • STANDBY"),
         }
         bg_col, text_col, tag_text = p_colors.get(
-            self.priority, (("#F1F5F9", "#1F2937"), ("#334155", "#9CA3AF"), "INTERFACE")
+            self.priority, (("#F1F5F9", "#1F2937"), ("#334155", "#9CA3AF"), f"PRIORITY {self.priority.value}")
         )
 
         self.tag_label = ctk.CTkLabel(

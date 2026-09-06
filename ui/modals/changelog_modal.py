@@ -10,12 +10,28 @@ from core.sound_engine import SoundEngine, SoundType
 
 
 CHANGELOG_DATA: Dict[str, dict] = {
+    "v2.4": {
+        "title": "🏎️ VERSI 2.4 (Sports Car Cluster, Inline QoS, Dynamic 1-8 Adapters & 4th Target)",
+        "date": "September 2026",
+        "badge": "LATEST STABLE v2.4",
+        "badge_color": ("#D1FAE5", "#064E3B"),
+        "badge_text_color": "#059669",
+        "items": [
+            ("🏎️ Cluster Tachometer Supercar & Spectrum Bar Ganda", "Instrumen monitor bergaya kluster supercar dengan jarum tachometer analog 60 FPS, redline glow dinamis, dan speedometer HUD digital. Dilengkapi bilah spectrum ganda untuk tiap target server aktif (6 bilah untuk 3 target default, 8 bilah saat target ke-4 diaktifkan)."),
+            ("🎛️ Inline Bandwidth QoS Monitor di Dashboard Utama", "Monitor alokasi bandwidth langsung di layar utama tepat di bawah speedometer. Pantau lalu lintas data aplikasi konferensi video (Zoom, Google Meet, Microsoft Teams) dan live streaming (OBS Studio, vMix) dengan tombol cepat 1-klik 'Boost Meeting' dan 'Boost Streaming'."),
+            ("🔌 Kartu Antarmuka Adaptif & Responsif (1 s.d. 8 Port)", "Sistem cerdas yang menyesuaikan tata letak dengan perangkat keras Anda. Laptop dengan 1 port LAN hanya menampilkan 1 kartu lebar; jika ada 1 LAN + 1 Wi-Fi tampil 2 kolom; jika ada 3 kartu tampil 3 kolom; serta mendukung hingga 8 port untuk PC workstation / server."),
+            ("🎯 Penambahan Target Server Ke-4 (+ Tambah IP Target)", "Modal interaktif untuk menambahkan IP target ke-4 (misalnya OpenDNS 208.67.222.222 atau gateway router lokal) langsung dari dashboard dengan validasi IPv4 otomatis."),
+            ("⚡ Eliminasi Glitch Splash Screen (Zero Delay Startup)", "Jendela utama disembunyikan sempurna sejak inisialisasi awal sehingga tidak ada lagi flicker/tampilan jendela sebelum splash screen selesai memutar animasinya."),
+            ("🔍 Riwayat Log Lengkap & Dialog Pencarian", "Panel aktivitas di dashboard dibuat lebih ramping dan efisien, dilengkapi tombol 'Buka Log Lengkap' untuk membuka dialog riwayat menyeluruh dengan filter kategori dan fitur ekspor."),
+            ("👶 Bahasa Pengaturan Formal yang Mudah Dipahami", "Panduan pengaturan didesain ulang dalam bahasa Indonesia formal yang sangat ramah pemula, manula, hingga teknisi jaringan profesional."),
+        ],
+    },
     "v2.3": {
         "title": "⚡ VERSI 2.3 (Optimization, Custom Probing, GPU Telemetry & QoS)",
         "date": "September 2026",
-        "badge": "CURRENT STABLE",
-        "badge_color": ("#D1FAE5", "#064E3B"),
-        "badge_text_color": "#059669",
+        "badge": "STABLE RELEASE",
+        "badge_color": ("#E0F2FE", "#0C4A6E"),
+        "badge_text_color": "#0284C7",
         "items": [
             ("✨ Enterprise Frameless Splash Screen", "Window 560x340 frameless, radial gradient gelap, logo Barong bulat berputar dengan 60 FPS gradient ring spinner (merah-oranye-emas), dynamic monospace status 0-100%, dan transisi alpha fadeout halus."),
             ("🎯 Custom Ping Target & Advanced Probing", "Kustomisasi 3 IP target probing (Simple Mode: cukup masukkan IP, misal 1.1.1.1, 8.8.8.8, 9.9.9.9) serta Advanced Mode (interval probing, timeout ms, RTO threshold, payload size, dan Source IP Binding)."),
@@ -99,9 +115,9 @@ class ChangelogModal(ctk.CTkToplevel):
         self.transient(master)
         self.grab_set()
 
-        self.current_version = "v2.3"
+        self.current_version = "v2.4"
         self._build_ui()
-        self._show_version("v2.3")
+        self._show_version("v2.4")
 
     def _build_ui(self):
         self.configure(fg_color=("#F8FAFC", "#12141C"))

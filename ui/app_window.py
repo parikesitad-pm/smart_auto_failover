@@ -24,17 +24,21 @@ from core.system_telemetry import SystemTelemetry
 from core.traffic_monitor import TrafficMonitor
 from .components import (
     AdapterSummaryBar,
+    AppQoSWidget,
     InterfaceCard,
     LogPanel,
     SettingsDialog,
     SkeletonLoader,
+    SportsCarGaugeWidget,
     ToastNotificationManager,
     TrafficChartWidget,
 )
 from .modals import (
+    AddTargetModal,
     BandwidthQoSModal,
     ChangelogModal,
     HelpFaqModal,
+    LogDetailModal,
     SettingsModal,
     SpeedtestModal,
     SystemDiagnosticsModal,
@@ -50,13 +54,16 @@ ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
 class AppWindow(ctk.CTk):
     """
-    Main application window for MODULA - Smart Auto Failover v2.3.
+    Main application window for MODULA - Smart Auto Failover v2.4.
     Supports Dual Mode (Dark/Light), 4-Engine Speedtest, Fullscreen (F11),
-    Audio Alerts, Toast Bubbles, App Bandwidth QoS, Custom Ping, and System Telemetry.
+    Sports Car Gauge HUD, Inline Bandwidth QoS, Custom Ping (up to 4 targets),
+    and Dynamic 1-8 Adapter Interface Cards.
     """
 
     def __init__(self):
         super().__init__()
+        # Ensure window is hidden immediately so splash screen shows with zero flicker!
+        self.withdraw()
 
         # Load or create configuration
         self.config = self._load_config()
@@ -69,19 +76,10 @@ class AppWindow(ctk.CTk):
         SoundEngine.set_enabled(getattr(self.config, "sound_enabled", True))
 
         # Window configuration - Auto-maximized for zero-clipping responsive view
-        self.title("MODULA - Smart Auto Failover v2.3 • Zero-Drop Zoom")
+        self.title("MODULA - Smart Auto Failover v2.4 • Zero-Drop Zoom")
         self.geometry("1100x820")
         self.minsize(820, 560)
         self.is_fullscreen = False
-
-        # Maximize window on startup
-        try:
-            if sys.platform == "win32":
-                self.state("zoomed")
-            elif sys.platform.startswith("linux"):
-                self.attributes("-zoomed", True)
-        except Exception:
-            pass
 
         # Set Window Icon
         ico_path = os.path.join(ASSETS_DIR, "modula.ico")
@@ -111,6 +109,8 @@ class AppWindow(ctk.CTk):
         # Metrics & Failover Stats
         self.total_failovers = 0
         self.start_time: Optional[float] = None
+        self.cards: Dict[PriorityLevel, InterfaceCard] = {}
+        self.cards_frame: Optional[ctk.CTkFrame] = None
 
         # Build UI layout
         self._build_ui()
@@ -133,9 +133,21 @@ class AppWindow(ctk.CTk):
         # Handle window close
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
 
+    def show_window(self):
+        """Called after splash screen finishes fadeout to smoothly display main window."""
+        try:
+            if sys.platform == "win32":
+                self.state("zoomed")
+            elif sys.platform.startswith("linux"):
+                self.attributes("-zoomed", True)
+        except Exception:
+            pass
+        self.deiconify()
+
     def _on_skeleton_ready(self):
         """Called when skeleton preloader finishes animating."""
         pass
+
 
     def _get_config_path(self) -> str:
         if os.path.exists(CONFIG_FILE) and os.access(CONFIG_FILE, os.W_OK):
@@ -473,46 +485,20 @@ class AppWindow(ctk.CTk):
         self.targets_pill_bar.pack(fill="x", pady=(0, 4))
         self._update_targets_pill_bar()
 
-        # Live Traffic Chart Widget
-        self.traffic_chart = TrafficChartWidget(banner_container, height=68)
-        self.traffic_chart.pack(fill="x")
+        # Sports Car Tachometer Gauge HUD + Backbone Spectrum Bars (Inspired by Supercar Cluster)
+        self.sports_gauge = SportsCarGaugeWidget(banner_container, height=140)
+        self.sports_gauge.pack(fill="x", pady=(0, 4))
 
-        # 5. Interface Cards Container (3 Columns)
-        cards_frame = ctk.CTkFrame(self, fg_color="transparent")
-        cards_frame.grid(row=4, column=0, padx=16, pady=4, sticky="ew")
-        for i in range(3):
-            cards_frame.grid_columnconfigure(i, weight=1, uniform="col")
+        # Inline Bandwidth QoS Priority Monitor (Zoom, Teams, Meet, OBS, vMix)
+        self.app_qos = AppQoSWidget(banner_container)
+        self.app_qos.pack(fill="x", pady=(0, 4))
 
-        self.cards: Dict[PriorityLevel, InterfaceCard] = {}
+        # 5. Interface Cards Container (Dynamically 1 up to 8 cards responsive grid)
+        self.cards_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.cards_frame.grid(row=4, column=0, padx=16, pady=4, sticky="ew")
+        self._rebuild_adapter_cards()
 
-        # Priority 1: LAN 1
-        self.cards[PriorityLevel.P1] = InterfaceCard(
-            cards_frame,
-            priority=PriorityLevel.P1,
-            on_adapter_selected=self._on_adapter_assigned,
-            on_toggle_adapter=self._on_toggle_adapter,
-        )
-        self.cards[PriorityLevel.P1].grid(row=0, column=0, padx=(0, 6), sticky="nsew")
-
-        # Priority 2: LAN 2
-        self.cards[PriorityLevel.P2] = InterfaceCard(
-            cards_frame,
-            priority=PriorityLevel.P2,
-            on_adapter_selected=self._on_adapter_assigned,
-            on_toggle_adapter=self._on_toggle_adapter,
-        )
-        self.cards[PriorityLevel.P2].grid(row=0, column=1, padx=4, sticky="nsew")
-
-        # Priority 3: Wi-Fi
-        self.cards[PriorityLevel.P3] = InterfaceCard(
-            cards_frame,
-            priority=PriorityLevel.P3,
-            on_adapter_selected=self._on_adapter_assigned,
-            on_toggle_adapter=self._on_toggle_adapter,
-        )
-        self.cards[PriorityLevel.P3].grid(row=0, column=2, padx=(6, 0), sticky="nsew")
-
-        # 6. Activity Log Panel
+        # 6. Activity Log Panel (Compacted with Full History Modal)
         self.log_panel = LogPanel(self)
         self.log_panel.grid(row=5, column=0, padx=16, pady=(6, 6), sticky="nsew")
 
@@ -536,10 +522,10 @@ class AppWindow(ctk.CTk):
         center_footer = ctk.CTkFrame(footer, fg_color="transparent")
         center_footer.grid(row=0, column=1, pady=2, sticky="n")
 
-        # Version Pill (v2.3 Gold/Amber)
+        # Version Pill (v2.4 Gold/Amber)
         ver_pill = ctk.CTkLabel(
             center_footer,
-            text=" v2.3 ",
+            text=" v2.4 ",
             font=("Segoe UI", 10, "bold"),
             fg_color=("#FEF3C7", "#78350F"),
             text_color=("#92400E", "#FDE68A"),
@@ -687,6 +673,66 @@ class AppWindow(ctk.CTk):
         SoundEngine.play(SoundType.ACTION)
         SystemDiagnosticsModal(self)
 
+    def _rebuild_adapter_cards(self):
+        """
+        Dynamically rebuild adapter interface cards to match active/detected hardware (1 up to 8 cards).
+        - 1 adapter: 1 full-width card
+        - 2 adapters: 2 columns
+        - 3 adapters: 3 columns
+        - 4 adapters: 4 columns
+        - 5 to 8 adapters: 2 rows responsive grid
+        """
+        if not hasattr(self, "cards_frame") or self.cards_frame is None:
+            return
+
+        for child in self.cards_frame.winfo_children():
+            child.destroy()
+        self.cards.clear()
+
+        adapter_names = [a.alias for a in self.all_adapters]
+        num_cards = max(1, min(len(self.all_adapters), 8))
+
+        if num_cards <= 4:
+            cols = num_cards
+            for c in range(8):
+                self.cards_frame.grid_columnconfigure(c, weight=1 if c < cols else 0, uniform="card_col" if c < cols else "")
+
+            for i in range(num_cards):
+                priority = PriorityLevel(i + 1)
+                card = InterfaceCard(
+                    self.cards_frame,
+                    priority=priority,
+                    on_adapter_selected=self._on_adapter_assigned,
+                    on_toggle_adapter=self._on_toggle_adapter,
+                )
+                padx_l = 0 if i == 0 else 4
+                padx_r = 0 if i == num_cards - 1 else 4
+                card.grid(row=0, column=i, padx=(padx_l, padx_r), pady=2, sticky="nsew")
+
+                alias_val = getattr(self.config, f"p{priority.value}_alias", "")
+                card.set_adapter_options(adapter_names, alias_val)
+                self.cards[priority] = card
+        else:
+            cols = (num_cards + 1) // 2
+            for c in range(8):
+                self.cards_frame.grid_columnconfigure(c, weight=1 if c < cols else 0, uniform="card_col" if c < cols else "")
+
+            for i in range(num_cards):
+                priority = PriorityLevel(i + 1)
+                r = i // cols
+                c = i % cols
+                card = InterfaceCard(
+                    self.cards_frame,
+                    priority=priority,
+                    on_adapter_selected=self._on_adapter_assigned,
+                    on_toggle_adapter=self._on_toggle_adapter,
+                )
+                card.grid(row=r, column=c, padx=4, pady=3, sticky="nsew")
+
+                alias_val = getattr(self.config, f"p{priority.value}_alias", "")
+                card.set_adapter_options(adapter_names, alias_val)
+                self.cards[priority] = card
+
     def refresh_adapters(self):
         """Scan system adapters, update summary bar, and detect plug/unplug events with sound."""
         prev_status = dict(self._prev_conn_status)
@@ -710,7 +756,7 @@ class AppWindow(ctk.CTk):
 
         # Auto-sanitize config if all configured aliases are missing from current machine (e.g. freshly cloned)
         has_any_configured = any(
-            a in adapter_names for a in [self.config.p1_alias, self.config.p2_alias, self.config.p3_alias] if a
+            getattr(self.config, f"p{i}_alias", "") in adapter_names for i in range(1, 9) if getattr(self.config, f"p{i}_alias", "")
         )
         if not has_any_configured and self.all_adapters and self._initial_adapter_scan:
             self._initial_adapter_scan = False
@@ -719,9 +765,8 @@ class AppWindow(ctk.CTk):
 
         self._initial_adapter_scan = False
 
-        self.cards[PriorityLevel.P1].set_adapter_options(adapter_names, self.config.p1_alias)
-        self.cards[PriorityLevel.P2].set_adapter_options(adapter_names, self.config.p2_alias)
-        self.cards[PriorityLevel.P3].set_adapter_options(adapter_names, self.config.p3_alias)
+        # Dynamically render 1 to 8 cards
+        self._rebuild_adapter_cards()
 
         summary = NetworkManager.get_port_summary(self.all_adapters, self._get_active_alias())
         self.summary_bar.update_summary(summary)
@@ -752,8 +797,9 @@ class AppWindow(ctk.CTk):
 
     def _auto_detect_interfaces(self):
         """
-        Automatically identify and assign Ethernet 1, Ethernet 2, and Wi-Fi adapters.
+        Automatically identify and assign Ethernet and Wi-Fi adapters.
         Strictly prioritizes physical Ethernet (docking / onboard GbE) over virtual/USB tethering.
+        Dynamically populates up to 8 priorities.
         """
         SoundEngine.play(SoundType.ACTION)
         backend = NetworkManager.get_backend()
@@ -795,52 +841,47 @@ class AppWindow(ctk.CTk):
         ethernets.sort(key=score_ethernet, reverse=True)
         wifis.sort(key=score_wifi, reverse=True)
 
-        if len(ethernets) >= 2:
-            self.config.p1_alias = ethernets[0].alias
-            self.config.p2_alias = ethernets[1].alias
-        elif len(ethernets) == 1:
-            self.config.p1_alias = ethernets[0].alias
-            self.config.p2_alias = ""
-        else:
-            self.config.p1_alias = ""
-            self.config.p2_alias = ""
-
+        ordered: List[str] = []
+        if ethernets:
+            ordered.append(ethernets[0].alias)
+        if len(ethernets) > 1:
+            ordered.append(ethernets[1].alias)
         if wifis:
-            self.config.p3_alias = wifis[0].alias
-        else:
-            self.config.p3_alias = ""
+            ordered.append(wifis[0].alias)
+
+        # Add remaining ethernets / wifis
+        for a in self.all_adapters:
+            if a.alias not in ordered:
+                ordered.append(a.alias)
+
+        # Assign to P1..P8
+        for i in range(1, 9):
+            val = ordered[i - 1] if i - 1 < len(ordered) else ""
+            setattr(self.config, f"p{i}_alias", val)
 
         self.engine.update_config(self.config)
         self.refresh_adapters()
         self._save_config()
 
         SoundEngine.play(SoundType.SUCCESS)
-        self.toast.success(f"Auto-detect: LAN 1='{self.config.p1_alias or 'None'}', LAN 2='{self.config.p2_alias or 'None'}', Wi-Fi='{self.config.p3_alias or 'None'}'")
+        assigned_desc = ", ".join(f"P{i}='{getattr(self.config, f'p{i}_alias')}'" for i in range(1, min(len(ordered)+1, 9)) if getattr(self.config, f'p{i}_alias'))
+        self.toast.success(f"Auto-detect: {assigned_desc or 'None'}")
 
         self.log_panel.append_log(
             LogEvent(
                 timestamp=time.strftime("%H:%M:%S"),
                 level=LogLevel.SUCCESS,
-                message=(
-                    f"Auto-assigned: LAN 1='{self.config.p1_alias or 'None'}', "
-                    f"LAN 2='{self.config.p2_alias or 'None'}', "
-                    f"Wi-Fi='{self.config.p3_alias or 'None'}'"
-                ),
+                message=f"Auto-assigned priorities: {assigned_desc}",
             )
         )
 
     def _on_adapter_assigned(self, priority: PriorityLevel, alias: str):
-        if priority == PriorityLevel.P1:
-            self.config.p1_alias = alias
-        elif priority == PriorityLevel.P2:
-            self.config.p2_alias = alias
-        elif priority == PriorityLevel.P3:
-            self.config.p3_alias = alias
-
+        setattr(self.config, f"p{priority.value}_alias", alias)
         self.engine.update_config(self.config)
         self._save_config()
         SoundEngine.play(SoundType.ACTION)
         self.toast.info(f"{priority.label} diatur ke: '{alias}'")
+
 
     def _on_toggle_adapter(self, alias: str, enabled: bool):
         """Manually connect/disconnect network adapter."""
@@ -1025,6 +1066,10 @@ class AppWindow(ctk.CTk):
             (f"🔍 P2: {self.config.ping_target_secondary}", "#38BDF8", ("#E0F2FE", "#0C4A6E")),
             (f"🛡️ P3: {self.config.ping_target_tertiary}", "#A78BFA", ("#EDE9FE", "#4C1D95")),
         ]
+        t4_val = getattr(self.config, "ping_target_quaternary", "")
+        if t4_val:
+            pills_data.append((f"🛰️ P4: {t4_val}", "#DB2777", ("#FDF2F8", "#831843")))
+
         for pill_text, pill_text_col, pill_bg in pills_data:
             ctk.CTkLabel(
                 self.targets_pill_bar,
@@ -1036,6 +1081,22 @@ class AppWindow(ctk.CTk):
                 padx=8,
                 pady=2,
             ).pack(side="left", padx=4, pady=3)
+
+        # Quick Button to Add/Edit 4th Target
+        t4_btn_text = "✏️ Edit Target 4" if t4_val else "+ Tambah Target ke-4"
+        add_t4_btn = ctk.CTkButton(
+            self.targets_pill_bar,
+            text=t4_btn_text,
+            command=self._open_add_target,
+            font=("Segoe UI", 9, "bold"),
+            fg_color=("#E2E8F0", "#2D3139"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#D97706", "#F59E0B"),
+            height=22,
+            width=120,
+            corner_radius=6,
+        )
+        add_t4_btn.pack(side="left", padx=(6, 4), pady=3)
 
         info_pill_btn = ctk.CTkButton(
             self.targets_pill_bar,
@@ -1062,6 +1123,21 @@ class AppWindow(ctk.CTk):
             height=20,
         )
         edit_ping_btn.pack(side="right", padx=(0, 4))
+
+    def _open_add_target(self):
+        SoundEngine.play(SoundType.ACTION)
+        AddTargetModal(self, config=self.config, on_saved=self._on_target_saved)
+
+    def _on_target_saved(self, new_ip: str):
+        self.config.ping_target_quaternary = new_ip
+        self.engine.update_config(self.config)
+        self._save_config()
+        self._update_targets_pill_bar()
+        SoundEngine.play(SoundType.SUCCESS)
+        if new_ip:
+            self.toast.success(f"🎯 Target ke-4 aktif: {new_ip}! Bilah spectrum kini 8 bilah.")
+        else:
+            self.toast.info("Target ke-4 dinonaktifkan. Bilah spectrum kembali 6 bilah.")
 
     @staticmethod
     def _render_smooth_bar(pct: float, length: int = 4) -> str:
@@ -1099,11 +1175,12 @@ class AppWindow(ctk.CTk):
             text=f"Target: {self.config.ping_target_primary} • Ping: {int(self.config.ping_interval_sec * 1000)}ms / {self.config.ping_timeout_ms}ms"
         )
         self.toast.success("⚙️ Pengaturan & Shortcut Berhasil Disimpan!")
+        targets_str = ", ".join(self.config.get_configured_targets())
         self.log_panel.append_log(
             LogEvent(
                 timestamp=time.strftime("%H:%M:%S"),
                 level=LogLevel.INFO,
-                message=f"Konfigurasi diperbarui: Target [{self.config.ping_target_primary}, {self.config.ping_target_secondary}, {self.config.ping_target_tertiary}] | Method: {self.config.probe_method}",
+                message=f"Konfigurasi diperbarui: Targets [{targets_str}] | Method: {self.config.probe_method}",
             )
         )
 
@@ -1136,7 +1213,7 @@ class AppWindow(ctk.CTk):
         self.after(100, self._process_queue)
 
     def _process_traffic_update(self):
-        """Update live traffic throughput stats and telemetry every second."""
+        """Update live traffic throughput stats, sports car gauge, and QoS telemetry every second."""
         try:
             # Update telemetry mini meter on footer with smooth bars & high-load alert
             try:
@@ -1174,22 +1251,37 @@ class AppWindow(ctk.CTk):
 
             # Find active adapter alias
             active_alias = ""
+            active_latency = 12.0
+            active_jitter = 1.2
             for p, s in self.engine.states.items():
                 if s.is_active_route and s.alias:
                     active_alias = s.alias
                     if s.last_latency_ms > 0:
+                        active_latency = s.last_latency_ms
+                        active_jitter = s.jitter_ms
                         self.traffic_monitor.record_latency_sample(s.alias, s.last_latency_ms)
                     break
 
             if not active_alias:
-                # Fallback to P1 alias if available
                 active_alias = self.config.p1_alias or (self.all_adapters[0].alias if self.all_adapters else "")
 
+            speed_mbps = 0.0
             if active_alias and active_alias in stats_map:
                 st = stats_map[active_alias]
-                dl_hist = self.traffic_monitor.download_history.get(active_alias, [])
-                up_hist = self.traffic_monitor.upload_history.get(active_alias, [])
-                self.traffic_chart.update_traffic(st, dl_hist, up_hist)
+                speed_mbps = st.download_mbps + st.upload_mbps
+
+            # Update Sports Car Tachometer Gauge HUD + Backbone Spectrum Bars
+            targets = self.config.get_configured_targets()
+            self.sports_gauge.update_gauge(
+                speed_mbps=speed_mbps,
+                latency_ms=active_latency,
+                jitter_ms=active_jitter,
+                targets=targets,
+            )
+
+            # Update Inline Bandwidth QoS Monitor
+            self.app_qos.update_stats()
+
         except Exception as e:
             print(f"Traffic update error: {e}")
 
@@ -1220,30 +1312,22 @@ class AppWindow(ctk.CTk):
 
         if active_p:
             p, s = active_p
-            if p == PriorityLevel.P1:
-                self.active_banner.configure(
-                    text=f"★ ACTIVE ROUTE: LAN 1 ('{s.alias}') • Metric: {s.assigned_metric or s.current_metric} • Latency: {s.last_latency_ms:.0f}ms • Zero-Drop Protected",
-                    fg_color=("#D1FAE5", "#064E3B"),
-                    text_color=("#065F46", "#6EE7B7"),
-                )
-            elif p == PriorityLevel.P2:
-                self.active_banner.configure(
-                    text=f"⚡ FAILOVER ROUTE ACTIVE: LAN 2 ('{s.alias}') • Promoted to Metric: {s.assigned_metric or s.current_metric} • Latency: {s.last_latency_ms:.0f}ms",
-                    fg_color=("#FFEDD5", "#7C2D12"),
-                    text_color=("#C2410C", "#FDBA74"),
-                )
-            else:
-                self.active_banner.configure(
-                    text=f"⚡ TERTIARY FAILOVER ACTIVE: Wi-Fi ('{s.alias}') • Promoted to Metric: {s.assigned_metric or s.current_metric} • Latency: {s.last_latency_ms:.0f}ms",
-                    fg_color=("#F3E8FF", "#581C87"),
-                    text_color=("#7E22CE", "#E9D5FF"),
-                )
+            badge_title = f"{p.label} ('{s.alias}')"
+            bg_col = ("#D1FAE5", "#064E3B") if p == PriorityLevel.P1 else (("#FFEDD5", "#7C2D12") if p == PriorityLevel.P2 else ("#F3E8FF", "#581C87"))
+            text_col = ("#065F46", "#6EE7B7") if p == PriorityLevel.P1 else (("#C2410C", "#FDBA74") if p == PriorityLevel.P2 else ("#7E22CE", "#E9D5FF"))
+
+            self.active_banner.configure(
+                text=f"★ ACTIVE ROUTE: {badge_title} • Metric: {s.assigned_metric or s.current_metric} • Latency: {s.last_latency_ms:.0f}ms • Zero-Drop Protected",
+                fg_color=bg_col,
+                text_color=text_col,
+            )
         else:
             self.active_banner.configure(
                 text="⚠️ ALERT: No active healthy route! All monitored interfaces are experiencing RTO or disconnected.",
                 fg_color=("#FEE2E2", "#7F1D1D"),
                 text_color=("#991B1B", "#FCA5A5"),
             )
+
 
     def _on_closing(self):
         try:

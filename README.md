@@ -1,4 +1,4 @@
-# MODULA - Smart Auto Failover v2.3
+# MODULA - Smart Auto Failover v2.4
 
 <div align="center">
 
@@ -17,11 +17,11 @@
 
 \*Dibuat dengan dedikasi oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
-[![Release](https://img.shields.io/badge/Release-v2.3-amber?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
+[![Release](https://img.shields.io/badge/Release-v2.4-amber?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-emerald?style=for-the-badge)](https://github.com/parikesitad-pm)
 [![GUI](https://img.shields.io/badge/GUI-CustomTkinter-indigo?style=for-the-badge)](https://github.com/TomSchimansky/CustomTkinter)
-[![Tests](https://img.shields.io/badge/Tests-60%2F60%20PASS-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-66%2F66%20PASS-brightgreen?style=for-the-badge)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 </div>
@@ -63,11 +63,12 @@ Banyak pengguna bertanya: _"Ping-nya dikirim kemana saja? Dari mana asal angka J
 
 ### 1. Kemana Saja Ping / Probing Dikirim?
 
-MODULA melakukan ICMP Echo Probing aktif secara simultan ke 3 target Anycast BGP Tier-1 global dengan latensi terendah (ditampilkan jelas di status bar header utama):
+MODULA melakukan ICMP Echo Probing aktif secara simultan ke target Anycast BGP Tier-1 global dengan latensi terendah (ditampilkan jelas di status bar header utama):
 
-- **🥇 Target Primer**: `1.1.1.1` (Cloudflare Global Anycast DNS) — Peering langsung ke gateway data center lokal.
-- **🥈 Target Sekunder**: `8.8.8.8` (Google Public Anycast DNS) — Verifikasi sekunder untuk mencegah _false-positive_.
-- **🥉 Target Tersier**: `9.9.9.9` (Quad9 Anycast) — Resolusi independen Swiss/Global untuk redundansi total.
+- **🥇 Target Primer (P1)**: `1.1.1.1` (Cloudflare Global Anycast DNS) — Peering langsung ke gateway data center lokal.
+- **🥈 Target Sekunder (P2)**: `8.8.8.8` (Google Public Anycast DNS) — Verifikasi sekunder untuk mencegah _false-positive_.
+- **🥉 Target Tersier (P3)**: `9.9.9.9` (Quad9 Anycast) — Resolusi independen Swiss/Global untuk redundansi total.
+- **🛰️ Target Keempat (P4 - Opsional)**: Kustom melalui tombol `+ Tambah Target ke-4` (misal OpenDNS `208.67.222.222` atau gateway router lokal `192.168.1.1`).
 - **🔒 Source IP Binding**: Ping TIDAK dikirim via rute default semata, melainkan di-bind secara eksplisit ke Source IP lokal masing-masing kartu jaringan (`ping -S <source_ip>` pada Windows, atau bind socket pada macOS/Linux). Hal ini memungkinkan LAN 1, LAN 2, dan Wi-Fi dites jalurnya secara independen dan simultan!
 
 ### 2. Dari Mana Angka Jitter Dihitung?
@@ -93,24 +94,25 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 
 ---
 
-## ⚡ Fitur Unggulan MODULA v2.3
+## ⚡ Fitur Unggulan MODULA v2.4
 
-| Fitur                               | Deskripsi                                                                                                                                                                               |
-| :---------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **🚀 Multi-Platform Releases**      | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                                   |
-| **🎯 Custom Ping & Probing**        | Kustomisasi IP target probing ICMP dengan **Simple Mode** (cukup masukkan IP) dan **Advanced Mode** (tuning interval ms, timeout ms, RTO threshold, payload size, & Source IP Binding). |
-| **⌨️ Shortcut Keyboard Manager**    | Dukungan pintasan keyboard global (F11 Fullscreen, F5 Refresh, Ctrl+M Monitoring, Ctrl+T Speedtest, Ctrl+Q QoS, Ctrl+P Settings) yang dapat dikustomisasi di jendela Settings.          |
-| **🎮 Live GPU Usage & Mini Meters** | Pemantauan utilisasi GPU real-time via daemon thread non-blocking serta visual meter mini mulus (`██░░`) pada footer untuk CPU, RAM, dan GPU.                                           |
-| **🎛️ QoS Priority Presets**         | Tombol preset instan 1-klik untuk **Video Conference** (Zoom, Teams, Meet) dan **Live Streaming** (OBS Studio, vMix) dengan auto-balancing 100% dan filter proses background bersih.    |
-| **🖥️ Auto-Maximized & Responsive**  | Aplikasi otomatis terbuka maximized / fit screen tanpa kepotong, serta adaptif saat diresize hingga resolusi compact 820x560.                                                           |
-| **🔄 Unified Module Refresh**       | Tombol 🔄 Refresh tunggal yang memicu animasi preloader skeleton dan merefresh seluruh adapter serta telemetri perangkat secara seamless.                                               |
-| **✨ Enterprise HUD Splash**        | Splash screen frameless 560x340 dengan background radial dark, rotating gradient spinner 60 FPS, circular Barong logo, CTkProgressBar, dynamic status text, dan fadeout 100%.           |
-| **🔊 Smart Sound Alert Engine**     | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM/GPU (>85%) dengan master mute switch.                               |
-| **💬 Toast Bubble Notifications**   | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                                |
-| **💻 Fastfetch & 60s Live Graph**   | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                                      |
-| **⚡ 60 FPS Speedtest + Detail**    | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).          |
-| **📊 Smooth Visualizer Modes**      | Tiga mode grafik estetik: `⚡ Cyber Spectrum Bars` (32-band iconic equalizer), `📡 RF Internet Wave`, dan `🌊 Smooth Curve` anti-patah.                                                 |
-| **🌓 Dual Theme (Dark & Light)**    | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                                     |
+| Fitur                               | Deskripsi                                                                                                                                                                                        |
+| :---------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **🏎️ Sports Car Tachometer HUD**    | Speedometer instrumen tachometer supercar 60 FPS needle sweep analog, redline glow, HUD digital, dan bilah spectrum ganda per backbone target (6 bilah default, 8 bilah saat target ke-4 aktif). |
+| **🎛️ Inline Bandwidth QoS Monitor** | Alokasi bandwidth real-time tepat di dashboard utama di bawah speedometer dengan 1-klik tombol cepat **Boost Meeting** (Zoom/Teams/Meet) dan **Boost Streaming** (OBS/vMix).                     |
+| **🔌 Adaptif 1 s.d. 8 Port Card**   | Menyesuaikan otomatis dengan perangkat Anda: laptop 1 LAN tampil 1 kartu lebar; 2 LAN + 1 Wi-Fi tampil 3 kolom; PC server hingga 8 port tertata otomatis dalam 2 baris responsif.                |
+| **🎯 Custom Target IP ke-4**        | Modal popup instan untuk menambah IP server ke-4 langsung dari dashboard dengan regex validator IPv4 dan preset kilat.                                                                           |
+| **⚡ Zero-Delay Splash Startup**    | Eliminasi total kedipan jendela sebelum splash screen; jendela utama disembunyikan sempurna sampai transisi fadeout splash screen selesai.                                                       |
+| **🔍 Dialog Riwayat Log Lengkap**   | Panel log dashboard diperamping (~95px) dan dilengkapi tombol **Buka Log Lengkap** untuk membuka dialog pencarian, filter tingkat log, dan ekspor berkas.                                        |
+| **👶 Bahasa Formal & Sangat Ramah** | Panduan pengaturan dirancang ulang dalam bahasa Indonesia formal yang mudah dipahami pemula, manula, hingga teknisi jaringan profesional (tersedia Mode Praktis & Mode Lanjutan).                |
+| **🚀 Multi-Platform Releases**      | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                                            |
+| **⌨️ Shortcut Keyboard Manager**    | Dukungan pintasan keyboard global (F11 Fullscreen, F5 Refresh, Ctrl+M Monitoring, Ctrl+T Speedtest, Ctrl+Q QoS, Ctrl+P Settings) yang dapat dikustomisasi di jendela Settings.                   |
+| **🎮 Live GPU Usage & Mini Meters** | Pemantauan utilisasi GPU real-time via daemon thread non-blocking serta visual meter mini mulus (`██░░`) pada footer untuk CPU, RAM, dan GPU.                                                    |
+| **🔊 Smart Sound Alert Engine**     | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM/GPU (>85%) dengan master mute switch.                                        |
+| **💬 Toast Bubble Notifications**   | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                                         |
+| **💻 Fastfetch Hardware Info**      | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                                               |
+| **⚡ 60 FPS Speedtest + Detail**    | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).                   |
+| **🌓 Dual Theme (Dark & Light)**    | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                                              |
 
 ---
 
@@ -118,14 +120,15 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│                      MODULA DESKTOP GUI (v2.3)                         │
+│                      MODULA DESKTOP GUI (v2.4)                         │
 │  [ CustomTkinter 6.0 ] • [ Pillow 12 ] • [ Barong Theming Engine ]     │
-│  • 40 FPS Canvas Visualizer • Toast Manager • Telemetry Hub • QoS GUI  │
+│  • Sports Car Tachometer HUD • Inline QoS • Dynamic 1-8 Port Cards     │
+│  • Toast Manager • Full History Modal • 4th Target Probing Dialog      │
 └──────────────────────────────────┬─────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼─────────────────────────────────────┐
 │                      CORE ORCHESTRATION LAYER                          │
-│  • FailoverEngine (State Machine & 5x Anti-Flapping Recovery)          │
+│  • FailoverEngine (Dynamic P1-P8 State Machine & 5x Anti-Flapping)     │
 │  • TrafficMonitor (RFC 3550 Jitter & Kernel NetIO Delta Sampling)      │
 │  • SoundEngine (Synthesizer Chimes, High-Load Alert & Master Mute)     │
 │  • BandwidthQoSEngine (NetQoS DSCP & Windows Process Priority)         │
@@ -151,7 +154,7 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 
 1. Unduh atau buka file bundle di:
    ```
-   dist_app/MODULA-v2.2-windows-x64.zip
+   dist_app/MODULA-v2.4-windows-x64.zip
    ```
 2. Ekstrak folder `MODULA`, lalu klik kanan file `run_admin.bat` -> pilih **"Run as administrator"** (atau klik ganda `MODULA.exe`).
 
@@ -174,7 +177,7 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 
 1. Build atau buka file disk image:
    ```
-   dist_app/MODULA-v2.2-macos-arm64.dmg
+   dist_app/MODULA-v2.4-macos-arm64.dmg
    ```
 2. Klik ganda file `.dmg`, lalu tarik icon **MODULA** (dengan icon resmi Barong `modula.icns`) ke folder **Applications**.
 3. **PENTING - Mengatasi macOS Gatekeeper Quarantine**:
@@ -216,14 +219,14 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 Jika Anda ingin membuild ulang paket rilis mandiri (_standalone distribution_) untuk tim Anda:
 
 ```bash
-# 1. Build Bundle Windows (Menghasilkan MODULA-v2.3-windows-x64.zip & MODULA.exe)
+# 1. Build Bundle Windows (Menghasilkan MODULA-v2.4-windows-x64.zip & MODULA.exe)
 python build_windows_bundle.py
 
-# 2. Build Bundle macOS (Menghasilkan MODULA-v2.3-macos-arm64.dmg di Mac)
+# 2. Build Bundle macOS (Menghasilkan MODULA-v2.4-macos-arm64.dmg di Mac)
 chmod +x build_macos_dmg.sh
 ./build_macos_dmg.sh
 
-# 3. Build Bundle Linux (Menghasilkan MODULA-v2.3-linux-x86_64.tar.gz di Linux)
+# 3. Build Bundle Linux (Menghasilkan MODULA-v2.4-linux-x86_64.tar.gz di Linux)
 chmod +x build_linux.sh
 ./build_linux.sh
 ```
@@ -263,7 +266,7 @@ Bagi para pengembang, insinyur jaringan, dan kontributor open-source, arsitektur
 
 ## 🧪 Quality Assessment (QA) & Test Suite
 
-MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **60 unit test** dan simulasi skenario **20 persona tester**:
+MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **66 unit test** dan simulasi skenario **20 persona tester**:
 
 ```bash
 python -m unittest discover tests
@@ -272,11 +275,12 @@ python -m unittest discover tests
 ### Hasil Eksekusi:
 
 ```text
-Ran 60 tests in 8.004s
+Ran 66 tests in 8.008s
 
-OK (All 60 unit tests & 20-persona QA simulation passed 100%)
+OK (All 66 unit tests & 20-persona QA simulation passed 100%)
 ```
 
+- `[PASS] TestV24Features`: Verifikasi Sports Car Tachometer HUD, Inline QoS Widget, Dynamic 1-8 Adapter Cards, dan target IP ke-4.
 - `[PASS] TestV23Features`: Verifikasi Custom Ping Probing, Settings Modal, Keyboard Shortcuts, Telemetri GPU, QoS Presets, dan filter vMixService.
 - `[PASS] TestSoundEngine`: Verifikasi synthesizer audio, nada connect/disconnect, failover, high-load (>85%), dan master mute.
 - `[PASS] TestBandwidthQoS`: Pemindaian proses aktif Zoom/OBS/vMix, auto-balance slider 100%, dan registrasi NetQoS.
@@ -290,4 +294,4 @@ OK (All 60 unit tests & 20-persona QA simulation passed 100%)
 
 Proyek ini dirilis di bawah lisensi **MIT License**. Terbuka penuh untuk digunakan oleh individu, streamer, perusahaan, maupun institusi penyiaran.
 
-\*Dibuat dengan bangga oleh **[parikesitad-pm](https://github.com/parikesitad-pm)\***. Jika project ini bermanfaat untuk kelancaran meeting, streaming, atau pekerjaan Anda, berikan bintang ⭐ di GitHub!
+\*Dibuat dengan bangga oleh **[parikesitad-pm](https://github.com/parikesitad-pm)**. Jika project ini bermanfaat untuk kelancaran meeting, streaming, atau pekerjaan Anda, berikan bintang ⭐ di GitHub!

@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# MODULA - Smart Auto Failover v2.3
+# MODULA - Smart Auto Failover v2.4
 # Linux x86_64 Standalone Bundle Packaging Script
-# Produces: dist_app/MODULA-v2.3-linux-x86_64.tar.gz
+# Produces: dist_app/MODULA-v2.4-linux-x86_64.tar.gz
 # ==============================================================================
 
 set -e
 
-VERSION="v2.3"
+VERSION="v2.4"
 ARCH="linux-x86_64"
 APP_NAME="MODULA"
 TAR_NAME="MODULA-${VERSION}-${ARCH}.tar.gz"

@@ -1,6 +1,7 @@
 """
 MODULA - Smart Auto Failover
-Settings Modal: Custom Ping Targets & Keyboard Shortcuts Manager (v2.3)
+Settings Modal: Custom Ping Targets & Keyboard Shortcuts Manager (v2.4)
+Dirancang ramah pemula, manula, hingga teknisi jaringan profesional.
 """
 
 import re
@@ -13,16 +14,17 @@ from core.sound_engine import SoundEngine, SoundType
 
 class SettingsModal(ctk.CTkToplevel):
     """
-    Comprehensive Configuration Modal for MODULA:
-    - Custom Ping Targets (Simple IP entry & Advanced ICMP/TCP Probing parameters)
-    - Custom Keyboard Shortcuts Manager with Hot-Remapping
+    Jendela Pengaturan MODULA:
+    - Mode Praktis: Cukup atur IP pengecek internet (Target 1 s.d. 4).
+    - Mode Lanjutan: Kustomisasi interval deteksi milidetik, batas RTO, dan toleransi failover.
+    - Pengaturan Tombol Pintas Keyboard (Shortcuts).
     """
 
     def __init__(self, master, config: FailoverConfig, on_save: Optional[Callable[[FailoverConfig], None]] = None):
         super().__init__(master)
-        self.title("⚙️ MODULA • Pengaturan Jaringan & Shortcut")
-        self.geometry("720x620")
-        self.minsize(640, 520)
+        self.title("⚙️ MODULA • Pengaturan Koneksi & Tombol Pintas")
+        self.geometry("740x660")
+        self.minsize(660, 560)
 
         self.config = config
         self.on_save = on_save
@@ -37,20 +39,20 @@ class SettingsModal(ctk.CTkToplevel):
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # 1. Header
+        # 1. Header yang Ramah dan Formal
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.grid(row=0, column=0, padx=20, pady=(16, 6), sticky="ew")
 
         ctk.CTkLabel(
             header,
-            text="⚙️ MODULA Configuration & Probing Engine",
+            text="⚙️ Pusat Pengaturan Jaringan & Kontrol",
             font=("Segoe UI", 16, "bold"),
             text_color=("#D97706", "#F59E0B"),
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
-            text="Kustomisasi IP target probing ICMP, interval failover, dan shortcut keyboard.",
+            text="Sesuaikan alamat server pengecek internet, sensitivitas pengalihan otomatis, dan tombol pintas.",
             font=("Segoe UI", 11),
             text_color=("#64748B", "#94A3B8"),
         ).pack(anchor="w")
@@ -67,10 +69,10 @@ class SettingsModal(ctk.CTkToplevel):
         )
         self.tabview.grid(row=1, column=0, padx=20, pady=6, sticky="nsew")
 
-        # Tab 1: Ping Targets
-        self.tab_ping = self.tabview.add("🎯 Custom Ping & Probing")
-        # Tab 2: Shortcuts
-        self.tab_shortcuts = self.tabview.add("⌨️ Keyboard Shortcuts")
+        # Tab 1: Server Pengecek (Ping)
+        self.tab_ping = self.tabview.add("🎯 Server Pengecek Internet")
+        # Tab 2: Tombol Pintas
+        self.tab_shortcuts = self.tabview.add("⌨️ Tombol Pintas Keyboard")
 
         self._build_ping_tab()
         self._build_shortcuts_tab()
@@ -93,7 +95,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         ctk.CTkButton(
             btns_box,
-            text="Batal",
+            text="Tutup",
             command=self.destroy,
             font=("Segoe UI", 11),
             fg_color=("#E2E8F0", "#2D3139"),
@@ -111,7 +113,7 @@ class SettingsModal(ctk.CTkToplevel):
             fg_color=("#D97706", "#F59E0B"),
             hover_color=("#B45309", "#D97706"),
             text_color=("#FFFFFF", "#0F172A"),
-            width=150,
+            width=160,
             height=32,
         ).pack(side="left")
 
@@ -119,25 +121,25 @@ class SettingsModal(ctk.CTkToplevel):
         tab = self.tab_ping
         tab.grid_columnconfigure(0, weight=1)
 
-        # Mode Switcher (Simple vs Advanced)
+        # Mode Switcher (Praktis vs Lanjutan)
         mode_box = ctk.CTkFrame(tab, fg_color="transparent")
         mode_box.pack(fill="x", pady=(4, 10))
 
         ctk.CTkLabel(
             mode_box,
-            text="Pilih Mode Konfigurasi:",
+            text="Pilih Gaya Pengaturan:",
             font=("Segoe UI", 11, "bold"),
             text_color=("#0F172A", "#F8FAFC"),
         ).pack(side="left", padx=(0, 10))
 
         self.ping_mode_seg = ctk.CTkSegmentedButton(
             mode_box,
-            values=["Simple (Hanya IP Target)", "Advanced (Full Probing Tuning)"],
+            values=["Mode Praktis (Mudah)", "Mode Lanjutan (Teknisi)"],
             command=self._on_ping_mode_changed,
             font=("Segoe UI", 10, "bold"),
-            width=260,
+            width=300,
         )
-        self.ping_mode_seg.set("Simple (Hanya IP Target)")
+        self.ping_mode_seg.set("Mode Praktis (Mudah)")
         self.ping_mode_seg.pack(side="left")
 
         # Presets Bar
@@ -152,7 +154,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             preset_box,
-            text="PRESET IP CEPAT:",
+            text="PILIHAN CEPAT (PRESET):",
             font=("Segoe UI", 9, "bold"),
             text_color=("#64748B", "#94A3B8"),
         ).pack(side="left", padx=10, pady=8)
@@ -160,7 +162,7 @@ class SettingsModal(ctk.CTkToplevel):
         ctk.CTkButton(
             preset_box,
             text="🌐 Cloudflare + Google + Quad9",
-            command=lambda: self._apply_ip_preset("1.1.1.1", "8.8.8.8", "9.9.9.9"),
+            command=lambda: self._apply_ip_preset("1.1.1.1", "8.8.8.8", "9.9.9.9", ""),
             font=("Segoe UI", 9, "bold"),
             fg_color=("#E2E8F0", "#2A2E3D"),
             hover_color=("#CBD5E1", "#3B4254"),
@@ -170,8 +172,8 @@ class SettingsModal(ctk.CTkToplevel):
 
         ctk.CTkButton(
             preset_box,
-            text="🛡️ OpenDNS + Google",
-            command=lambda: self._apply_ip_preset("208.67.222.222", "8.8.8.8", "1.1.1.1"),
+            text="🛡️ 4 Server Global Terlengkap",
+            command=lambda: self._apply_ip_preset("1.1.1.1", "8.8.8.8", "9.9.9.9", "208.67.222.222"),
             font=("Segoe UI", 9, "bold"),
             fg_color=("#E2E8F0", "#2A2E3D"),
             hover_color=("#CBD5E1", "#3B4254"),
@@ -180,43 +182,51 @@ class SettingsModal(ctk.CTkToplevel):
         ).pack(side="left", padx=4)
 
         # Simple IP Frame
-        self.simple_ip_frame = ctk.CTkFrame(
+        self.simple_ip_frame = ctk.CTkScrollableFrame(
             tab,
             fg_color=("#F8FAFC", "#1E222D"),
             corner_radius=8,
             border_width=1,
             border_color=("#E2E8F0", "#2E3345"),
+            height=340,
         )
-        self.simple_ip_frame.pack(fill="x", pady=4, padx=2)
+        self.simple_ip_frame.pack(fill="both", expand=True, pady=4, padx=2)
 
         # Target 1 (Primary)
         self.t1_entry = self._create_ip_field(
             self.simple_ip_frame,
-            "Target Primer (P1 / Active Backbone):",
+            "1. Server Pengecek Utama (Prioritas 1):",
             self.config.ping_target_primary,
             "1.1.1.1",
-            "Anycast global dengan peering latensi terendah (Cloudflare DNS)",
-            row=0,
+            "Server paling cepat di dunia (Cloudflare). Menjadi patokan utama deteksi online.",
         )
 
         # Target 2 (Secondary)
         self.t2_entry = self._create_ip_field(
             self.simple_ip_frame,
-            "Target Sekunder (P2 / Verifikasi):",
+            "2. Server Pengecek Cadangan (Prioritas 2):",
             self.config.ping_target_secondary,
             "8.8.8.8",
-            "Mencegah false positive jika node primer ada maintenance (Google DNS)",
-            row=1,
+            "Server alternatif terpercaya (Google). Memastikan aplikasi tidak salah duga bila server utama sibuk.",
         )
 
         # Target 3 (Tertiary)
         self.t3_entry = self._create_ip_field(
             self.simple_ip_frame,
-            "Target Tersier (P3 / Redundansi Tambahan):",
+            "3. Server Pengecek Ketiga (Prioritas 3):",
             self.config.ping_target_tertiary,
             "9.9.9.9",
-            "Redundansi Swiss/Global untuk konfirmasi rute darurat (Quad9 DNS)",
-            row=2,
+            "Server independen global (Quad9). Memastikan stabilitas internet dari sudut pandang jalur rute lain.",
+        )
+
+        # Target 4 (Quaternary / Optional)
+        t4_val = getattr(self.config, "ping_target_quaternary", "") or ""
+        self.t4_entry = self._create_ip_field(
+            self.simple_ip_frame,
+            "4. Server Pengecek Tambahan (Prioritas 4 - Opsional):",
+            t4_val,
+            "Contoh: 208.67.222.222 atau IP Router Lokal (192.168.1.1)",
+            "Kosongkan bila tidak diperlukan. Jika diisi, grafik tachometer dan spectrum otomatis menjadi 8 bilah!",
         )
 
         # Advanced Tuning Frame
@@ -227,12 +237,11 @@ class SettingsModal(ctk.CTkToplevel):
             border_width=1,
             border_color=("#E2E8F0", "#2E3345"),
         )
-        # Hidden by default in simple mode
         self._build_advanced_tuning()
 
-    def _create_ip_field(self, parent, label: str, val: str, placeholder: str, hint: str, row: int) -> ctk.CTkEntry:
+    def _create_ip_field(self, parent, label: str, val: str, placeholder: str, hint: str) -> ctk.CTkEntry:
         box = ctk.CTkFrame(parent, fg_color="transparent")
-        box.pack(fill="x", padx=14, pady=6)
+        box.pack(fill="x", padx=14, pady=5)
 
         ctk.CTkLabel(
             box,
@@ -252,7 +261,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             box,
-            text=f"💡 {hint}",
+            text=f"ℹ️ {hint}",
             font=("Segoe UI", 9),
             text_color=("#64748B", "#94A3B8"),
         ).pack(anchor="w")
@@ -270,20 +279,20 @@ class SettingsModal(ctk.CTkToplevel):
         # Interval
         b1 = ctk.CTkFrame(row1, fg_color="transparent")
         b1.grid(row=0, column=0, sticky="ew", padx=(0, 8))
-        ctk.CTkLabel(b1, text="Interval Probing (Detik):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ctk.CTkLabel(b1, text="Kecepatan Deteksi (Detik antar Tes):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
         self.interval_entry = ctk.CTkEntry(b1, font=("Consolas", 11), height=28)
         self.interval_entry.insert(0, str(self.config.ping_interval_sec))
         self.interval_entry.pack(fill="x", pady=2)
-        ctk.CTkLabel(b1, text="Standar: 1.0s (Cepat & hemat bandwidth)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
+        ctk.CTkLabel(b1, text="Standar: 1.0s (Sangat cepat & tidak membebani kuota)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
 
         # Timeout
         b2 = ctk.CTkFrame(row1, fg_color="transparent")
         b2.grid(row=0, column=1, sticky="ew", padx=(8, 0))
-        ctk.CTkLabel(b2, text="Timeout Ping (Milidetik):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ctk.CTkLabel(b2, text="Waktu Tunggu Respon (Milidetik):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
         self.timeout_entry = ctk.CTkEntry(b2, font=("Consolas", 11), height=28)
         self.timeout_entry.insert(0, str(self.config.ping_timeout_ms))
         self.timeout_entry.pack(fill="x", pady=2)
-        ctk.CTkLabel(b2, text="Standar: 800ms (Sebelum dianggap RTO)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
+        ctk.CTkLabel(b2, text="Standar: 800ms (Batas waktu sebelum sinyal dinilai macet)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
 
         # RTO Threshold & Recovery Threshold
         row2 = ctk.CTkFrame(f, fg_color="transparent")
@@ -293,22 +302,22 @@ class SettingsModal(ctk.CTkToplevel):
         # RTO Threshold
         b3 = ctk.CTkFrame(row2, fg_color="transparent")
         b3.grid(row=0, column=0, sticky="ew", padx=(0, 8))
-        ctk.CTkLabel(b3, text="Ambang Batas RTO (Failover Threshold):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ctk.CTkLabel(b3, text="Batas Toleransi Gangguan (Berapa Kali Gagal):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
         self.rto_entry = ctk.CTkEntry(b3, font=("Consolas", 11), height=28)
         self.rto_entry.insert(0, str(self.config.failover_rto_threshold))
         self.rto_entry.pack(fill="x", pady=2)
-        ctk.CTkLabel(b3, text="Standar: 2 kali RTO langsung failover (<2s)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
+        ctk.CTkLabel(b3, text="Standar: 2 kali gagal langsung pindah jalur (<2 detik)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
 
         # Recovery Threshold
         b4 = ctk.CTkFrame(row2, fg_color="transparent")
         b4.grid(row=0, column=1, sticky="ew", padx=(8, 0))
-        ctk.CTkLabel(b4, text="Ambang Batas Pemulihan (Anti-Flapping):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ctk.CTkLabel(b4, text="Syarat Pemulihan (Koneksi Stabil Kembali):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
         self.rec_entry = ctk.CTkEntry(b4, font=("Consolas", 11), height=28)
         self.rec_entry.insert(0, str(self.config.recovery_success_threshold))
         self.rec_entry.pack(fill="x", pady=2)
-        ctk.CTkLabel(b4, text="Standar: 5x berturut-turut sukses", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
+        ctk.CTkLabel(b4, text="Standar: 5 kali lancar berturut-turut sebelum kembali ke kabel utama", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
 
-        # Payload Size & Protocol
+        # Payload Size & Source IP Binding
         row3 = ctk.CTkFrame(f, fg_color="transparent")
         row3.pack(fill="x", padx=14, pady=6)
         row3.grid_columnconfigure((0, 1), weight=1)
@@ -316,19 +325,19 @@ class SettingsModal(ctk.CTkToplevel):
         # Payload Size
         b5 = ctk.CTkFrame(row3, fg_color="transparent")
         b5.grid(row=0, column=0, sticky="ew", padx=(0, 8))
-        ctk.CTkLabel(b5, text="Ukuran Paket Payload (Bytes):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ctk.CTkLabel(b5, text="Ukuran Paket Tes Data (Bytes):", font=("Segoe UI", 10, "bold")).pack(anchor="w")
         self.payload_entry = ctk.CTkEntry(b5, font=("Consolas", 11), height=28)
         self.payload_entry.insert(0, str(getattr(self.config, "ping_payload_size", 32)))
         self.payload_entry.pack(fill="x", pady=2)
-        ctk.CTkLabel(b5, text="Standar ICMP: 32 bytes (Ringan)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
+        ctk.CTkLabel(b5, text="Standar: 32 bytes (Kecil, aman & ramah kuota seluler)", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
 
         # Source IP Binding Switch
         b6 = ctk.CTkFrame(row3, fg_color="transparent")
         b6.grid(row=0, column=1, sticky="ew", padx=(8, 0))
-        ctk.CTkLabel(b6, text="Source IP Binding Interface:", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ctk.CTkLabel(b6, text="Uji Tiap Colokan/Port Secara Terpisah:", font=("Segoe UI", 10, "bold")).pack(anchor="w")
         self.bind_switch = ctk.CTkSwitch(
             b6,
-            text="Aktifkan Multi-Interface Bind (-S)",
+            text="Aktifkan Uji Mandiri Port (-S Binding)",
             font=("Segoe UI", 10),
             progress_color="#D97706",
         )
@@ -337,16 +346,16 @@ class SettingsModal(ctk.CTkToplevel):
         else:
             self.bind_switch.deselect()
         self.bind_switch.pack(anchor="w", pady=4)
-        ctk.CTkLabel(b6, text="Uji jalur LAN 1, LAN 2, Wi-Fi secara independen", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
+        ctk.CTkLabel(b6, text="Kabel LAN 1, LAN 2, dan Wi-Fi dites lewat jalurnya masing-masing", font=("Segoe UI", 8), text_color="#64748B").pack(anchor="w")
 
     def _on_ping_mode_changed(self, mode: str):
         SoundEngine.play(SoundType.ACTION)
-        if "Advanced" in mode:
+        if "Lanjutan" in mode or "Teknisi" in mode:
             self.adv_frame.pack(fill="x", pady=4, padx=2)
         else:
             self.adv_frame.pack_forget()
 
-    def _apply_ip_preset(self, p1: str, p2: str, p3: str):
+    def _apply_ip_preset(self, p1: str, p2: str, p3: str, p4: str = ""):
         SoundEngine.play(SoundType.ACTION)
         self.t1_entry.delete(0, "end")
         self.t1_entry.insert(0, p1)
@@ -354,7 +363,10 @@ class SettingsModal(ctk.CTkToplevel):
         self.t2_entry.insert(0, p2)
         self.t3_entry.delete(0, "end")
         self.t3_entry.insert(0, p3)
-        self.msg_label.configure(text=f"Preset {p1}, {p2}, {p3} dipilih!", text_color=("#059669", "#10B981"))
+        self.t4_entry.delete(0, "end")
+        if p4:
+            self.t4_entry.insert(0, p4)
+        self.msg_label.configure(text="Preset server berhasil diterapkan!", text_color=("#059669", "#10B981"))
 
     def _build_shortcuts_tab(self):
         tab = self.tab_shortcuts
@@ -362,7 +374,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             tab,
-            text="Kustomisasi Tombol Pintas (Keyboard Shortcuts):",
+            text="Sesuaikan Tombol Pintas Keyboard:",
             font=("Segoe UI", 11, "bold"),
             text_color=("#0F172A", "#F8FAFC"),
         ).pack(anchor="w", pady=(4, 8))
@@ -381,18 +393,18 @@ class SettingsModal(ctk.CTkToplevel):
         self.shortcut_entries: Dict[str, ctk.CTkEntry] = {}
 
         action_labels = {
-            "fullscreen": ("Layar Penuh (Toggle Fullscreen)", "Masuk / keluar layar penuh"),
-            "refresh": ("Refresh & Preloader Semua Modul", "Panggil preloader & hardware rescan"),
-            "toggle_monitoring": ("Mulai / Berhenti Monitoring", "Toggle failover engine"),
-            "speedtest": ("Buka Modal Speedtest 4-Engine", "Akses benchmark kecepatan"),
-            "bandwidth_qos": ("Buka Bandwidth QoS Allocator", "Atur prioritas Zoom / OBS / Stream"),
-            "toggle_sound": ("Mute / Unmute Efek Suara", "Saklar audio notifikasi global"),
-            "settings": ("Buka Pengaturan & Custom Ping", "Buka jendela settings ini"),
+            "fullscreen": ("Layar Penuh (Toggle Layar Penuh)", "Buka atau tutup tampilan layar penuh (seperti F11)"),
+            "refresh": ("Segarkan & Pindai Ulang Perangkat", "Jalankan preloader animasi dan deteksi ulang kabel & Wi-Fi"),
+            "toggle_monitoring": ("Mulai / Berhenti Proteksi", "Nyalakan atau istirahatkan sistem proteksi failover"),
+            "speedtest": ("Uji Kecepatan Internet (Speedtest)", "Buka jendela uji kecepatan 4 mesin (Ookla, Fast, Cloudflare, nPerf)"),
+            "bandwidth_qos": ("Prioritas Bandwidth Aplikasi (QoS)", "Buka jendela kontrol alokasi bandwidth Zoom / OBS / vMix"),
+            "toggle_sound": ("Bunyikan / Senyapkan Efek Suara", "Nyalakan atau matikan notifikasi suara"),
+            "settings": ("Buka Pengaturan Ini", "Buka jendela konfigurasi dan target server"),
         }
 
         current_shortcuts = getattr(self.config, "shortcuts", DEFAULT_SHORTCUTS) or DEFAULT_SHORTCUTS
 
-        for i, (key, (title, desc)) in enumerate(action_labels.items()):
+        for key, (title, desc) in action_labels.items():
             row = ctk.CTkFrame(scroll, fg_color="transparent")
             row.pack(fill="x", padx=10, pady=6)
             row.grid_columnconfigure(0, weight=1)
@@ -415,7 +427,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         ctk.CTkButton(
             reset_bar,
-            text="🔄 Kembalikan Shortcut ke Standar",
+            text="🔄 Kembalikan Tombol Pintas ke Standar Pabrik",
             command=self._reset_shortcuts_to_default,
             font=("Segoe UI", 10),
             fg_color=("#E2E8F0", "#2D3139"),
@@ -430,7 +442,7 @@ class SettingsModal(ctk.CTkToplevel):
             if k in self.shortcut_entries:
                 self.shortcut_entries[k].delete(0, "end")
                 self.shortcut_entries[k].insert(0, v)
-        self.msg_label.configure(text="Shortcut dikembalikan ke default!", text_color=("#059669", "#10B981"))
+        self.msg_label.configure(text="Tombol pintas berhasil dikembalikan ke standar!", text_color=("#059669", "#10B981"))
 
     def _save_settings(self):
         # 1. Validate IP targets
@@ -438,22 +450,28 @@ class SettingsModal(ctk.CTkToplevel):
         t1 = self.t1_entry.get().strip()
         t2 = self.t2_entry.get().strip()
         t3 = self.t3_entry.get().strip()
+        t4 = self.t4_entry.get().strip()
 
         if not t1 or not re.match(ip_regex, t1):
-            self.msg_label.configure(text="❌ Target Primer tidak valid (harus IPv4, misal: 1.1.1.1)", text_color="#EF4444")
+            self.msg_label.configure(text="❌ Server Utama tidak valid (harus alamat IP seperti 1.1.1.1)", text_color="#EF4444")
             return
 
         if t2 and not re.match(ip_regex, t2):
-            self.msg_label.configure(text="❌ Target Sekunder tidak valid (harus IPv4, misal: 8.8.8.8)", text_color="#EF4444")
+            self.msg_label.configure(text="❌ Server Cadangan tidak valid (harus alamat IP seperti 8.8.8.8)", text_color="#EF4444")
             return
 
         if t3 and not re.match(ip_regex, t3):
-            self.msg_label.configure(text="❌ Target Tersier tidak valid (harus IPv4, misal: 9.9.9.9)", text_color="#EF4444")
+            self.msg_label.configure(text="❌ Server Ketiga tidak valid (harus alamat IP seperti 9.9.9.9)", text_color="#EF4444")
+            return
+
+        if t4 and not re.match(ip_regex, t4):
+            self.msg_label.configure(text="❌ Server Keempat tidak valid (harus alamat IP seperti 208.67.222.222 atau kosongkan)", text_color="#EF4444")
             return
 
         self.config.ping_target_primary = t1
         self.config.ping_target_secondary = t2 or "8.8.8.8"
         self.config.ping_target_tertiary = t3 or "9.9.9.9"
+        self.config.ping_target_quaternary = t4
 
         # 2. Advanced settings
         try:
@@ -464,7 +482,7 @@ class SettingsModal(ctk.CTkToplevel):
             self.config.ping_payload_size = max(0, int(self.payload_entry.get().strip()))
             self.config.source_ip_binding = bool(self.bind_switch.get())
         except Exception as e:
-            self.msg_label.configure(text=f"❌ Nilai parameter lanjutan tidak valid: {e}", text_color="#EF4444")
+            self.msg_label.configure(text=f"❌ Nilai pengaturan lanjutan tidak valid: {e}", text_color="#EF4444")
             return
 
         # 3. Shortcuts

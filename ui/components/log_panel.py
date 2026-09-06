@@ -23,8 +23,13 @@ class LogPanel(ctk.CTkFrame):
         )
         self.max_lines = max_lines
         self.auto_scroll_var = ctk.BooleanVar(value=True)
+        self.events: list = []
 
         self._build_ui()
+
+    def _open_detail_modal(self):
+        from ui.modals.log_detail_modal import LogDetailModal
+        LogDetailModal(self.winfo_toplevel(), self.events)
 
     def _build_ui(self):
         self.grid_rowconfigure(1, weight=1)
@@ -32,58 +37,46 @@ class LogPanel(ctk.CTkFrame):
 
         # Top Bar
         top_bar = ctk.CTkFrame(self, fg_color="transparent")
-        top_bar.grid(row=0, column=0, padx=12, pady=(10, 6), sticky="ew")
+        top_bar.grid(row=0, column=0, padx=12, pady=(6, 4), sticky="ew")
         top_bar.grid_columnconfigure(0, weight=1)
 
         title_label = ctk.CTkLabel(
             top_bar,
-            text="📋 Activity & Failover Log",
-            font=("Segoe UI", 12, "bold"),
+            text="📋 Aktivitas & Log Failover Terkini",
+            font=("Segoe UI", 11, "bold"),
             text_color=("#0F172A", "#E2E8F0"),
         )
         title_label.grid(row=0, column=0, sticky="w")
 
-        # Auto-scroll toggle
-        auto_chk = ctk.CTkCheckBox(
+        # Open Detail Modal button
+        detail_btn = ctk.CTkButton(
             top_bar,
-            text="Auto-scroll",
-            variable=self.auto_scroll_var,
-            font=("Segoe UI", 11),
-            text_color=("#64748B", "#94A3B8"),
-            checkbox_width=16,
-            checkbox_height=16,
+            text="🔍 Buka Log Lengkap",
+            command=self._open_detail_modal,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#D97706", "#F59E0B"),
+            hover_color=("#B45309", "#D97706"),
+            text_color=("#FFFFFF", "#0F172A"),
+            width=120,
+            height=24,
+            corner_radius=6,
         )
-        auto_chk.grid(row=0, column=1, padx=8, sticky="e")
+        detail_btn.grid(row=0, column=1, padx=4, sticky="e")
 
         # Clear button
         clear_btn = ctk.CTkButton(
             top_bar,
             text="Clear",
             command=self.clear_logs,
-            font=("Segoe UI", 11),
+            font=("Segoe UI", 10),
             fg_color=("#E2E8F0", "#2D3139"),
             hover_color=("#CBD5E1", "#374151"),
             text_color=("#0F172A", "#E2E8F0"),
-            width=55,
+            width=50,
             height=24,
             corner_radius=6,
         )
-        clear_btn.grid(row=0, column=2, padx=4, sticky="e")
-
-        # Export button
-        export_btn = ctk.CTkButton(
-            top_bar,
-            text="Export...",
-            command=self.export_logs,
-            font=("Segoe UI", 11),
-            fg_color=("#E2E8F0", "#2D3139"),
-            hover_color=("#CBD5E1", "#374151"),
-            text_color=("#0F172A", "#E2E8F0"),
-            width=65,
-            height=24,
-            corner_radius=6,
-        )
-        export_btn.grid(row=0, column=3, padx=(4, 0), sticky="e")
+        clear_btn.grid(row=0, column=2, padx=(2, 0), sticky="e")
 
         # Text Box
         self.textbox = ctk.CTkTextbox(
@@ -109,6 +102,10 @@ class LogPanel(ctk.CTkFrame):
         tk_text.tag_config("INFO", foreground="#475569")
 
     def append_log(self, event: LogEvent):
+        self.events.append(event)
+        if len(self.events) > self.max_lines:
+            self.events.pop(0)
+
         tk_text: tk.Text = self.textbox._textbox
         tk_text.configure(state="normal")
 

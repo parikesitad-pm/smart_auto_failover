@@ -37,18 +37,12 @@ class FailoverEngine:
         self._ping_manager = ConcurrentPingManager(max_workers=4)
 
         # Track state for each priority level
-        self.states: Dict[PriorityLevel, MonitoredInterfaceState] = {
-            PriorityLevel.P1: MonitoredInterfaceState(priority=PriorityLevel.P1, alias=config.p1_alias),
-            PriorityLevel.P2: MonitoredInterfaceState(priority=PriorityLevel.P2, alias=config.p2_alias),
-            PriorityLevel.P3: MonitoredInterfaceState(priority=PriorityLevel.P3, alias=config.p3_alias),
-        }
-
-        # Tracks whether each interface is currently classified as healthy
-        self._healthy_status: Dict[PriorityLevel, bool] = {
-            PriorityLevel.P1: True,
-            PriorityLevel.P2: True,
-            PriorityLevel.P3: True,
-        }
+        self.states: Dict[PriorityLevel, MonitoredInterfaceState] = {}
+        self._healthy_status: Dict[PriorityLevel, bool] = {}
+        for p in PriorityLevel:
+            alias = getattr(config, f"{p.name.lower()}_alias", "")
+            self.states[p] = MonitoredInterfaceState(priority=p, alias=alias)
+            self._healthy_status[p] = True
 
         # Record of initial metrics before engine started
         self._initial_metrics: Dict[str, int] = {}
@@ -59,9 +53,13 @@ class FailoverEngine:
 
     def update_config(self, new_config: FailoverConfig):
         self.config = new_config
-        self.states[PriorityLevel.P1].alias = new_config.p1_alias
-        self.states[PriorityLevel.P2].alias = new_config.p2_alias
-        self.states[PriorityLevel.P3].alias = new_config.p3_alias
+        for p in PriorityLevel:
+            alias = getattr(new_config, f"{p.name.lower()}_alias", "")
+            if p not in self.states:
+                self.states[p] = MonitoredInterfaceState(priority=p, alias=alias)
+                self._healthy_status[p] = True
+            else:
+                self.states[p].alias = alias
 
     def log(self, level: LogLevel, message: str):
         now_str = datetime.now().strftime("%H:%M:%S")
@@ -120,8 +118,8 @@ class FailoverEngine:
         """Restore all monitored interfaces to Windows Automatic Metric."""
         self.log(LogLevel.INFO, "Restoring interfaces to Windows Automatic Metric...")
         aliases = [
-            self.states[p].alias for p in [PriorityLevel.P1, PriorityLevel.P2, PriorityLevel.P3]
-            if self.states[p].alias
+            s.alias for s in self.states.values()
+            if s.alias
         ]
 
         if self.dry_run:
@@ -190,10 +188,19 @@ class FailoverEngine:
             return False
 
     def _apply_normal_metrics(self):
-        """Set baseline metrics: P1=10, P2=20, P3=30."""
-        self._apply_metric_if_changed(self.states[PriorityLevel.P1], self.config.metric_p1_normal)
-        self._apply_metric_if_changed(self.states[PriorityLevel.P2], self.config.metric_p2_normal)
-        self._apply_metric_if_changed(self.states[PriorityLevel.P3], self.config.metric_p3_normal)
+        """Set baseline metrics across configured interfaces: P1=10, P2=20, P3=30..."""
+        for p, state in sorted(self.states.items(), key=lambda x: x[0].value):
+            if not state.alias:
+                continue
+            if p == PriorityLevel.P1:
+                metric = self.config.metric_p1_normal
+            elif p == PriorityLevel.P2:
+                metric = self.config.metric_p2_normal
+            elif p == PriorityLevel.P3:
+                metric = self.config.metric_p3_normal
+            else:
+                metric = min(49, 10 * p.value)
+            self._apply_metric_if_changed(state, metric)
 
     def _monitor_loop(self):
         """Continuous health check loop."""
@@ -203,13 +210,14 @@ class FailoverEngine:
             # Refresh adapter IPs and link states in case of cable plug/unplug
             self._refresh_adapter_info()
 
-            # Submit concurrent ping probes
+            # Submit concurrent ping probes across configured targets
+            probe_target = self.config.ping_target_primary or "1.1.1.1"
             futures = {}
             for p, state in self.states.items():
                 if state.alias and state.ip and state.is_connected:
                     futures[p] = self._ping_manager.probe_interface(
                         source_ip=state.ip,
-                        target=self.config.ping_target_primary,
+                        target=probe_target,
                         timeout_ms=self.config.ping_timeout_ms,
                     )
                 else:
@@ -245,6 +253,7 @@ class FailoverEngine:
     def _evaluate_health_and_failover(self, results: Dict[PriorityLevel, Optional[PingResult]]):
         """
         Evaluate ping results, update RTO/success counters, and trigger metric failover/recovery.
+        Supports dynamic 1 up to 8 network interfaces.
         """
         for p, state in self.states.items():
             # Skip evaluation for unassigned/unmonitored slots
@@ -275,7 +284,7 @@ class FailoverEngine:
                     state.latency_history.pop(0)
 
                 # Check auto-recovery transition
-                if not self._healthy_status[p]:
+                if not self._healthy_status.get(p, False):
                     if state.consecutive_success >= self.config.recovery_success_threshold:
                         self._healthy_status[p] = True
                         self.log(
@@ -294,7 +303,7 @@ class FailoverEngine:
                     state.latency_history.pop(0)
 
                 # Check failover transition (only alert if interface was previously healthy)
-                if self._healthy_status[p]:
+                if self._healthy_status.get(p, False):
                     if state.consecutive_rto >= self.config.failover_rto_threshold:
                         self._healthy_status[p] = False
                         self.log(
@@ -303,86 +312,52 @@ class FailoverEngine:
                             f"({state.consecutive_rto} consecutive timeouts - {res.error})"
                         )
 
-        # Determine target active interface based on 3-tier priority
-        p1_healthy = self._healthy_status[PriorityLevel.P1] and self.states[PriorityLevel.P1].is_connected and bool(self.states[PriorityLevel.P1].alias)
-        p2_healthy = self._healthy_status[PriorityLevel.P2] and self.states[PriorityLevel.P2].is_connected and bool(self.states[PriorityLevel.P2].alias)
-        p3_healthy = self._healthy_status[PriorityLevel.P3] and self.states[PriorityLevel.P3].is_connected and bool(self.states[PriorityLevel.P3].alias)
+        # Determine target active interface based on priority hierarchy (P1 -> P2 -> P3 ... -> P8)
+        healthy_priorities = [
+            p for p in sorted(self.states.keys(), key=lambda x: x.value)
+            if self.states[p].alias and self.states[p].is_connected and self._healthy_status.get(p, False)
+        ]
 
-        s1 = self.states[PriorityLevel.P1]
-        s2 = self.states[PriorityLevel.P2]
-        s3 = self.states[PriorityLevel.P3]
+        active_priority = healthy_priorities[0] if healthy_priorities else None
 
-        if p1_healthy:
-            # Case 1: LAN 1 is Healthy (Normal state)
-            s1.is_active_route = True
-            s2.is_active_route = False
-            s3.is_active_route = False
+        for p, s in self.states.items():
+            if not s.alias:
+                s.is_active_route = False
+                continue
+            if p == active_priority:
+                s.is_active_route = True
+                s.status = InterfaceStatus.ONLINE
+                self._apply_metric_if_changed(s, self.config.metric_p1_normal)  # Promoted to 10
+            else:
+                s.is_active_route = False
+                is_h = self._healthy_status.get(p, False) and s.is_connected
+                if is_h:
+                    s.status = InterfaceStatus.STANDBY
+                    metric = min(49, 10 * p.value)
+                    self._apply_metric_if_changed(s, metric)
+                else:
+                    s.status = InterfaceStatus.RTO_FAILING if s.is_connected else InterfaceStatus.DISCONNECTED
+                    demoted_metric = self.config.metric_demoted if p == PriorityLevel.P1 else (self.config.metric_demoted + (p.value - 1) * 2)
+                    self._apply_metric_if_changed(s, demoted_metric)
 
-            s1.status = InterfaceStatus.ONLINE
-            s2.status = InterfaceStatus.STANDBY if p2_healthy else (InterfaceStatus.RTO_FAILING if s2.alias else InterfaceStatus.DISCONNECTED)
-            s3.status = InterfaceStatus.STANDBY if p3_healthy else (InterfaceStatus.RTO_FAILING if s3.alias else InterfaceStatus.DISCONNECTED)
-
-            self._apply_metric_if_changed(s1, self.config.metric_p1_normal)  # 10
-            if s2.alias:
-                self._apply_metric_if_changed(s2, self.config.metric_p2_normal if p2_healthy else self.config.metric_demoted)  # 20 or 50
-            if s3.alias:
-                self._apply_metric_if_changed(s3, self.config.metric_p3_normal if p3_healthy else self.config.metric_demoted + 10)  # 30 or 60
-
-        elif p2_healthy:
-            # Case 2: LAN 1 Failed -> Failover to LAN 2!
-            s1.is_active_route = False
-            s2.is_active_route = True
-            s3.is_active_route = False
-
-            s1.status = InterfaceStatus.RTO_FAILING if (s1.alias and s1.is_connected) else InterfaceStatus.DISCONNECTED
-            s2.status = InterfaceStatus.ONLINE
-            s3.status = InterfaceStatus.STANDBY if p3_healthy else (InterfaceStatus.RTO_FAILING if s3.alias else InterfaceStatus.DISCONNECTED)
-
-            # Shift LAN 2 to Metric 10, Demote LAN 1 to Metric 50, Wi-Fi stays at 30
-            changed = self._apply_metric_if_changed(s2, self.config.metric_p1_normal)  # LAN 2 -> 10
-            if s1.alias:
-                self._apply_metric_if_changed(s1, self.config.metric_demoted)    # LAN 1 -> 50
-            if s3.alias:
-                self._apply_metric_if_changed(s3, self.config.metric_p3_normal if p3_healthy else self.config.metric_demoted + 10)  # Wi-Fi -> 30
-
-            if changed and s1.alias:
+        # Check failover transition logs
+        if active_priority is not None:
+            active_state = self.states[active_priority]
+            if not hasattr(self, "_last_active_p"):
+                self._last_active_p = active_priority
+            elif self._last_active_p != active_priority:
+                old_p = self._last_active_p
+                self._last_active_p = active_priority
                 self.log(
                     LogLevel.FAILOVER,
-                    f"⚡ FAILOVER EXECUTED: Default Route switched to LAN 2 ('{s2.alias}', Metric {self.config.metric_p1_normal}). "
-                    f"LAN 1 demoted to Metric {self.config.metric_demoted}. Zero-drop active!"
-                )
-
-        elif p3_healthy:
-            # Case 3: LAN 1 & LAN 2 Failed -> Failover to Wi-Fi (or Standalone Wi-Fi)!
-            s1.is_active_route = False
-            s2.is_active_route = False
-            s3.is_active_route = True
-
-            s1.status = InterfaceStatus.RTO_FAILING if (s1.alias and s1.is_connected) else InterfaceStatus.DISCONNECTED
-            s2.status = InterfaceStatus.RTO_FAILING if (s2.alias and s2.is_connected) else InterfaceStatus.DISCONNECTED
-            s3.status = InterfaceStatus.ONLINE
-
-            # Wi-Fi becomes Metric 10, LAN 2 demoted to 40, LAN 1 demoted to 50
-            changed = self._apply_metric_if_changed(s3, self.config.metric_p1_normal)  # Wi-Fi -> 10
-            if s2.alias:
-                self._apply_metric_if_changed(s2, self.config.metric_demoted - 10)     # LAN 2 -> 40
-            if s1.alias:
-                self._apply_metric_if_changed(s1, self.config.metric_demoted)          # LAN 1 -> 50
-
-            if changed and (s1.alias or s2.alias):
-                self.log(
-                    LogLevel.FAILOVER,
-                    f"⚡ SECONDARY FAILOVER: Both LANs down! Default Route switched to Wi-Fi ('{s3.alias}', Metric {self.config.metric_p1_normal})."
+                    f"⚡ FAILOVER EXECUTED: Default Route switched to {active_priority.short_label} ('{active_state.alias}', Metric {self.config.metric_p1_normal}). Zero-drop active!"
                 )
 
         # Synchronize OS-level route priority
-        ordered_aliases = []
-        if p1_healthy:
-            ordered_aliases = [s1.alias, s2.alias, s3.alias]
-        elif p2_healthy:
-            ordered_aliases = [s2.alias, s1.alias, s3.alias]
-        elif p3_healthy:
-            ordered_aliases = [s3.alias, s2.alias, s1.alias]
+        ordered_aliases = [self.states[p].alias for p in healthy_priorities if self.states[p].alias]
+        for s in self.states.values():
+            if s.alias and s.alias not in ordered_aliases:
+                ordered_aliases.append(s.alias)
 
         if ordered_aliases and any(ordered_aliases):
             active_name = ordered_aliases[0]

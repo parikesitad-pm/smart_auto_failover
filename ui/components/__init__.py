@@ -6,6 +6,8 @@ from .adapter_summary_bar import AdapterSummaryBar
 from .traffic_chart import TrafficChartWidget
 from .skeleton_loader import SkeletonLoader
 from .toast_notification import ToastNotificationManager
+from .sports_car_gauge import SportsCarGaugeWidget
+from .app_qos_widget import AppQoSWidget
 
 __all__ = [
     "InterfaceCard",
@@ -16,4 +18,6 @@ __all__ = [
     "TrafficChartWidget",
     "SkeletonLoader",
     "ToastNotificationManager",
+    "SportsCarGaugeWidget",
+    "AppQoSWidget",
 ]

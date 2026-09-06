@@ -29,16 +29,9 @@ def main():
         app.engine.set_dry_run(True)
 
     if args.no_splash:
-        app.deiconify()
+        app.show_window()
     else:
-        app.withdraw()
-
-        def on_splash_finish():
-            app.deiconify()
-            app.lift()
-            app.focus_force()
-
-        SplashScreen(master=app, on_finish=on_splash_finish, duration=3.0)
+        SplashScreen(master=app, on_finish=app.show_window, duration=3.0)
 
     try:
         app.mainloop()
