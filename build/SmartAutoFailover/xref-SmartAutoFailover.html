@@ -1461,6 +1461,7 @@ imported by:
     <a href="#_collections_abc">_collections_abc</a>
  &#8226;   <a href="#contextlib">contextlib</a>
  &#8226;   <a href="#core.backends.base_backend">core.backends.base_backend</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#email._policybase">email._policybase</a>
  &#8226;   <a href="#functools">functools</a>
@@ -1539,6 +1540,7 @@ imported by:
  &#8226;   <a href="#random">random</a>
  &#8226;   <a href="#tarfile">tarfile</a>
  &#8226;   <a href="#tokenize">tokenize</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
  &#8226;   <a href="#zipfile">zipfile</a>
 
   </div>
@@ -1946,6 +1948,7 @@ imported by:
  &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
  &#8226;   <a href="#queue">queue</a>
  &#8226;   <a href="#selectors">selectors</a>
+ &#8226;   <a href="#shlex">shlex</a>
  &#8226;   <a href="#shutil">shutil</a>
  &#8226;   <a href="#ssl">ssl</a>
  &#8226;   <a href="#statistics">statistics</a>
@@ -2356,6 +2359,7 @@ imported by:
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#tarfile">tarfile</a>
  &#8226;   <a href="#weakref">weakref</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
 
   </div>
 
@@ -2402,6 +2406,8 @@ imported by:
  &#8226;   <a href="#core.models">core.models</a>
  &#8226;   <a href="#core.network_manager">core.network_manager</a>
  &#8226;   <a href="#core.ping_probe">core.ping_probe</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#core.traffic_monitor">core.traffic_monitor</a>
 
   </div>
 
@@ -2546,10 +2552,15 @@ imported by:
  &#8226;   <a href="#core.failover_engine">core.failover_engine</a>
  &#8226;   <a href="#core.network_manager">core.network_manager</a>
  &#8226;   <a href="#core.ping_probe">core.ping_probe</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#core.traffic_monitor">core.traffic_monitor</a>
  &#8226;   <a href="#ui.app_window">ui.app_window</a>
+ &#8226;   <a href="#ui.components.adapter_summary_bar">ui.components.adapter_summary_bar</a>
  &#8226;   <a href="#ui.components.interface_card">ui.components.interface_card</a>
  &#8226;   <a href="#ui.components.log_panel">ui.components.log_panel</a>
  &#8226;   <a href="#ui.components.settings_dialog">ui.components.settings_dialog</a>
+ &#8226;   <a href="#ui.components.traffic_chart">ui.components.traffic_chart</a>
+ &#8226;   <a href="#ui.modals.speedtest_modal">ui.modals.speedtest_modal</a>
 
   </div>
 
@@ -2600,6 +2611,55 @@ imports:
 imported by:
     <a href="#core">core</a>
  &#8226;   <a href="#core.failover_engine">core.failover_engine</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="core.speedtest_engine"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/core/speedtest_engine.py" type="text/plain"><tt>core.speedtest_engine</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#abc">abc</a>
+ &#8226;   <a href="#core">core</a>
+ &#8226;   <a href="#core.models">core.models</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#http.client">http.client</a>
+ &#8226;   <a href="#json">json</a>
+ &#8226;   <a href="#shutil">shutil</a>
+ &#8226;   <a href="#socket">socket</a>
+ &#8226;   <a href="#subprocess">subprocess</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#urllib.error">urllib.error</a>
+ &#8226;   <a href="#urllib.request">urllib.request</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.modals.speedtest_modal">ui.modals.speedtest_modal</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="core.traffic_monitor"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/core/traffic_monitor.py" type="text/plain"><tt>core.traffic_monitor</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#core">core</a>
+ &#8226;   <a href="#core.models">core.models</a>
+ &#8226;   <a href="#psutil">psutil</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.app_window">ui.app_window</a>
 
   </div>
 
@@ -2659,6 +2719,7 @@ imported by:
  &#8226;   <a href="#multiprocessing.sharedctypes">multiprocessing.sharedctypes</a>
  &#8226;   <a href="#platform">platform</a>
  &#8226;   <a href="#psutil._common">psutil._common</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
 
   </div>
 
@@ -2870,10 +2931,15 @@ imported by:
  &#8226;   <a href="#customtkinter.windows.widgets.core_widget_classes.ctk_base_class">customtkinter.windows.widgets.core_widget_classes.ctk_base_class</a>
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#ui.app_window">ui.app_window</a>
+ &#8226;   <a href="#ui.components.adapter_summary_bar">ui.components.adapter_summary_bar</a>
  &#8226;   <a href="#ui.components.interface_card">ui.components.interface_card</a>
  &#8226;   <a href="#ui.components.latency_sparkline">ui.components.latency_sparkline</a>
  &#8226;   <a href="#ui.components.log_panel">ui.components.log_panel</a>
  &#8226;   <a href="#ui.components.settings_dialog">ui.components.settings_dialog</a>
+ &#8226;   <a href="#ui.components.traffic_chart">ui.components.traffic_chart</a>
+ &#8226;   <a href="#ui.modals.changelog_modal">ui.modals.changelog_modal</a>
+ &#8226;   <a href="#ui.modals.help_faq_modal">ui.modals.help_faq_modal</a>
+ &#8226;   <a href="#ui.modals.speedtest_modal">ui.modals.speedtest_modal</a>
 
   </div>
 
@@ -4156,6 +4222,7 @@ imported by:
     <a href="#_strptime">_strptime</a>
  &#8226;   <a href="#calendar">calendar</a>
  &#8226;   <a href="#core.failover_engine">core.failover_engine</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
  &#8226;   <a href="#email.utils">email.utils</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#psutil">psutil</a>
@@ -7670,7 +7737,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#http.cookiejar">http.cookiejar</a>
+    <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
  &#8226;   <a href="#xmlrpc.client">xmlrpc.client</a>
 
@@ -8324,6 +8392,7 @@ imported by:
  &#8226;   <a href="#pprint">pprint</a>
  &#8226;   <a href="#quopri">quopri</a>
  &#8226;   <a href="#runpy">runpy</a>
+ &#8226;   <a href="#shlex">shlex</a>
  &#8226;   <a href="#socket">socket</a>
  &#8226;   <a href="#subprocess">subprocess</a>
  &#8226;   <a href="#tarfile">tarfile</a>
@@ -8426,7 +8495,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#customtkinter.windows.widgets.theme.theme_manager">customtkinter.windows.widgets.theme.theme_manager</a>
+    <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#customtkinter.windows.widgets.theme.theme_manager">customtkinter.windows.widgets.theme.theme_manager</a>
  &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
  &#8226;   <a href="#json.decoder">json.decoder</a>
  &#8226;   <a href="#json.encoder">json.encoder</a>
@@ -9737,6 +9807,7 @@ imported by:
  &#8226;   <a href="#tkinter.filedialog">tkinter.filedialog</a>
  &#8226;   <a href="#ui.app_window">ui.app_window</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
  &#8226;   <a href="#xml.sax">xml.sax</a>
  &#8226;   <a href="#xml.sax.saxutils">xml.sax.saxutils</a>
  &#8226;   <a href="#zipfile">zipfile</a>
@@ -9760,6 +9831,7 @@ imported by:
     <a href="#os">os</a>
  &#8226;   <a href="#pkgutil">pkgutil</a>
  &#8226;   <a href="#py_compile">py_compile</a>
+ &#8226;   <a href="#shlex">shlex</a>
  &#8226;   <a href="#sysconfig">sysconfig</a>
  &#8226;   <a href="#tracemalloc">tracemalloc</a>
 
@@ -10066,6 +10138,7 @@ imports:
 imported by:
     <a href="#core.backends.macos_backend">core.backends.macos_backend</a>
  &#8226;   <a href="#core.backends.windows_backend">core.backends.windows_backend</a>
+ &#8226;   <a href="#core.traffic_monitor">core.traffic_monitor</a>
  &#8226;   <a href="#psutil">psutil</a>
  &#8226;   <a href="#psutil._common">psutil._common</a>
  &#8226;   <a href="#psutil._ntuples">psutil._ntuples</a>
@@ -10602,6 +10675,25 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="shlex"></a>
+  <a target="code" href="///C:/Python314/Lib/shlex.py" type="text/plain"><tt>shlex</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#collections">collections</a>
+ &#8226;   <a href="#io">io</a>
+ &#8226;   <a href="#os.path">os.path</a>
+ &#8226;   <a href="#sys">sys</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#webbrowser">webbrowser</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="shutil"></a>
   <a target="code" href="///C:/Python314/Lib/shutil.py" type="text/plain"><tt>shutil</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
@@ -10630,12 +10722,14 @@ imports:
   <div class="import">
 imported by:
     <a href="#argparse">argparse</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
  &#8226;   <a href="#customtkinter.windows.widgets.font.font_manager">customtkinter.windows.widgets.font.font_manager</a>
  &#8226;   <a href="#multiprocessing.util">multiprocessing.util</a>
  &#8226;   <a href="#pathlib">pathlib</a>
  &#8226;   <a href="#tarfile">tarfile</a>
  &#8226;   <a href="#tempfile">tempfile</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
  &#8226;   <a href="#zipfile">zipfile</a>
 
   </div>
@@ -10687,6 +10781,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#_ssl">_ssl</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
  &#8226;   <a href="#email.utils">email.utils</a>
  &#8226;   <a href="#ftplib">ftplib</a>
  &#8226;   <a href="#http.client">http.client</a>
@@ -10941,6 +11036,7 @@ imported by:
  &#8226;   <a href="#core.backends.macos_backend">core.backends.macos_backend</a>
  &#8226;   <a href="#core.backends.windows_backend">core.backends.windows_backend</a>
  &#8226;   <a href="#core.ping_probe">core.ping_probe</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
  &#8226;   <a href="#ctypes._aix">ctypes._aix</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
  &#8226;   <a href="#darkdetect._linux_detect">darkdetect._linux_detect</a>
@@ -10951,6 +11047,7 @@ imported by:
  &#8226;   <a href="#platform">platform</a>
  &#8226;   <a href="#psutil">psutil</a>
  &#8226;   <a href="#pyi_rth_multiprocessing.py">pyi_rth_multiprocessing.py</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
 
   </div>
 
@@ -11077,6 +11174,7 @@ imported by:
  &#8226;   <a href="#reprlib">reprlib</a>
  &#8226;   <a href="#runpy">runpy</a>
  &#8226;   <a href="#selectors">selectors</a>
+ &#8226;   <a href="#shlex">shlex</a>
  &#8226;   <a href="#shutil">shutil</a>
  &#8226;   <a href="#socket">socket</a>
  &#8226;   <a href="#ssl">ssl</a>
@@ -11095,6 +11193,7 @@ imported by:
  &#8226;   <a href="#urllib.request">urllib.request</a>
  &#8226;   <a href="#warnings">warnings</a>
  &#8226;   <a href="#weakref">weakref</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
  &#8226;   <a href="#xml.parsers.expat">xml.parsers.expat</a>
  &#8226;   <a href="#xml.sax">xml.sax</a>
  &#8226;   <a href="#xml.sax.saxutils">xml.sax.saxutils</a>
@@ -11249,6 +11348,7 @@ imported by:
  &#8226;   <a href="#concurrent.futures.thread">concurrent.futures.thread</a>
  &#8226;   <a href="#concurrent.interpreters">concurrent.interpreters</a>
  &#8226;   <a href="#core.failover_engine">core.failover_engine</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#importlib.util">importlib.util</a>
  &#8226;   <a href="#logging">logging</a>
@@ -11270,6 +11370,8 @@ imported by:
  &#8226;   <a href="#queue">queue</a>
  &#8226;   <a href="#subprocess">subprocess</a>
  &#8226;   <a href="#sysconfig">sysconfig</a>
+ &#8226;   <a href="#ui.modals.speedtest_modal">ui.modals.speedtest_modal</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
  &#8226;   <a href="#zipfile">zipfile</a>
 
   </div>
@@ -11293,6 +11395,8 @@ imported by:
  &#8226;   <a href="#core.failover_engine">core.failover_engine</a>
  &#8226;   <a href="#core.models">core.models</a>
  &#8226;   <a href="#core.ping_probe">core.ping_probe</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#core.traffic_monitor">core.traffic_monitor</a>
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#email._parseaddr">email._parseaddr</a>
  &#8226;   <a href="#email.generator">email.generator</a>
@@ -11378,6 +11482,7 @@ imported by:
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#ui.components.latency_sparkline">ui.components.latency_sparkline</a>
  &#8226;   <a href="#ui.components.log_panel">ui.components.log_panel</a>
+ &#8226;   <a href="#ui.components.traffic_chart">ui.components.traffic_chart</a>
 
   </div>
 
@@ -11719,6 +11824,8 @@ imported by:
  &#8226;   <a href="#core.models">core.models</a>
  &#8226;   <a href="#core.network_manager">core.network_manager</a>
  &#8226;   <a href="#core.ping_probe">core.ping_probe</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#core.traffic_monitor">core.traffic_monitor</a>
  &#8226;   <a href="#customtkinter">customtkinter</a>
  &#8226;   <a href="#customtkinter.windows.ctk_input_dialog">customtkinter.windows.ctk_input_dialog</a>
  &#8226;   <a href="#customtkinter.windows.ctk_tk">customtkinter.windows.ctk_tk</a>
@@ -11761,9 +11868,12 @@ imported by:
  &#8226;   <a href="#importlib.resources.abc">importlib.resources.abc</a>
  &#8226;   <a href="#packaging.version">packaging.version</a>
  &#8226;   <a href="#ui.app_window">ui.app_window</a>
+ &#8226;   <a href="#ui.components.adapter_summary_bar">ui.components.adapter_summary_bar</a>
  &#8226;   <a href="#ui.components.interface_card">ui.components.interface_card</a>
  &#8226;   <a href="#ui.components.latency_sparkline">ui.components.latency_sparkline</a>
  &#8226;   <a href="#ui.components.settings_dialog">ui.components.settings_dialog</a>
+ &#8226;   <a href="#ui.components.traffic_chart">ui.components.traffic_chart</a>
+ &#8226;   <a href="#ui.modals.speedtest_modal">ui.modals.speedtest_modal</a>
 
   </div>
 
@@ -11798,6 +11908,7 @@ imports:
 imported by:
     <a href="#ui.app_window">ui.app_window</a>
  &#8226;   <a href="#ui.components">ui.components</a>
+ &#8226;   <a href="#ui.modals">ui.modals</a>
 
   </div>
 
@@ -11811,6 +11922,7 @@ imports:
     <a href="#core.failover_engine">core.failover_engine</a>
  &#8226;   <a href="#core.models">core.models</a>
  &#8226;   <a href="#core.network_manager">core.network_manager</a>
+ &#8226;   <a href="#core.traffic_monitor">core.traffic_monitor</a>
  &#8226;   <a href="#customtkinter">customtkinter</a>
  &#8226;   <a href="#json">json</a>
  &#8226;   <a href="#os">os</a>
@@ -11820,6 +11932,8 @@ imports:
  &#8226;   <a href="#typing">typing</a>
  &#8226;   <a href="#ui">ui</a>
  &#8226;   <a href="#ui.components">ui.components</a>
+ &#8226;   <a href="#ui.modals">ui.modals</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
 
   </div>
   <div class="import">
@@ -11837,19 +11951,42 @@ imported by:
 <span class="moduletype">Package</span>  <div class="import">
 imports:
     <a href="#ui">ui</a>
+ &#8226;   <a href="#ui.components.adapter_summary_bar">ui.components.adapter_summary_bar</a>
  &#8226;   <a href="#ui.components.interface_card">ui.components.interface_card</a>
  &#8226;   <a href="#ui.components.latency_sparkline">ui.components.latency_sparkline</a>
  &#8226;   <a href="#ui.components.log_panel">ui.components.log_panel</a>
  &#8226;   <a href="#ui.components.settings_dialog">ui.components.settings_dialog</a>
+ &#8226;   <a href="#ui.components.traffic_chart">ui.components.traffic_chart</a>
 
   </div>
   <div class="import">
 imported by:
     <a href="#ui.app_window">ui.app_window</a>
+ &#8226;   <a href="#ui.components.adapter_summary_bar">ui.components.adapter_summary_bar</a>
  &#8226;   <a href="#ui.components.interface_card">ui.components.interface_card</a>
  &#8226;   <a href="#ui.components.latency_sparkline">ui.components.latency_sparkline</a>
  &#8226;   <a href="#ui.components.log_panel">ui.components.log_panel</a>
  &#8226;   <a href="#ui.components.settings_dialog">ui.components.settings_dialog</a>
+ &#8226;   <a href="#ui.components.traffic_chart">ui.components.traffic_chart</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.components.adapter_summary_bar"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/ui/components/adapter_summary_bar.py" type="text/plain"><tt>ui.components.adapter_summary_bar</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#core.models">core.models</a>
+ &#8226;   <a href="#customtkinter">customtkinter</a>
+ &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#ui.components">ui.components</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.components">ui.components</a>
 
   </div>
 
@@ -11937,6 +12074,103 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="ui.components.traffic_chart"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/ui/components/traffic_chart.py" type="text/plain"><tt>ui.components.traffic_chart</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#core.models">core.models</a>
+ &#8226;   <a href="#customtkinter">customtkinter</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#ui.components">ui.components</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.components">ui.components</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.modals"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/ui/modals/__init__.py" type="text/plain"><tt>ui.modals</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#ui">ui</a>
+ &#8226;   <a href="#ui.modals.changelog_modal">ui.modals.changelog_modal</a>
+ &#8226;   <a href="#ui.modals.help_faq_modal">ui.modals.help_faq_modal</a>
+ &#8226;   <a href="#ui.modals.speedtest_modal">ui.modals.speedtest_modal</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.app_window">ui.app_window</a>
+ &#8226;   <a href="#ui.modals.changelog_modal">ui.modals.changelog_modal</a>
+ &#8226;   <a href="#ui.modals.help_faq_modal">ui.modals.help_faq_modal</a>
+ &#8226;   <a href="#ui.modals.speedtest_modal">ui.modals.speedtest_modal</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.modals.changelog_modal"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/ui/modals/changelog_modal.py" type="text/plain"><tt>ui.modals.changelog_modal</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#customtkinter">customtkinter</a>
+ &#8226;   <a href="#ui.modals">ui.modals</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.modals">ui.modals</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.modals.help_faq_modal"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/ui/modals/help_faq_modal.py" type="text/plain"><tt>ui.modals.help_faq_modal</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#customtkinter">customtkinter</a>
+ &#8226;   <a href="#ui.modals">ui.modals</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.modals">ui.modals</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.modals.speedtest_modal"></a>
+  <a target="code" href="///D:/lucca/project/auto-failover/ui/modals/speedtest_modal.py" type="text/plain"><tt>ui.modals.speedtest_modal</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#core.models">core.models</a>
+ &#8226;   <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#customtkinter">customtkinter</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#ui.modals">ui.modals</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.modals">ui.modals</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="unicodedata"></a>
   <tt>unicodedata</tt> <span class="moduletype"><tt>C:\Python314\DLLs\unicodedata.pyd</tt></span>  <div class="import">
 imported by:
@@ -11977,7 +12211,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#pathlib">pathlib</a>
+    <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#pathlib">pathlib</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
 
   </div>
@@ -12052,7 +12287,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#http.cookiejar">http.cookiejar</a>
+    <a href="#core.speedtest_engine">core.speedtest_engine</a>
+ &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#pathlib">pathlib</a>
  &#8226;   <a href="#xml.sax.saxutils">xml.sax.saxutils</a>
 
@@ -12198,6 +12434,30 @@ imported by:
  &#8226;   <a href="#multiprocessing.util">multiprocessing.util</a>
  &#8226;   <a href="#tempfile">tempfile</a>
  &#8226;   <a href="#xml.sax.expatreader">xml.sax.expatreader</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="webbrowser"></a>
+  <a target="code" href="///C:/Python314/Lib/webbrowser.py" type="text/plain"><tt>webbrowser</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#argparse">argparse</a>
+ &#8226;   <a href="#copy">copy</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#shlex">shlex</a>
+ &#8226;   <a href="#shutil">shutil</a>
+ &#8226;   <a href="#subprocess">subprocess</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#threading">threading</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#ui.app_window">ui.app_window</a>
 
   </div>
 

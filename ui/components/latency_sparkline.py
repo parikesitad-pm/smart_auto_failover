@@ -6,6 +6,7 @@ import customtkinter as ctk
 class LatencySparkline(ctk.CTkFrame):
     """
     Mini canvas-based sparkline chart and latency bar showing recent ping history.
+    Supports Dual Mode (Dark & Light).
     """
 
     def __init__(self, master, width: int = 240, height: int = 40, max_points: int = 30, **kwargs):
@@ -19,9 +20,9 @@ class LatencySparkline(ctk.CTkFrame):
             self,
             width=self.width,
             height=self.height,
-            bg="#1A1C23",
+            bg="#1A1C23" if ctk.get_appearance_mode() == "Dark" else "#F1F5F9",
             highlightthickness=1,
-            highlightbackground="#2D3139",
+            highlightbackground="#2D3139" if ctk.get_appearance_mode() == "Dark" else "#CBD5E1",
         )
         self.canvas.pack(fill="both", expand=True)
 
@@ -30,20 +31,26 @@ class LatencySparkline(ctk.CTkFrame):
         self._redraw(last_latency, is_rto)
 
     def _redraw(self, last_latency: float, is_rto: bool):
+        is_dark = (ctk.get_appearance_mode() == "Dark")
+        bg_col = "#1A1C23" if is_dark else "#F1F5F9"
+        border_col = "#2D3139" if is_dark else "#CBD5E1"
+        guide_col = "#232833" if is_dark else "#E2E8F0"
+
+        self.canvas.configure(bg=bg_col, highlightbackground=border_col)
         self.canvas.delete("all")
         w = self.canvas.winfo_width() or self.width
         h = self.canvas.winfo_height() or self.height
 
         if not self.history:
             self.canvas.create_text(
-                w / 2, h / 2, text="No Ping Data", fill="#6C727F", font=("Segoe UI", 9)
+                w / 2, h / 2, text="No Ping Data", fill="#94A3B8" if is_dark else "#64748B", font=("Segoe UI", 9)
             )
             return
 
-        # Draw background horizontal guide lines (e.g. 50ms, 150ms)
+        # Draw background horizontal guide lines (e.g. 50ms)
         max_scale_ms = 250.0
         y_50 = h - int((50.0 / max_scale_ms) * (h - 8))
-        self.canvas.create_line(0, y_50, w, y_50, fill="#232833", dash=(2, 2))
+        self.canvas.create_line(0, y_50, w, y_50, fill=guide_col, dash=(2, 2))
 
         # Calculate points
         n = len(self.history)
@@ -57,7 +64,7 @@ class LatencySparkline(ctk.CTkFrame):
         for i, lat in enumerate(self.history):
             x = start_x + (i * step_x)
             if lat <= 0:  # RTO
-                y = h - 2  # Bottom or top marker
+                y = h - 2
             else:
                 ratio = min(1.0, lat / max_scale_ms)
                 y = (h - 4) - int(ratio * (h - 10))
@@ -65,15 +72,15 @@ class LatencySparkline(ctk.CTkFrame):
 
         # Color based on latest status
         if is_rto:
-            line_color = "#EF4444"  # Red
+            line_color = "#EF4444"
         elif last_latency < 50:
-            line_color = "#10B981"  # Emerald Green
+            line_color = "#10B981"
         elif last_latency < 120:
-            line_color = "#3B82F6"  # Blue
+            line_color = "#3B82F6"
         elif last_latency < 250:
-            line_color = "#F59E0B"  # Amber
+            line_color = "#F59E0B"
         else:
-            line_color = "#EF4444"  # Red
+            line_color = "#EF4444"
 
         # Draw sparkline segments
         for i in range(len(points) - 1):
@@ -83,7 +90,7 @@ class LatencySparkline(ctk.CTkFrame):
             seg_color = "#EF4444" if lat_next <= 0 else line_color
             self.canvas.create_line(x1, y1, x2, y2, fill=seg_color, width=2, smooth=True)
 
-        # Draw latest point pulsing dot
+        # Draw latest point dot
         if points:
             last_x, last_y = points[-1]
             dot_color = "#EF4444" if is_rto else line_color
@@ -91,4 +98,3 @@ class LatencySparkline(ctk.CTkFrame):
             self.canvas.create_oval(
                 last_x - r, last_y - r, last_x + r, last_y + r, fill=dot_color, outline="#FFFFFF", width=1
             )
-

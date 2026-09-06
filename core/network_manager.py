@@ -67,3 +67,20 @@ class NetworkManager:
     @classmethod
     def restore_all_automatic_metrics(cls, aliases: List[str]) -> List[Tuple[str, bool, str]]:
         return cls.get_backend().restore_defaults(aliases)
+
+    @classmethod
+    def set_adapter_enabled(cls, alias: str, enabled: bool) -> Tuple[bool, str]:
+        return cls.get_backend().set_adapter_enabled(alias, enabled)
+
+    @classmethod
+    def get_port_summary(cls, adapters: List[AdapterInfo], active_alias: str = "") -> "AdapterPortSummary":
+        from core.models import AdapterPortSummary
+        eth = sum(1 for a in adapters if a.adapter_type == "Ethernet")
+        wifi = sum(1 for a in adapters if a.adapter_type == "Wireless")
+        conn = sum(1 for a in adapters if a.is_connected)
+        return AdapterPortSummary(
+            total_ethernet=eth,
+            total_wireless=wifi,
+            connected_count=conn,
+            active_route_alias=active_alias,
+        )

@@ -45,6 +45,13 @@ class LogLevel(Enum):
     ERROR = "ERROR"
 
 
+class SpeedtestProvider(Enum):
+    CLOUDFLARE = "Cloudflare Speedtest"
+    NPERF = "nPerf / Multi-CDN"
+    FAST = "Fast.com (Netflix CDN)"
+    OOKLA = "Ookla Speedtest"
+
+
 @dataclass
 class PingResult:
     success: bool
@@ -61,9 +68,49 @@ class AdapterInfo:
     ipv4: str = ""
     gateway: str = ""
     is_connected: bool = False
+    is_admin_enabled: bool = True
     metric: int = 0
     auto_metric: bool = True
     adapter_type: str = "Ethernet"  # Ethernet / Wireless / Unknown
+    description: str = ""
+    physical_media_type: str = ""
+    is_physical: bool = True
+
+
+@dataclass
+class AdapterPortSummary:
+    total_ethernet: int = 0
+    total_wireless: int = 0
+    connected_count: int = 0
+    active_route_alias: str = ""
+
+
+@dataclass
+class TrafficStats:
+    alias: str
+    bytes_sent_sec: float = 0.0
+    bytes_recv_sec: float = 0.0
+    download_kbps: float = 0.0
+    upload_kbps: float = 0.0
+    jitter_ms: float = 0.0
+
+
+@dataclass
+class SpeedtestResult:
+    alias: str
+    ip: str
+    provider: SpeedtestProvider
+    ping_ms: float = 0.0
+    jitter_ms: float = 0.0
+    download_mbps: float = 0.0
+    upload_mbps: float = 0.0
+    loaded_latency_ms: float = 0.0
+    packet_loss_pct: float = 0.0
+    timestamp: str = ""
+    success: bool = True
+    error: str = ""
+    server_location: str = ""
+    isp_info: str = ""
 
 
 @dataclass
@@ -82,6 +129,7 @@ class FailoverConfig:
     p2_alias: str = ""
     p3_alias: str = ""
     auto_start: bool = False
+    theme_mode: str = "Dark"  # "Dark" or "Light"
 
     def to_dict(self) -> dict:
         return {
@@ -99,6 +147,7 @@ class FailoverConfig:
             "p2_alias": self.p2_alias,
             "p3_alias": self.p3_alias,
             "auto_start": self.auto_start,
+            "theme_mode": self.theme_mode,
         }
 
     @classmethod
@@ -115,12 +164,16 @@ class MonitoredInterfaceState:
     ip: str = ""
     gateway: str = ""
     is_connected: bool = False
+    is_admin_enabled: bool = True
     current_metric: int = 0
     assigned_metric: int = 0
     is_active_route: bool = False
     consecutive_rto: int = 0
     consecutive_success: int = 0
     last_latency_ms: float = 0.0
+    jitter_ms: float = 0.0
+    download_kbps: float = 0.0
+    upload_kbps: float = 0.0
     latency_history: List[float] = field(default_factory=list)
     total_pings: int = 0
     total_lost: int = 0
@@ -138,4 +191,3 @@ class LogEvent:
     timestamp: str
     level: LogLevel
     message: str
-

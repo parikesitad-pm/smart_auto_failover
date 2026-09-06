@@ -1,4 +1,5 @@
 import ctypes
+import json
 import os
 import re
 import subprocess
@@ -54,6 +55,39 @@ class WindowsBackend(BaseNetworkBackend):
     def get_all_adapters(self) -> List[AdapterInfo]:
         adapters: Dict[str, AdapterInfo] = {}
 
+        # 0. Query detailed adapter hardware info via PowerShell Get-NetAdapter
+        ps_adapters_info: Dict[str, dict] = {}
+        ps_cmd = [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            "Get-NetAdapter | Select-Object Name, InterfaceDescription, Status, MediaType, PhysicalMediaType | ConvertTo-Json",
+        ]
+        ret_ps, out_ps, _ = self._run_cmd(ps_cmd, timeout=4.0)
+        if ret_ps == 0 and out_ps.strip():
+            try:
+                raw = json.loads(out_ps.strip())
+                items = raw if isinstance(raw, list) else [raw]
+                for item in items:
+                    name = item.get("Name", "")
+                    if name:
+                        ps_adapters_info[name.strip().lower()] = item
+            except Exception:
+                pass
+
+        # 0b. Query admin states via 'netsh interface show interface'
+        admin_states: Dict[str, bool] = {}
+        ret_admin, out_admin, _ = self._run_cmd(["netsh", "interface", "show", "interface"])
+        if ret_admin == 0:
+            for line in out_admin.splitlines():
+                line = line.strip()
+                if line.startswith("Enabled") or line.startswith("Disabled"):
+                    parts = line.split(None, 3)
+                    if len(parts) >= 4:
+                        admin_states[parts[3].strip()] = (parts[0].lower() == "enabled")
+
         # 1. Parse 'netsh interface ipv4 show interfaces'
         ret, stdout, _ = self._run_cmd(["netsh", "interface", "ipv4", "show", "interfaces"])
         if ret == 0:
@@ -69,16 +103,57 @@ class WindowsBackend(BaseNetworkBackend):
                         metric = int(parts[1])
                         state_str = parts[3].lower()
                         name = parts[4].strip()
+                        name_lower = name.lower()
 
-                        if "loopback" in name.lower():
+                        # Exclude virtual, loopback, Wi-Fi Direct, and Bluetooth adapters
+                        if (
+                            "loopback" in name_lower
+                            or name_lower.startswith("local area connection*")
+                            or "bluetooth" in name_lower
+                            or "vethernet" in name_lower
+                            or "teredo" in name_lower
+                            or "isatap" in name_lower
+                        ):
                             continue
+
+                        # Check PowerShell hardware info
+                        ps_info = ps_adapters_info.get(name_lower, {})
+                        desc = ps_info.get("InterfaceDescription", "")
+                        desc_lower = desc.lower()
+                        phys_media = ps_info.get("PhysicalMediaType", "")
+
+                        # Filter out virtual/Bluetooth via description/media
+                        if (
+                            "bluetooth" in desc_lower
+                            or "virtual" in desc_lower
+                            or "hyper-v" in desc_lower
+                            or "wi-fi direct" in desc_lower
+                            or "microsoft wi-fi" in desc_lower
+                            or phys_media == "BlueTooth"
+                        ):
+                            continue
+
+                        # Determine adapter type
+                        is_wifi = (
+                            phys_media == "Native 802.11"
+                            or "wi-fi" in name_lower
+                            or "wireless" in name_lower
+                            or "wi-fi" in desc_lower
+                            or "wireless" in desc_lower
+                            or "802.11" in desc_lower
+                        )
+                        adapter_type = "Wireless" if is_wifi else "Ethernet"
 
                         adapters[name] = AdapterInfo(
                             alias=name,
                             index=idx,
                             metric=metric,
                             is_connected=(state_str == "connected"),
-                            adapter_type="Wireless" if "wi-fi" in name.lower() or "wireless" in name.lower() else "Ethernet",
+                            is_admin_enabled=admin_states.get(name, True),
+                            adapter_type=adapter_type,
+                            description=desc,
+                            physical_media_type=phys_media,
+                            is_physical=True,
                         )
                     except (ValueError, IndexError):
                         continue
@@ -88,10 +163,10 @@ class WindowsBackend(BaseNetworkBackend):
             ps_addrs = psutil.net_if_addrs()
             for name, addrs in ps_addrs.items():
                 target_adapter = adapters.get(name)
+                if not target_adapter:
+                    continue
                 for addr in addrs:
                     if addr.family.name == "AF_INET":
-                        if not target_adapter:
-                            continue
                         if not target_adapter.ipv4 or not target_adapter.ipv4.startswith("169.254."):
                             if not addr.address.startswith("169.254."):
                                 target_adapter.ipv4 = addr.address
@@ -162,3 +237,26 @@ class WindowsBackend(BaseNetworkBackend):
                 results.append((alias, False, f"Failed to restore Automatic Metric on '{alias}': {msg}"))
         return results
 
+    def set_adapter_enabled(self, alias: str, enabled: bool) -> Tuple[bool, str]:
+        if not alias:
+            return False, "Empty interface alias"
+
+        state_str = "ENABLED" if enabled else "DISABLED"
+        cmd = ["netsh", "interface", "set", "interface", f"name={alias}", f"admin={state_str}"]
+        code, stdout, stderr = self._run_cmd(cmd, timeout=6.0)
+
+        if code == 0:
+            return True, f"Interface '{alias}' is now {state_str.lower()}"
+
+        # Fallback to PowerShell Enable-NetAdapter / Disable-NetAdapter
+        ps_cmd = "Enable-NetAdapter" if enabled else "Disable-NetAdapter"
+        ps_script = f"{ps_cmd} -Name '{alias}' -Confirm:$false"
+        p_code, p_out, p_err = self._run_cmd(
+            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps_script],
+            timeout=8.0,
+        )
+        if p_code == 0:
+            return True, f"Interface '{alias}' is now {state_str.lower()}"
+
+        err_msg = p_err.strip() or stderr.strip() or f"Failed with code {code}"
+        return False, f"Failed to toggle interface '{alias}': {err_msg}"

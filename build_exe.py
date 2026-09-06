@@ -23,14 +23,16 @@ def build_standalone():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     main_py = os.path.join(script_dir, "main.py")
 
+    dist_dir = os.path.join(script_dir, "dist_app")
     cmd = [
         sys.executable,
         "-m",
         "PyInstaller",
         "--noconfirm",
-        "--onedir",  # onedir is faster to launch than onefile
-        "--windowed",  # No console window
-        "--uac-admin",  # Embed UAC Administrator execution manifest
+        "--onedir",
+        "--windowed",
+        "--uac-admin",
+        "--distpath", dist_dir,
         "--name", "SmartAutoFailover",
         "--collect-all", "customtkinter",
         "--collect-all", "darkdetect",
@@ -40,7 +42,7 @@ def build_standalone():
     print(f"\nRunning command:\n{' '.join(cmd)}\n")
     ret = subprocess.call(cmd, cwd=script_dir)
     if ret == 0:
-        dist_path = os.path.join(script_dir, "dist", "SmartAutoFailover", "SmartAutoFailover.exe")
+        dist_path = os.path.join(dist_dir, "SmartAutoFailover", "SmartAutoFailover.exe")
         print("\n" + "=" * 70)
         print("BUILD SUCCESSFUL!")
         print(f"Executable created at:\n  {dist_path}")
@@ -51,4 +53,3 @@ def build_standalone():
 
 if __name__ == "__main__":
     build_standalone()
-

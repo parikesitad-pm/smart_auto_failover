@@ -9,6 +9,7 @@ from core.models import LogEvent, LogLevel
 class LogPanel(ctk.CTkFrame):
     """
     Color-coded activity and failover history log console.
+    Supports Dual Mode (Dark & Light).
     """
 
     def __init__(self, master, max_lines: int = 500, **kwargs):
@@ -16,8 +17,8 @@ class LogPanel(ctk.CTkFrame):
             master,
             corner_radius=12,
             border_width=1,
-            border_color="#2D3139",
-            fg_color="#1A1C23",
+            border_color=("#CBD5E1", "#2D3139"),
+            fg_color=("#FFFFFF", "#1A1C23"),
             **kwargs,
         )
         self.max_lines = max_lines
@@ -38,7 +39,7 @@ class LogPanel(ctk.CTkFrame):
             top_bar,
             text="📋 Activity & Failover Log",
             font=("Segoe UI", 12, "bold"),
-            text_color="#E2E8F0",
+            text_color=("#0F172A", "#E2E8F0"),
         )
         title_label.grid(row=0, column=0, sticky="w")
 
@@ -48,7 +49,7 @@ class LogPanel(ctk.CTkFrame):
             text="Auto-scroll",
             variable=self.auto_scroll_var,
             font=("Segoe UI", 11),
-            text_color="#94A3B8",
+            text_color=("#64748B", "#94A3B8"),
             checkbox_width=16,
             checkbox_height=16,
         )
@@ -60,9 +61,9 @@ class LogPanel(ctk.CTkFrame):
             text="Clear",
             command=self.clear_logs,
             font=("Segoe UI", 11),
-            fg_color="#2D3139",
-            hover_color="#374151",
-            text_color="#E2E8F0",
+            fg_color=("#E2E8F0", "#2D3139"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#0F172A", "#E2E8F0"),
             width=55,
             height=24,
             corner_radius=6,
@@ -75,9 +76,9 @@ class LogPanel(ctk.CTkFrame):
             text="Export...",
             command=self.export_logs,
             font=("Segoe UI", 11),
-            fg_color="#2D3139",
-            hover_color="#374151",
-            text_color="#E2E8F0",
+            fg_color=("#E2E8F0", "#2D3139"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#0F172A", "#E2E8F0"),
             width=65,
             height=24,
             corner_radius=6,
@@ -88,24 +89,24 @@ class LogPanel(ctk.CTkFrame):
         self.textbox = ctk.CTkTextbox(
             self,
             corner_radius=8,
-            fg_color="#12131A",
-            text_color="#CBD5E1",
+            fg_color=("#F8FAFC", "#12131A"),
+            text_color=("#0F172A", "#CBD5E1"),
             font=("Consolas", 10),
             wrap="word",
-            border_width=0,
+            border_width=1,
+            border_color=("#E2E8F0", "#1E212B"),
         )
         self.textbox.grid(row=1, column=0, padx=12, pady=(0, 10), sticky="nsew")
 
         # Setup Tk Text tags for syntax highlighting
-        # Access underlying Tkinter Text widget
         tk_text: tk.Text = self.textbox._textbox
         tk_text.tag_config("TIME", foreground="#64748B")
-        tk_text.tag_config("FAILOVER", foreground="#F87171", font=("Consolas", 10, "bold"))
-        tk_text.tag_config("RECOVERY", foreground="#34D399", font=("Consolas", 10, "bold"))
-        tk_text.tag_config("SUCCESS", foreground="#10B981")
-        tk_text.tag_config("WARN", foreground="#FBBF24")
-        tk_text.tag_config("ERROR", foreground="#EF4444", font=("Consolas", 10, "bold"))
-        tk_text.tag_config("INFO", foreground="#94A3B8")
+        tk_text.tag_config("FAILOVER", foreground="#EF4444", font=("Consolas", 10, "bold"))
+        tk_text.tag_config("RECOVERY", foreground="#10B981", font=("Consolas", 10, "bold"))
+        tk_text.tag_config("SUCCESS", foreground="#059669")
+        tk_text.tag_config("WARN", foreground="#D97706")
+        tk_text.tag_config("ERROR", foreground="#DC2626", font=("Consolas", 10, "bold"))
+        tk_text.tag_config("INFO", foreground="#475569")
 
     def append_log(self, event: LogEvent):
         tk_text: tk.Text = self.textbox._textbox
@@ -150,4 +151,3 @@ class LogPanel(ctk.CTkFrame):
                 messagebox.showinfo("Export Log", f"Log successfully exported to:\n{filename}")
             except Exception as e:
                 messagebox.showerror("Export Error", f"Failed to save log: {e}")
-

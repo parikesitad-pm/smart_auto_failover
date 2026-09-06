@@ -192,3 +192,19 @@ class MacOSBackend(BaseNetworkBackend):
                 return [(s, False, stderr.strip() or stdout.strip()) for s in aliases]
         return [(s, True, "Default state maintained") for s in aliases]
 
+    def set_adapter_enabled(self, alias: str, enabled: bool) -> Tuple[bool, str]:
+        if not alias:
+            return False, "Empty service alias"
+
+        state_str = "on" if enabled else "off"
+        cmd = ["networksetup", "-setnetworkserviceenabled", alias, state_str]
+        code, stdout, stderr = self._run_cmd(cmd)
+
+        if code == 0:
+            dev = self._device_map.get(alias)
+            if dev:
+                self._run_cmd(["ifconfig", dev, "up" if enabled else "down"])
+            return True, f"macOS service '{alias}' is now {state_str}"
+
+        err_msg = stderr.strip() or stdout.strip() or f"Code {code}"
+        return False, f"Failed to toggle macOS service '{alias}': {err_msg}"

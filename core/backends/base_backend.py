@@ -37,3 +37,7 @@ class BaseNetworkBackend(ABC):
         """Restore all interfaces to operating system defaults (automatic metric or original order)."""
         pass
 
+    @abstractmethod
+    def set_adapter_enabled(self, alias: str, enabled: bool) -> Tuple[bool, str]:
+        """Manually connect (enable) or disconnect (disable) a network interface."""
+        pass
