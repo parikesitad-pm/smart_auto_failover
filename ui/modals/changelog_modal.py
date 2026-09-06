@@ -56,6 +56,41 @@ class ChangelogModal(ctk.CTkToplevel):
 
         changelog_text = """
 ===================================================================
+⚡ VERSI 2.2 (Multi-Platform Bundle, QoS Allocator & Fastfetch)
+===================================================================
+Tanggal Rilis: September 2026
+
+✨ Fitur Baru & Peningkatan:
+1. Multi-Platform Packaging & Build:
+   - Skrip build otomatis cross-platform: macOS (.dmg Apple Silicon M1/M2/M3), Linux (.tar.gz), dan Windows (.zip / .exe) dengan format versi resmi di akhir file (MODULA-v2.2-windows-x64.zip, dsb).
+   - Dokumentasi lengkap build multi-platform di README.md.
+
+2. Audio Alert Engine & Master Mute Toggle:
+   - Notifikasi suara sintetis real-time saat port Wi-Fi/Ethernet terhubung (connect) atau terputus (disconnect).
+   - Nada audio failover darurat saat interface primary RTO/down.
+   - Master sound toggle (🔊 / 🔇) di pojok kanan atas header.
+
+3. Toast Bubble Notification Manager:
+   - Floating toast notification modern yang muncul untuk setiap event jaringan dan interaksi pengguna.
+
+4. Application Bandwidth QoS Allocator:
+   - Alokasi persentase bandwidth pintar antar aplikasi aktif (Zoom, OBS Studio, vMix, Spotify, Discord, Chrome).
+   - Kontrol slider interaktif 0-100% dengan auto-balancing 100% dan preset profil (Zoom VIP 75%, Broadcast 70%, Balanced).
+   - Penerapan NetQoS Policy dan Windows Process Priority Scheduling.
+
+5. Fastfetch PC Hardware Diagnostics & CCleaner Junk Cleaner:
+   - Mini CPU/RAM monitor ala Mac di footer dengan data akurat real-time.
+   - Modal Fastfetch PC Diagnostics menampilkan detail hardware (Laptop Model, CPU, Dual GPU Iris Xe & RTX 3050 Ti, RAM, Storage).
+   - 1-Click Cleaner ala CCleaner untuk membersihkan file build usang, cache, dan temporary files.
+
+6. Perbaikan & Iconic Spectrum Bars:
+   - Perbaikan bug spectrum bar yang sebelumnya tidak muncul saat traffic rendah.
+   - 3 mode iconic visualizer: Cyber Spectrum Bars, RF Internet Wave, dan Smooth Curve dengan ambient heartbeat 30 FPS.
+
+7. Fullscreen Mode (F11):
+   - Tombol toggle Fullscreen ala browser di header, dengan shortcut keyboard F11 dan Escape.
+
+===================================================================
 🐲 VERSI 2.1 (MODULA Overhaul & Speedtest 4-Provider)
 ===================================================================
 Tanggal Rilis: September 2026

@@ -19,6 +19,8 @@ from core.models import (
     PriorityLevel,
 )
 from core.network_manager import NetworkManager
+from core.sound_engine import SoundEngine, SoundType
+from core.system_telemetry import SystemTelemetry
 from core.traffic_monitor import TrafficMonitor
 from .components import (
     AdapterSummaryBar,
@@ -26,21 +28,29 @@ from .components import (
     LogPanel,
     SettingsDialog,
     SkeletonLoader,
+    ToastNotificationManager,
     TrafficChartWidget,
 )
-from .modals import ChangelogModal, HelpFaqModal, SpeedtestModal
+from .modals import (
+    BandwidthQoSModal,
+    ChangelogModal,
+    HelpFaqModal,
+    SpeedtestModal,
+    SystemDiagnosticsModal,
+)
 
 
 CONFIG_FILE = "config.json"
 GITHUB_URL = "https://github.com/parikesitad-pm"
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
 
 class AppWindow(ctk.CTk):
     """
-    Main application window for MODULA - Smart Auto Failover v2.1.
-    Supports Dual Mode (Dark/Light), Speedtest Suite (Ookla, Fast.com, nPerf, Cloudflare),
-    Adapter Toggles, Equalizer Spectrum Bars, and Zero-Drop Route Metric Orchestration.
+    Main application window for MODULA - Smart Auto Failover v2.2.
+    Supports Dual Mode (Dark/Light), 4-Engine Speedtest, Fullscreen (F11),
+    Audio Alerts, Toast Bubbles, App Bandwidth QoS, and System Telemetry.
     """
 
     def __init__(self):
@@ -53,10 +63,14 @@ class AppWindow(ctk.CTk):
         ctk.set_appearance_mode(self.config.theme_mode)
         ctk.set_default_color_theme("blue")
 
+        # Configure Sound Engine from config
+        SoundEngine.set_enabled(getattr(self.config, "sound_enabled", True))
+
         # Window configuration
-        self.title("MODULA - Smart Auto Failover • Zero-Drop Zoom")
-        self.geometry("1060x830")
-        self.minsize(960, 720)
+        self.title("MODULA - Smart Auto Failover v2.2 • Zero-Drop Zoom")
+        self.geometry("1080x840")
+        self.minsize(980, 720)
+        self.is_fullscreen = False
 
         # Set Window Icon
         ico_path = os.path.join(ASSETS_DIR, "modula.ico")
@@ -65,6 +79,10 @@ class AppWindow(ctk.CTk):
                 self.iconbitmap(ico_path)
             except Exception:
                 pass
+
+        # Keyboard shortcuts (F11 Fullscreen, Escape Exit)
+        self.bind("<F11>", lambda e: self._toggle_fullscreen())
+        self.bind("<Escape>", lambda e: self._exit_fullscreen())
 
         # Thread-safe event queue for GUI updates
         self.update_queue = queue.Queue()
@@ -77,6 +95,8 @@ class AppWindow(ctk.CTk):
         )
         self.traffic_monitor = TrafficMonitor()
         self.all_adapters: List[AdapterInfo] = []
+        self._prev_conn_status: Dict[str, bool] = {}
+        self._initial_adapter_scan = True
 
         # Metrics & Failover Stats
         self.total_failovers = 0
@@ -85,8 +105,11 @@ class AppWindow(ctk.CTk):
         # Build UI layout
         self._build_ui()
 
+        # Toast Notification Manager
+        self.toast = ToastNotificationManager(self)
+
         # GitHub-style animated skeleton preloader
-        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_ready, min_duration=1.4)
+        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_ready, min_duration=1.3)
 
         # Populate adapters into dropdowns
         self.refresh_adapters()
@@ -183,7 +206,37 @@ class AppWindow(ctk.CTk):
             height=26,
         )
         self.theme_btn.set(self.config.theme_mode)
-        self.theme_btn.pack(side="left", padx=(0, 10))
+        self.theme_btn.pack(side="left", padx=(0, 6))
+
+        # Audio Alert Sound Toggle (Enable / Mute)
+        self.sound_btn = ctk.CTkButton(
+            right_header,
+            text="🔊 Sound: ON" if SoundEngine.is_enabled() else "🔇 Sound: MUTE",
+            command=self._toggle_sound,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#E2E8F0", "#2D3139") if SoundEngine.is_enabled() else ("#FEE2E2", "#7F1D1D"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#0F172A", "#F8FAFC"),
+            width=100,
+            height=26,
+            corner_radius=6,
+        )
+        self.sound_btn.pack(side="left", padx=(0, 6))
+
+        # Fullscreen Toggle Button (F11)
+        self.fs_btn = ctk.CTkButton(
+            right_header,
+            text="⛶ F11",
+            command=self._toggle_fullscreen,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#E2E8F0", "#2D3139"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#0F172A", "#F8FAFC"),
+            width=58,
+            height=26,
+            corner_radius=6,
+        )
+        self.fs_btn.pack(side="left", padx=(0, 10))
 
         # Admin Badge & Elevation
         os_name = NetworkManager.get_os_name()
@@ -291,17 +344,32 @@ class AppWindow(ctk.CTk):
         # Speedtest Button (Barong Gold)
         speedtest_btn = ctk.CTkButton(
             left_actions,
-            text="⚡ Speedtest Suite (4 Engines)",
+            text="⚡ Speedtest (4 Engines)",
             command=self._open_speedtest,
             font=("Segoe UI", 12, "bold"),
             fg_color=("#D97706", "#F59E0B"),
             hover_color=("#B45309", "#D97706"),
             text_color=("#FFFFFF", "#0F172A"),
-            width=190,
+            width=175,
             height=34,
             corner_radius=8,
         )
-        speedtest_btn.pack(side="left", padx=6)
+        speedtest_btn.pack(side="left", padx=4)
+
+        # App Bandwidth QoS Button (Cyan / Accent)
+        qos_btn = ctk.CTkButton(
+            left_actions,
+            text="🎛️ Bandwidth QoS",
+            command=self._open_bandwidth_qos,
+            font=("Segoe UI", 12, "bold"),
+            fg_color=("#0284C7", "#0EA5E9"),
+            hover_color=("#0369A1", "#0284C7"),
+            text_color=("#FFFFFF", "#0F172A"),
+            width=150,
+            height=34,
+            corner_radius=8,
+        )
+        qos_btn.pack(side="left", padx=4)
 
         # Right Actions
         right_actions = ctk.CTkFrame(action_bar, fg_color="transparent")
@@ -414,10 +482,10 @@ class AppWindow(ctk.CTk):
         center_footer = ctk.CTkFrame(footer, fg_color="transparent")
         center_footer.grid(row=0, column=1, pady=2, sticky="n")
 
-        # Version Pill (v2.1 Gold/Amber)
+        # Version Pill (v2.2 Gold/Amber)
         ver_pill = ctk.CTkLabel(
             center_footer,
-            text=" v2.1 ",
+            text=" v2.2 ",
             font=("Segoe UI", 10, "bold"),
             fg_color=("#FEF3C7", "#78350F"),
             text_color=("#92400E", "#FDE68A"),
@@ -467,14 +535,32 @@ class AppWindow(ctk.CTk):
         )
         author_btn.pack(side="left", padx=3)
 
-        # Right: Target info
+        # Right: Fastfetch Diagnostics mini button + Target info
+        right_footer = ctk.CTkFrame(footer, fg_color="transparent")
+        right_footer.grid(row=0, column=2, padx=16, pady=2, sticky="e")
+
+        self.sys_diag_btn = ctk.CTkButton(
+            right_footer,
+            text="💻 CPU: --% | RAM: --GB",
+            command=self._open_system_diagnostics,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#F1F5F9", "#1E212B"),
+            hover_color=("#E2E8F0", "#2D3139"),
+            text_color=("#0F172A", "#38BDF8"),
+            border_width=1,
+            border_color=("#CBD5E1", "#334155"),
+            height=24,
+            corner_radius=6,
+        )
+        self.sys_diag_btn.pack(side="left", padx=(0, 8))
+
         self.footer_right = ctk.CTkLabel(
-            footer,
-            text=f"Target: {self.config.ping_target_primary} • Ping: 1000ms / 800ms timeout",
+            right_footer,
+            text=f"Target: {self.config.ping_target_primary}",
             font=("Segoe UI", 10),
             text_color=("#64748B", "#94A3B8"),
         )
-        self.footer_right.grid(row=0, column=2, padx=16, pady=4, sticky="e")
+        self.footer_right.pack(side="left")
 
     def _on_theme_changed(self, mode: str):
         self.config.theme_mode = mode
@@ -488,10 +574,73 @@ class AppWindow(ctk.CTk):
             self.destroy()
             sys.exit(0)
 
+    def _toggle_fullscreen(self):
+        """Toggle borderless fullscreen mode (F11)."""
+        self.is_fullscreen = not self.is_fullscreen
+        self.attributes("-fullscreen", self.is_fullscreen)
+        if self.is_fullscreen:
+            self.fs_btn.configure(text="🗗 F11")
+            self.toast.info("Fullscreen Aktif (Tekan F11 atau Esc untuk keluar)")
+        else:
+            self.fs_btn.configure(text="⛶ F11")
+            self.toast.info("Keluar dari mode Fullscreen")
+        SoundEngine.play(SoundType.ACTION)
+
+    def _exit_fullscreen(self):
+        """Exit fullscreen if active (Escape key)."""
+        if self.is_fullscreen:
+            self.is_fullscreen = False
+            self.attributes("-fullscreen", False)
+            self.fs_btn.configure(text="⛶ F11")
+            self.toast.info("Keluar dari mode Fullscreen")
+            SoundEngine.play(SoundType.ACTION)
+
+    def _toggle_sound(self):
+        """Toggle master audio effects on/off."""
+        new_state = not SoundEngine.is_enabled()
+        SoundEngine.set_enabled(new_state)
+        self.config.sound_enabled = new_state
+        self._save_config()
+        if new_state:
+            self.sound_btn.configure(text="🔊 Sound: ON", fg_color=("#E2E8F0", "#2D3139"))
+            SoundEngine.play(SoundType.SUCCESS)
+            self.toast.success("Sound Effects: AKTIF 🔊")
+        else:
+            self.sound_btn.configure(text="🔇 Sound: MUTE", fg_color=("#FEE2E2", "#7F1D1D"))
+            self.toast.warning("Sound Effects: DIMATIKAN 🔇")
+
+    def _open_bandwidth_qos(self):
+        """Open the Application Bandwidth Allocation & QoS Modal."""
+        SoundEngine.play(SoundType.ACTION)
+        BandwidthQoSModal(self)
+
+    def _open_system_diagnostics(self):
+        """Open Fastfetch-style Hardware Diagnostics & Junk Cleaner modal."""
+        SoundEngine.play(SoundType.ACTION)
+        SystemDiagnosticsModal(self)
+
     def refresh_adapters(self):
-        """Scan system adapters, update summary bar, and refresh dropdown options."""
+        """Scan system adapters, update summary bar, and detect plug/unplug events with sound."""
+        prev_status = dict(self._prev_conn_status)
         self.all_adapters = NetworkManager.get_all_adapters()
         adapter_names = [a.alias for a in self.all_adapters]
+
+        # Detect connection / disconnection transitions
+        for a in self.all_adapters:
+            was_connected = prev_status.get(a.alias)
+            if was_connected is not None and not self._initial_adapter_scan:
+                if not was_connected and a.is_connected:
+                    SoundEngine.play(SoundType.CONNECT)
+                    icon = "📶" if a.adapter_type == "Wireless" else "🔌"
+                    self.toast.success(f"{icon} {a.adapter_type} Terhubung: '{a.alias}'")
+                elif was_connected and not a.is_connected:
+                    SoundEngine.play(SoundType.DISCONNECT)
+                    icon = "📶" if a.adapter_type == "Wireless" else "🔌"
+                    self.toast.error(f"⚠️ {icon} {a.adapter_type} Terputus: '{a.alias}'")
+
+            self._prev_conn_status[a.alias] = a.is_connected
+
+        self._initial_adapter_scan = False
 
         self.cards[PriorityLevel.P1].set_adapter_options(adapter_names, self.config.p1_alias)
         self.cards[PriorityLevel.P2].set_adapter_options(adapter_names, self.config.p2_alias)
@@ -513,6 +662,7 @@ class AppWindow(ctk.CTk):
         Automatically identify and assign Ethernet 1, Ethernet 2, and Wi-Fi adapters.
         Strictly prioritizes physical Ethernet (docking / onboard GbE) over virtual/USB tethering.
         """
+        SoundEngine.play(SoundType.ACTION)
         self.all_adapters = NetworkManager.get_all_adapters()
 
         ethernets = [a for a in self.all_adapters if a.adapter_type == "Ethernet"]
@@ -563,6 +713,9 @@ class AppWindow(ctk.CTk):
         self.refresh_adapters()
         self._save_config()
 
+        SoundEngine.play(SoundType.SUCCESS)
+        self.toast.success(f"Auto-detect: LAN 1='{self.config.p1_alias}', LAN 2='{self.config.p2_alias}', Wi-Fi='{self.config.p3_alias}'")
+
         self.log_panel.append_log(
             LogEvent(
                 timestamp=time.strftime("%H:%M:%S"),
@@ -585,10 +738,14 @@ class AppWindow(ctk.CTk):
 
         self.engine.update_config(self.config)
         self._save_config()
+        SoundEngine.play(SoundType.ACTION)
+        self.toast.info(f"{priority.label} diatur ke: '{alias}'")
 
     def _on_toggle_adapter(self, alias: str, enabled: bool):
         """Manually connect/disconnect network adapter."""
+        SoundEngine.play(SoundType.ACTION)
         action = "Enable (Konek)" if enabled else "Disable (Putus)"
+        self.toast.info(f"Mengubah port '{alias}' -> {action}...")
         self.log_panel.append_log(
             LogEvent(
                 timestamp=time.strftime("%H:%M:%S"),
@@ -598,6 +755,8 @@ class AppWindow(ctk.CTk):
         )
         ok, msg = NetworkManager.set_adapter_enabled(alias, enabled)
         if ok:
+            SoundEngine.play(SoundType.SUCCESS)
+            self.toast.success(f"Port '{alias}' -> {action} berhasil!")
             self.log_panel.append_log(
                 LogEvent(
                     timestamp=time.strftime("%H:%M:%S"),
@@ -606,6 +765,8 @@ class AppWindow(ctk.CTk):
                 )
             )
         else:
+            SoundEngine.play(SoundType.DISCONNECT)
+            self.toast.error(f"Gagal ubah port '{alias}': {msg}")
             self.log_panel.append_log(
                 LogEvent(
                     timestamp=time.strftime("%H:%M:%S"),
@@ -616,20 +777,26 @@ class AppWindow(ctk.CTk):
         self.after(1200, self.refresh_adapters)
 
     def _open_speedtest(self):
+        SoundEngine.play(SoundType.ACTION)
         SpeedtestModal(self, adapters=self.all_adapters)
 
     def _open_changelog(self):
+        SoundEngine.play(SoundType.ACTION)
         ChangelogModal(self)
 
     def _open_help_faq(self):
+        SoundEngine.play(SoundType.ACTION)
         HelpFaqModal(self)
 
     def _open_github(self):
+        SoundEngine.play(SoundType.ACTION)
         webbrowser.open(GITHUB_URL)
 
     def _toggle_monitoring(self):
         if not self.engine._is_running:
             if not any([self.config.p1_alias, self.config.p2_alias, self.config.p3_alias]):
+                SoundEngine.play(SoundType.DISCONNECT)
+                self.toast.error("Pilih setidaknya satu adapter sebelum monitoring!")
                 self.log_panel.append_log(
                     LogEvent(
                         timestamp=time.strftime("%H:%M:%S"),
@@ -639,6 +806,8 @@ class AppWindow(ctk.CTk):
                 )
                 return
 
+            SoundEngine.play(SoundType.ACTION)
+            self.toast.info("Network monitoring aktif. Proteksi failover aktif.")
             self.start_time = time.time()
             self.engine.start()
             self.toggle_btn.configure(
@@ -647,6 +816,8 @@ class AppWindow(ctk.CTk):
                 hover_color=("#DC2626", "#B91C1C"),
             )
         else:
+            SoundEngine.play(SoundType.ACTION)
+            self.toast.warning("Monitoring dihentikan. Metrics dikembalikan.")
             self.engine.stop(restore_metrics=True)
             self.toggle_btn.configure(
                 text="▶ Start Monitoring",
@@ -662,7 +833,9 @@ class AppWindow(ctk.CTk):
             self.summary_bar.update_summary(summary)
 
     def _reset_metrics(self):
+        SoundEngine.play(SoundType.ACTION)
         self.engine.restore_automatic_metrics()
+        self.toast.info("Route metrics direset ke otomatis")
 
     def _open_settings(self):
         SettingsDialog(self, config=self.config, on_save=self._on_settings_saved)
@@ -697,6 +870,8 @@ class AppWindow(ctk.CTk):
                     self.log_panel.append_log(event)
                     if event.level == LogLevel.FAILOVER:
                         self.total_failovers += 1
+                        SoundEngine.play(SoundType.FAILOVER)
+                        self.toast.error(f"🚨 FAILOVER: {event.message}")
                         self.footer_left.configure(
                             text=f"Failover Events: {self.total_failovers} • Active Primary: {self._get_active_alias()}"
                         )
@@ -709,8 +884,17 @@ class AppWindow(ctk.CTk):
         self.after(100, self._process_queue)
 
     def _process_traffic_update(self):
-        """Update live traffic throughput stats every second."""
+        """Update live traffic throughput stats and telemetry every second."""
         try:
+            # Update telemetry mini meter on footer
+            try:
+                metrics = SystemTelemetry.get_live_metrics()
+                self.sys_diag_btn.configure(
+                    text=f"💻 CPU {metrics.cpu_percent:.0f}% • RAM {metrics.ram_used_gb:.1f}/{metrics.ram_total_gb:.1f}GB"
+                )
+            except Exception:
+                pass
+
             stats_map = self.traffic_monitor.update()
 
             # Find active adapter alias

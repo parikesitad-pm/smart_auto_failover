@@ -1,34 +1,54 @@
-# MODULA - Smart Auto Failover v2.1
+# MODULA - Smart Auto Failover v2.2
 
 \*Dibuat oleh: **parikesitad-pm\*** • [GitHub Profile](https://github.com/parikesitad-pm)
 
-Aplikasi Desktop modern, ultra-ringan (**Windows & macOS**) berbasis Python & CustomTkinter dengan identitas visual **Topeng Barong Bali**, dirancang khusus untuk memantau koneksi jaringan aktif secara simultan (**LAN 1 Docking**, **LAN 2 Docking**, **Wi-Fi**, dan **USB Tethering HP**), serta melakukan pengalihan rute default secara otomatis dan instan (**Zero-Drop Failover**) tanpa memutus panggilan Zoom meeting atau UDP stream aktif.
+Aplikasi Desktop modern, ultra-ringan (**Windows, macOS Apple Silicon M1/M2/M3 & Linux**) berbasis Python & CustomTkinter dengan identitas visual **Topeng Barong Bali**. Dirancang khusus untuk memantau koneksi jaringan aktif secara simultan (**LAN 1 Docking**, **LAN 2 Docking**, **Wi-Fi**, dan **USB Tethering HP**), serta melakukan pengalihan rute default secara otomatis dan instan (**Zero-Drop Failover**) tanpa memutus panggilan Zoom meeting, OBS live streaming, vMix broadcast, atau UDP stream aktif.
 
 ---
 
-## 🐲 Fitur Unggulan di Versi 2.1 (MODULA Overhaul)
+## ⚡ Fitur Unggulan di Versi 2.2
 
-1. **Rebranding & Identitas Visual Barong**:
-   - Desain terintegrasi dengan logo artistik **Topeng Barong Bali** dan palet warna harmoni: _Royal Gold_ (`#F59E0B`), _Crimson_ (`#DC2626`), dan _Deep Slate_ (`#12141C`).
-   - Icon aplikasi `.ico` dan badge resmi di taskbar serta window header.
+1. **Multi-Platform Release Bundles (Versioned Packages)**:
+   - Skrip build otomatis untuk tiga platform utama:
+     - 🪟 **Windows x64**: `MODULA-v2.2-windows-x64.zip` & `MODULA.exe` standalone.
+     - 🍏 **macOS Apple Silicon (M1/M2/M3)**: `MODULA-v2.2-macos-arm64.dmg` dengan drag-and-drop ke Applications.
+     - 🐧 **Linux x86_64**: `MODULA-v2.2-linux-x86_64.tar.gz`.
 
-2. **Startup Preloader & GitHub-Style Skeleton Loader**:
-   - Tampilan pembuka beranimasi dengan efek shimmer skeleton cards saat aplikasi memindai adapter dan mengkalibrasi rute metrik awal.
+2. **Audio Alert Engine & Master Mute Toggle**:
+   - Notifikasi suara sintetis real-time saat port Wi-Fi / Ethernet terhubung (_Connect chime_) atau terputus (_Disconnect chime_).
+   - Emergency audio siren saat rute primary mengalami RTO/failover.
+   - Tombol toggle suara (🔊 ON / 🔇 MUTE) langsung di header aplikasi.
 
-3. **Speedtest Suite 4-Provider (1-Click All Test)**:
-   - Pengujian kecepatan 4 engine terkemuka sekaligus dengan 1 klik: **Ookla Speedtest**, **Fast.com (Netflix Open Connect CDN)**, **nPerf / Multi-CDN**, dan **Cloudflare Anycast**.
-   - Animasi **Speedometer Circular Gauge ala Ookla** dengan jarum putar sweep dan angka digital real-time.
-   - Detail telemetri mendalam ala Cloudflare: _Idle Latency_, _Loaded Latency (Bufferbloat)_, _Jitter (RFC 3550)_, dan _Server Location / ISP_.
+3. **Toast Bubble Notification Manager**:
+   - Floating toast banner modern dan non-intrusif yang muncul otomatis untuk setiap interaksi pengguna dan event jaringan.
 
-4. **Equalizer Spectrum Bars Visualizer**:
-   - Pilihan visualisasi live throughput & jitter: Mode Kurva Halus (_Smooth Curve_) atau Mode Bar Spektrum Equalizer (_Aesthetic Audio Spectrum Bars_) dengan warna glow dinamis sesuai beban bandwidth.
+4. **Application Bandwidth QoS Allocator**:
+   - Modul kontrol alokasi bandwidth pintar antar aplikasi aktif (**Zoom, OBS Studio, vMix, Spotify, Discord, Google Chrome**).
+   - Slider persentase 0–100% interaktif dengan fitur auto-balancing 100% dan preset profil instan (_Zoom VIP 75%_, _Broadcast Streamer 70%_, _Balanced QoS_).
+   - Integrasi Windows NetQoS DSCP policies & process scheduling priority.
 
-5. **Smart Hardware Auto-Detection (Anti-Phantom USB)**:
-   - Filter ketat untuk menyingkirkan virtual adapter (Wi-Fi Direct \*Local Area Connection\*\*, Bluetooth Personal Area Network, Loopback, dan vEthernet).
-   - Prioritas mutlak port fisik Ethernet (docking / PCIe GbE) pada **Priority 1** dan **Priority 2**, sehingga USB tethering HP tidak akan merebut status koneksi utama jika port docking terpasang.
+5. **Fastfetch PC Hardware Diagnostics & CCleaner Junk Cleaner**:
+   - Mini CPU/RAM monitor di footer ala macOS dengan angka akurat real-time.
+   - Modal Fastfetch PC Diagnostics menampilkan detail spesifikasi perangkat:
+     - Model Laptop & Motherboard (contoh: ASUS TUF Dash F15 FX516PE)
+     - CPU Core & Threads (Intel Core i7-11370H)
+     - Dual GPU (Intel Iris Xe Integrated & NVIDIA GeForce RTX 3050 Ti Laptop GPU)
+     - Live RAM & Penyimpanan Disk (NTFS drives)
+   - **1-Click Cleaner ala CCleaner**: Pembersih instan untuk menghapus file build usang, cache pyinstaller, dan temporary files.
 
-6. **Dual Mode (Dark & Light)**:
-   - Dukungan tema Gelap (_Dark_) dan Terang (_Light_) yang elegan dan responsif.
+6. **Iconic Spectrum Bars Visualizer (3 Mode & Heartbeat Loop)**:
+   - Tiga mode visualisasi dinamis yang ikonik:
+     - `⚡ Cyber Spectrum Bars` (Equalizer audio multi-band glow)
+     - `📡 RF Internet Wave` (Gelombang radio frekuensi interaktif)
+     - `🌊 Smooth Curve` (Kurva halus throughput)
+   - Ambient heartbeat animation loop 30 FPS sehingga grafik tetap berdenyut dinamis meskipun traffic internet sedang idle.
+
+7. **Fullscreen Mode (F11)**:
+   - Tombol toggle Fullscreen ala browser di header, dengan shortcut keyboard `<F11>` dan `<Escape>`.
+
+8. **Speedtest Suite 4-Provider (1-Click All Test)**:
+   - 1-Click Test ke seluruh 4 engine: **Ookla Speedtest**, **Fast.com (Netflix Open Connect)**, **nPerf**, dan **Cloudflare Anycast**.
+   - Animasi Speedometer Circular Gauge dengan jarum sweep ala Ookla dan detail telemetri mendalam ala Cloudflare (Idle Latency, Bufferbloat, Jitter, Packet Loss).
 
 ---
 
@@ -41,64 +61,101 @@ Pada aplikasi konferensi video real-time seperti **Zoom Meeting**, koneksi audio
 
 ---
 
-## 💻 Cara Menjalankan Aplikasi
+## 📦 Panduan Build & Packaging Multi-Platform
 
-### Di Windows:
+### 🪟 1. Windows (x64)
 
-1. Cukup klik ganda file:
-   ```
-   run_admin.bat
-   ```
-   _(Script otomatis meminta izin Administrator / UAC)._
-2. Atau jalankan file `.exe` mandiri yang sudah jadi di:
-   ```
-   dist_app\SmartAutoFailover\SmartAutoFailover.exe
-   ```
+Untuk membuild standalone `.exe` dan paket release `.zip`:
 
-### Di macOS (MacBook / Mac Mini):
+```powershell
+# Jalankan script packaging Windows
+python build_windows_bundle.py
+```
 
-1. Buka Terminal di Mac:
-   ```bash
-   cd /path/to/auto-failover
-   chmod +x run_mac.sh
-   ./run_mac.sh
-   ```
-   _(Script otomatis meminta password `sudo` sekali untuk mengatur Network Service Order)._
+Output yang dihasilkan:
+
+- `dist_app/MODULA-v2.2-windows-x64.zip` (Paket siap distribusi untuk tim)
+- `dist_app/MODULA/MODULA.exe` (Executable standalone dengan icon & manifest Administrator)
+
+Cara menjalankan langsung dari source code:
+
+```cmd
+run_admin.bat
+```
+
+---
+
+### 🍏 2. macOS Apple Silicon (M1 / M2 / M3)
+
+Untuk membuild bundle `.app` dan disk image `.dmg` di Mac:
+
+```bash
+# Pastikan script executable
+chmod +x build_macos_dmg.sh
+
+# Jalankan script build
+./build_macos_dmg.sh
+```
+
+Output yang dihasilkan:
+
+- `dist_app/MODULA-v2.2-macos-arm64.dmg` (Disk image DMG dengan drag-and-drop installer ke Applications)
+- `dist_app/MODULA.app`
+
+Cara menjalankan di macOS dari Terminal:
+
+```bash
+chmod +x run_mac.sh
+./run_mac.sh
+```
+
+_(Script otomatis meminta password `sudo` sekali untuk mengatur Network Service Order)._
+
+---
+
+### 🐧 3. Linux (x86_64)
+
+Untuk membuild standalone bundle di distribusi Linux (Ubuntu, Debian, Fedora, Arch):
+
+```bash
+# Pastikan dependencies sistem terpasang
+sudo apt-get install python3 python3-pip python3-tk
+
+# Jalankan script build
+chmod +x build_linux.sh
+./build_linux.sh
+```
+
+Output yang dihasilkan:
+
+- `dist_app/MODULA-v2.2-linux-x86_64.tar.gz`
+- `dist_app/MODULA/MODULA` (Executable Linux dengan helper `run_linux.sh`)
 
 ---
 
 ## ⚡ Multi-Interface Speedtest
 
-Klik tombol **"⚡ Speedtest Suite"** di action bar aplikasi:
+Klik tombol **"⚡ Speedtest"** di action bar aplikasi:
 
-- **Pilih Engine**: Cloudflare Anycast, nPerf, atau Ookla.
+- **Pilih Engine**: Cloudflare Anycast, Fast.com, nPerf, atau Ookla.
 - **Pilih Interface**:
   - Pilih adapter tertentu (misal `Ethernet (10.207.2.115)` atau `Wi-Fi (192.168.1.39)`) untuk tes individual.
   - Atau pilih **"🔍 Bulk Test (Semua Adapter Aktif)"** untuk membandingkan performa seluruh koneksi Anda secara berdampingan.
 
 ---
 
-## 🧪 Hasil Quality Assessment (20 Tester Personas)
+## 🧪 Quality Assessment & Testing Suite
 
-Seluruh 31 unit test dan 20 simulasi persona pengguna lulus 100% (`Ran 31 tests in 1.086s: OK`):
+Jalankan rangkaian test otomatis:
 
-1. `[PASS] Persona 1`: Budi (Executive on Zoom Call) - Zero-drop UDP failover ke LAN 2 dalam 2 detik.
-2. `[PASS] Persona 2`: Siti (Backend Engineer) - Jitter real-time dan packet loss terdeteksi akurat.
-3. `[PASS] Persona 3`: Alex (DevOps on Mac M2) - macOS Service Order switching berjalan lancar.
-4. `[PASS] Persona 4`: Rian (Competitive Gamer) - Probing interval 1.0s dengan timeout 800ms.
-5. `[PASS] Persona 5`: Dimas (Field Tech 4G Tethering) - Deteksi adapter USB tethering HP otomatis.
-6. `[PASS] Persona 6`: Dewi (Corporate VPN) - Hirarki metric normal (10/20/30) terjaga.
-7. `[PASS] Persona 7`: Fajar (Docking Unplugged) - Failover instan tanpa crash saat kabel dicabut tiba-tiba.
-8. `[PASS] Persona 8`: Lina (Outdoor Light Mode) - Pergantian ke Light Mode kontras tinggi.
-9. `[PASS] Persona 9`: Hendra (Night Dark Mode) - Mode Gelap obsidian rendah kelelahan mata.
-10. `[PASS] Persona 10`: Kevin (Cloudflare Speedtest) - Pengujian download/upload terikat ke source IP.
-11. `[PASS] Persona 11`: Anita (nPerf Speedtest) - Multi-CDN Anycast latency test berhasil.
-12. `[PASS] Persona 12`: Bambang (Ookla Speedtest) - Integrasi Ookla CLI & fallback Anycast.
-13. `[PASS] Persona 13`: Doni (Bulk Multi-WAN) - Skor perbandingan multi-interface berurutan.
-14. `[PASS] Persona 14`: Rini (Network Admin) - Perintah connect/disconnect manual port terverifikasi.
-15. `[PASS] Persona 15`: Maya (Standard User) - Mode simulasi dry-run aman tanpa hak admin.
-16. `[PASS] Persona 16`: Rudi (Windows 11 UAC) - Generator elevasi Administrator teruji.
-17. `[PASS] Persona 17`: Tono (Anti-Flapping) - Recovery membutuhkan tepat 5x sukses berturut-turut.
-18. `[PASS] Persona 18`: Sarah (Newbie) - Teks modal Bantuan & FAQ interaktif lengkap.
-19. `[PASS] Persona 19`: Gilang (Release Auditor) - Riwayat Changelog v1.0 dan v2.0 utuh.
-20. `[PASS] Persona 20`: Eko (DevOps Teardown) - Restorasi Automatic Metric otomatis saat aplikasi ditutup.
+```bash
+python -m unittest discover tests
+```
+
+Semua modul v2.2 teruji:
+
+- `SoundEngine`: Synthesizer chimes cross-platform & mute logic.
+- `BandwidthQoS`: Process scanner, slider auto-balance 100%, and NetQoS rules.
+- `SystemTelemetry`: Fastfetch hardware detection & CCleaner disk scanner.
+- `ToastNotificationManager`: Event bubble notifications.
+- `FailoverEngine`: Routing metrics preservation and zero-drop recovery.

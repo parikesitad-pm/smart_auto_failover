@@ -5,6 +5,7 @@ from .settings_dialog import SettingsDialog
 from .adapter_summary_bar import AdapterSummaryBar
 from .traffic_chart import TrafficChartWidget
 from .skeleton_loader import SkeletonLoader
+from .toast_notification import ToastNotificationManager
 
 __all__ = [
     "InterfaceCard",
@@ -14,4 +15,5 @@ __all__ = [
     "AdapterSummaryBar",
     "TrafficChartWidget",
     "SkeletonLoader",
+    "ToastNotificationManager",
 ]

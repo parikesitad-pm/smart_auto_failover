@@ -130,6 +130,7 @@ class FailoverConfig:
     p3_alias: str = ""
     auto_start: bool = False
     theme_mode: str = "Dark"  # "Dark" or "Light"
+    sound_enabled: bool = True
 
     def to_dict(self) -> dict:
         return {
@@ -148,6 +149,7 @@ class FailoverConfig:
             "p3_alias": self.p3_alias,
             "auto_start": self.auto_start,
             "theme_mode": self.theme_mode,
+            "sound_enabled": self.sound_enabled,
         }
 
     @classmethod
