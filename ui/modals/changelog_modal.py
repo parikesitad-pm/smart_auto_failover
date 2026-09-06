@@ -1,180 +1,286 @@
+"""
+MODULA - Smart Auto Failover
+Interactive Version History & Changelog Explorer (v2.3)
+"""
+
+from typing import Dict, List
 import customtkinter as ctk
+
+from core.sound_engine import SoundEngine, SoundType
+
+
+CHANGELOG_DATA: Dict[str, dict] = {
+    "v2.3": {
+        "title": "⚡ VERSI 2.3 (Optimization, Custom Probing, GPU Telemetry & QoS)",
+        "date": "September 2026",
+        "badge": "CURRENT STABLE",
+        "badge_color": ("#D1FAE5", "#064E3B"),
+        "badge_text_color": "#059669",
+        "items": [
+            ("✨ Enterprise Frameless Splash Screen", "Window 560x340 frameless, radial gradient gelap, logo Barong bulat berputar dengan 60 FPS gradient ring spinner (merah-oranye-emas), dynamic monospace status 0-100%, dan transisi alpha fadeout halus."),
+            ("🎯 Custom Ping Target & Advanced Probing", "Kustomisasi 3 IP target probing (Simple Mode: cukup masukkan IP, misal 1.1.1.1, 8.8.8.8, 9.9.9.9) serta Advanced Mode (interval probing, timeout ms, RTO threshold, payload size, dan Source IP Binding)."),
+            ("⌨️ Keyboard Shortcuts & Settings Modal", "Dukungan tombol pintas keyboard lengkap (F11 Fullscreen, Ctrl+R Refresh, Ctrl+M Monitoring, Ctrl+T Speedtest, Ctrl+Q QoS, Ctrl+U Mute, Ctrl+S Settings) yang bisa dikustomisasi di jendela Settings."),
+            ("💻 Live GPU Usage & Sleek Mini Monitors", "Pemantauan beban GPU real-time (Nvidia/Intel/DirectX) via non-blocking background thread. Visual meter mini di footer menggantikan ASCII kasar dengan tampilan modern dan halus."),
+            ("🎛️ Bandwidth QoS Presets & vMixService Fix", "Pembersihan deteksi proses palsu (mengecualikan background service vMixService.exe) dan penambahan 1-Click Priority Presets untuk Video Conference (Zoom/Meet/Teams) dan Live Streaming (OBS/vMix)."),
+            ("🖥️ Auto-Maximized & Responsive Layout", "Aplikasi otomatis terbuka maksimal (fit screen) tanpa ada card atau log yang terpotong, dengan dukungan resize responsif hingga 820x560."),
+            ("🔄 Unified Module Refresh", "Tombol reload terpisah di header diintegrasikan ke tombol 🔄 Refresh yang otomatis memicu preloader dan merefresh seluruh modul sistem."),
+        ],
+    },
+    "v2.2": {
+        "title": "🚀 VERSI 2.2 (Multi-Platform Bundle, QoS Allocator & Fastfetch)",
+        "date": "September 2026",
+        "badge": "RELEASE",
+        "badge_color": ("#E0F2FE", "#0C4A6E"),
+        "badge_text_color": "#0284C7",
+        "items": [
+            ("📦 Multi-Platform Packaging", "Bundle rilis mandiri: Windows (.zip / .exe), macOS Apple Silicon M1/M2/M3 (.dmg) dengan icon resmi Barong modula.icns, dan Linux (.tar.gz)."),
+            ("🔊 Audio Alert Engine", "Sintesis suara real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem (>85%) dengan master mute switch."),
+            ("💬 Toast Bubble Manager", "Notifikasi melayang modern di sudut kanan bawah layar untuk setiap aksi jaringan."),
+            ("🎛️ Application Bandwidth QoS", "Alokasi persentase bandwidth pintar antar aplikasi aktif dengan auto-balancing 100% dan Windows NetQoS policies."),
+            ("💻 Fastfetch Hardware Diagnostics", "Modal spesifikasi hardware PC lengkap dan grafik canvas rolling 60 detik CPU/RAM."),
+            ("📊 Smooth 60 FPS Visualizer", "3 mode grafik ikonik: Cyber Spectrum Bars, RF Internet Wave, dan Smooth Curve anti-patah."),
+            ("⚡ 4-Engine Speedtest & Detail Modal", "Benchmark simultan ke Ookla, Fast.com Netflix, nPerf, dan Cloudflare Anycast dengan Deep Telemetry Modal (Rating A+ sampai F)."),
+        ],
+    },
+    "v2.1": {
+        "title": "🐲 VERSI 2.1 (MODULA Rebranding & Barong Theme)",
+        "date": "September 2026",
+        "badge": "OVERHAUL",
+        "badge_color": ("#FEF3C7", "#78350F"),
+        "badge_text_color": "#D97706",
+        "items": [
+            ("🎨 Rebranding MODULA", "Nama resmi berganti menjadi 'MODULA - Smart Auto Failover' dengan logo Topeng Barong Bali."),
+            ("🎯 Dual Mode Palette", "Dark Mode & Light Mode berpalet Barong Gold, Crimson, dan Obsidian."),
+            ("⚡ 4-Provider Speedtest Suite", "Integrasi speedtest langsung ke Cloudflare, nPerf, Ookla, dan Fast.com."),
+            ("📶 Multi-Interface Detection", "Peningkatan deteksi cerdas untuk koneksi simultan 2 LAN dan Wi-Fi."),
+        ],
+    },
+    "v2.0": {
+        "title": "🛡️ VERSI 2.0 (Dual-Mode & Multi-Port Monitor)",
+        "date": "September 2026",
+        "badge": "MAJOR",
+        "badge_color": ("#EDE9FE", "#4C1D95"),
+        "badge_text_color": "#7C3AED",
+        "items": [
+            ("🌓 Dark & Light Mode", "Dukungan tema ganda dinamis dengan persistensi config.json."),
+            ("🔌 Port Summary & Manual Toggles", "Informasi jumlah port Ethernet dan Wireless aktif beserta tombol toggle enable/disable per kartu."),
+            ("📈 Traffic Chart Monitor", "Visualisasi throughput live dan perhitungan Jitter real-time sesuai formula IETF RFC 3550."),
+            ("🧪 20-Persona Quality Assessment", "Rangkaian simulasi 20 skenario pengguna dunia nyata."),
+        ],
+    },
+    "v1.0": {
+        "title": "📦 VERSI 1.0 (Fondasi Zero-Drop Failover)",
+        "date": "September 2026",
+        "badge": "INITIAL",
+        "badge_color": ("#F1F5F9", "#1E293B"),
+        "badge_text_color": "#64748B",
+        "items": [
+            ("🛡️ Zero-Drop UDP Routing", "Failover berbasis Layer-3 Metric switching tanpa memutus socket Zoom / Teams."),
+            ("⚡ Anti-Flapping State Machine", "Mencegah osilasi bolak-balik dengan syarat 5x sukses berturut-turut."),
+            ("📝 Activity Log & Restoration", "Logging event failover dan pemulihan otomatis metrik saat aplikasi ditutup."),
+            ("👤 Watermark & Author Link", "Dedicated project by parikesitad-pm."),
+        ],
+    },
+}
 
 
 class ChangelogModal(ctk.CTkToplevel):
     """
-    Modal dialog displaying the versioning history and changelog.
-    Supports Dual Mode (Dark & Light).
+    Interactive Version History & Changelog Modal for MODULA.
+    Features version shortcut tabs to jump directly between releases.
     """
 
     def __init__(self, master):
         super().__init__(master)
-        self.title("📜 Release Notes & Changelog • Smart Auto-Failover")
-        self.geometry("540x560")
-        self.minsize(480, 420)
+        self.title("📜 Riwayat Versi & Changelog • MODULA")
+        self.geometry("700x620")
+        self.minsize(620, 480)
 
         self.transient(master)
         self.grab_set()
 
+        self.current_version = "v2.3"
         self._build_ui()
+        self._show_version("v2.3")
 
     def _build_ui(self):
-        self.configure(fg_color=("#F8FAFC", "#181A20"))
-        self.grid_rowconfigure(1, weight=1)
+        self.configure(fg_color=("#F8FAFC", "#12141C"))
+        self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # Header
+        # 1. Header
         header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, padx=20, pady=(16, 8), sticky="ew")
+        header.grid(row=0, column=0, padx=20, pady=(16, 6), sticky="ew")
 
         ctk.CTkLabel(
             header,
-            text="📜 Version History & Changelog",
+            text="📜 MODULA Versioning & Release Changelog",
             font=("Segoe UI", 16, "bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=("#D97706", "#F59E0B"),
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
-            text="Smart Auto-Failover Network Monitor by parikesitad-pm",
+            text="Jelajahi riwayat evolusi, fitur baru, dan optimasi arsitektur di setiap versi.",
             font=("Segoe UI", 11),
             text_color=("#64748B", "#94A3B8"),
         ).pack(anchor="w")
 
-        # Scrollable textbox for changelog
-        textbox = ctk.CTkTextbox(
+        # 2. Version Shortcut Navigation Bar
+        nav_bar = ctk.CTkFrame(
+            self,
+            fg_color=("#FFFFFF", "#181A24"),
+            corner_radius=10,
+            border_width=1,
+            border_color=("#CBD5E1", "#242938"),
+        )
+        nav_bar.grid(row=1, column=0, padx=20, pady=6, sticky="ew")
+
+        ctk.CTkLabel(
+            nav_bar,
+            text="PILIH VERSI:",
+            font=("Segoe UI", 10, "bold"),
+            text_color=("#64748B", "#94A3B8"),
+        ).pack(side="left", padx=12, pady=10)
+
+        self.ver_buttons: Dict[str, ctk.CTkButton] = {}
+        versions = [
+            ("v2.3", "⚡ v2.3 (Terbaru)"),
+            ("v2.2", "🚀 v2.2"),
+            ("v2.1", "🐲 v2.1"),
+            ("v2.0", "🛡️ v2.0"),
+            ("v1.0", "📦 v1.0"),
+        ]
+
+        for ver_key, ver_lbl in versions:
+            btn = ctk.CTkButton(
+                nav_bar,
+                text=ver_lbl,
+                command=lambda v=ver_key: self._show_version(v),
+                font=("Segoe UI", 10, "bold"),
+                fg_color=("#D97706", "#F59E0B") if ver_key == "v2.3" else ("#E2E8F0", "#242938"),
+                hover_color=("#B45309", "#D97706"),
+                text_color=("#FFFFFF", "#0F172A") if ver_key == "v2.3" else ("#0F172A", "#F8FAFC"),
+                height=28,
+                width=85 if "Terbaru" not in ver_lbl else 115,
+            )
+            btn.pack(side="left", padx=3)
+            self.ver_buttons[ver_key] = btn
+
+        # 3. Scrollable Release Content Card
+        self.content_scroll = ctk.CTkScrollableFrame(
             self,
             corner_radius=10,
-            fg_color=("#FFFFFF", "#1E212B"),
-            text_color=("#0F172A", "#E2E8F0"),
-            font=("Segoe UI", 11),
             border_width=1,
-            border_color=("#E2E8F0", "#2D3139"),
-            wrap="word",
+            border_color=("#CBD5E1", "#242938"),
+            fg_color=("#FFFFFF", "#181A24"),
         )
-        textbox.grid(row=1, column=0, padx=20, pady=8, sticky="nsew")
+        self.content_scroll.grid(row=2, column=0, padx=20, pady=6, sticky="nsew")
 
-        changelog_text = """
-===================================================================
-⚡ VERSI 2.2 (Multi-Platform Bundle, QoS Allocator & Fastfetch)
-===================================================================
-Tanggal Rilis: September 2026
+        # 4. Footer Close Bar
+        footer = ctk.CTkFrame(self, fg_color="transparent")
+        footer.grid(row=3, column=0, padx=20, pady=(6, 14), sticky="ew")
 
-✨ Fitur Baru & Peningkatan:
-1. Multi-Platform Packaging & Build:
-   - Skrip build otomatis cross-platform: macOS (.dmg Apple Silicon M1/M2/M3), Linux (.tar.gz), dan Windows (.zip / .exe) dengan format versi resmi di akhir file (MODULA-v2.2-windows-x64.zip, dsb).
-   - Dokumentasi lengkap build multi-platform di README.md.
+        ctk.CTkLabel(
+            footer,
+            text="Dibuat dengan dedikasi oleh parikesitad-pm • Lisensi MIT",
+            font=("Segoe UI", 10),
+            text_color=("#64748B", "#94A3B8"),
+        ).pack(side="left")
 
-2. Audio Alert Engine & Master Mute Toggle:
-   - Notifikasi suara sintetis real-time saat port Wi-Fi/Ethernet terhubung (connect) atau terputus (disconnect).
-   - Nada audio failover darurat saat interface primary RTO/down.
-   - Master sound toggle (🔊 / 🔇) di pojok kanan atas header.
-
-3. Toast Bubble Notification Manager:
-   - Floating toast notification modern yang muncul untuk setiap event jaringan dan interaksi pengguna.
-
-4. Application Bandwidth QoS Allocator:
-   - Alokasi persentase bandwidth pintar antar aplikasi aktif (Zoom, OBS Studio, vMix, Spotify, Discord, Chrome).
-   - Kontrol slider interaktif 0-100% dengan auto-balancing 100% dan preset profil (Zoom VIP 75%, Broadcast 70%, Balanced).
-   - Penerapan NetQoS Policy dan Windows Process Priority Scheduling.
-
-5. Fastfetch PC Hardware Diagnostics & CCleaner Junk Cleaner:
-   - Mini CPU/RAM monitor ala Mac di footer dengan data akurat real-time.
-   - Modal Fastfetch PC Diagnostics menampilkan detail hardware (Laptop Model, CPU, Dual GPU Iris Xe & RTX 3050 Ti, RAM, Storage).
-   - 1-Click Cleaner ala CCleaner untuk membersihkan file build usang, cache, dan temporary files.
-
-6. Perbaikan & Iconic Spectrum Bars:
-   - Perbaikan bug spectrum bar yang sebelumnya tidak muncul saat traffic rendah.
-   - 3 mode iconic visualizer: Cyber Spectrum Bars, RF Internet Wave, dan Smooth Curve dengan ambient heartbeat 30 FPS.
-
-7. Fullscreen Mode (F11):
-   - Tombol toggle Fullscreen ala browser di header, dengan shortcut keyboard F11 dan Escape.
-
-===================================================================
-🐲 VERSI 2.1 (MODULA Overhaul & Speedtest 4-Provider)
-===================================================================
-Tanggal Rilis: September 2026
-
-✨ Fitur Baru & Peningkatan:
-1. Rebranding & Identitas Visual MODULA:
-   - Nama resmi berganti menjadi "MODULA - Smart Auto Failover".
-   - Integrasi Logo Topeng Barong Bali dengan palet warna bernuansa Royal Gold (#F59E0B), Crimson (#DC2626), dan Deep Slate (#12141C).
-   - Icon aplikasi (.ico) resmi di taskbar dan window.
-
-2. Startup Preloader & GitHub-Style Skeleton Loader:
-   - Tampilan pembuka beranimasi ala skeleton loader GitHub dengan shimmer dinamis selama pemindaian topologi interface & rute metrik.
-
-3. Speedtest Suite 4-Provider (Ookla, Fast.com, nPerf, Cloudflare):
-   - Fitur 1-Click Test ke seluruh 4 engine sekaligus (Ookla, Fast.com Netflix CDN, nPerf, dan Cloudflare) atau tes individual.
-   - Animasi Speedometer Circular Gauge ala Ookla dengan jarum putar real-time dan digital display.
-   - Detail telemetri lengkap ala Cloudflare: Idle Latency, Loaded Latency (Bufferbloat), Jitter, Packet Loss, dan ISP/Location.
-
-4. Equalizer Spectrum Bars Mode:
-   - Opsi visualisasi throughput dinamis: Mode Kurva Halus (Smooth Curve) atau Mode Equalizer Spectrum Bars (audio-style multi-band glow bars).
-
-5. Perbaikan Auto-Detection Hardware Prioritas:
-   - Eliminasi phantom USB tethering / virtual miniport (Local Area Connection*, Bluetooth PAN).
-   - Prioritas mutlak physical Ethernet (PCIe GbE / USB Docking) pada Priority 1 dan Priority 2 sebelum fallback Wi-Fi.
-
-===================================================================
-🚀 VERSI 2.0 (Rilis Besar - Major Update)
-===================================================================
-Tanggal Rilis: September 2026
-
-✨ Fitur Baru & Peningkatan:
-1. Dual Mode (Dark & Light Mode):
-   - Dukungan penuh pergantian tema Gelap (Dark) dan Terang (Light) secara instan.
-   - Penyesuaian kontras tinggi pada kartu, sparkline, dan dialog.
-
-2. Adapter Summary Bar & Manual Port Toggle:
-   - Banner ringkasan jumlah port Ethernet dan Wireless aktif.
-   - Indikator status berupa bubble 'Terhubung' dan 'Aktif (Zoom Route)'.
-   - Saklar manual (Port On/Off) untuk menyambung atau memutus adapter tanpa cabut kabel.
-
-3. Live Traffic & Throughput Monitoring:
-   - Visualisasi grafik real-time untuk kecepatan Download (Rx) dan Upload (Tx).
-   - Pengukuran Jitter instan (RFC 3550) dan Packet Loss meter.
-
-4. Speedtest Suite Modal:
-   - Pengujian kecepatan terpadu dengan 3 provider: Cloudflare Anycast, nPerf / Multi-CDN, dan Ookla.
-   - Pilihan Individual Test (per adapter yang di-bind ke Source IP) maupun Bulk Test (semua adapter aktif).
-
-5. Integrasi Footer & Dokumentasi:
-   - Tombol Changelog dan Help & FAQ interaktif di footer.
-   - Watermark dan tautan langsung ke profil GitHub pembuat (parikesitad-pm).
-
-===================================================================
-🌟 VERSI 1.0 (Rilis Perdana)
-===================================================================
-Tanggal Rilis: September 2026
-
-✨ Fitur Inti:
-1. Zero-Drop Zoom Failover:
-   - Manipulasi Interface Metric di Windows (netsh & PowerShell) tanpa memutus socket UDP Zoom.
-2. Health-Check ICMP Bound Source IP:
-   - Probing independen menggunakan parameter ping -S <source_ip> ke 1.1.1.1.
-3. 3-Tier Priority State Machine:
-   - Skema prioritas: LAN 1 (Metric 10) -> LAN 2 (Metric 20) -> Wi-Fi (Metric 30).
-   - Ambang batas failover: 2x RTO berturut-turut.
-   - Auto-Recovery: 5x ping sukses berturut-turut.
-4. Dukungan Multi-Platform Awal:
-   - Arsitektur backend untuk Windows dan macOS.
-   - Restorasi otomatis ke Windows Automatic Metric saat aplikasi ditutup.
-"""
-        textbox.insert("1.0", changelog_text.strip())
-        textbox.configure(state="disabled")
-
-        # Bottom Close Button
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.grid(row=2, column=0, padx=20, pady=12, sticky="e")
-
-        close_btn = ctk.CTkButton(
-            btn_frame,
+        ctk.CTkButton(
+            footer,
             text="Tutup",
             command=self.destroy,
+            font=("Segoe UI", 11),
+            fg_color=("#E2E8F0", "#2D3139"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#0F172A", "#F8FAFC"),
             width=90,
             height=30,
-            fg_color=("#3B82F6", "#2563EB"),
-            hover_color=("#2563EB", "#1D4ED8"),
+        ).pack(side="right")
+
+    def _show_version(self, ver_key: str):
+        SoundEngine.play(SoundType.ACTION)
+        self.current_version = ver_key
+
+        # Update button highlights
+        for k, btn in self.ver_buttons.items():
+            if k == ver_key:
+                btn.configure(
+                    fg_color=("#D97706", "#F59E0B"),
+                    text_color=("#FFFFFF", "#0F172A"),
+                )
+            else:
+                btn.configure(
+                    fg_color=("#E2E8F0", "#242938"),
+                    text_color=("#0F172A", "#F8FAFC"),
+                )
+
+        # Clear scrollable container
+        for widget in self.content_scroll.winfo_children():
+            widget.destroy()
+
+        data = CHANGELOG_DATA.get(ver_key)
+        if not data:
+            return
+
+        # Version Title & Badge Bar
+        top_bar = ctk.CTkFrame(self.content_scroll, fg_color="transparent")
+        top_bar.pack(fill="x", padx=14, pady=(10, 6))
+
+        title_lbl = ctk.CTkLabel(
+            top_bar,
+            text=data["title"],
+            font=("Segoe UI", 14, "bold"),
+            text_color=("#0F172A", "#F8FAFC"),
         )
-        close_btn.pack()
+        title_lbl.pack(side="left")
+
+        badge = ctk.CTkLabel(
+            top_bar,
+            text=f" {data['badge']} ",
+            font=("Segoe UI", 9, "bold"),
+            fg_color=data["badge_color"],
+            text_color=data["badge_text_color"],
+            corner_radius=6,
+        )
+        badge.pack(side="right")
+
+        date_lbl = ctk.CTkLabel(
+            self.content_scroll,
+            text=f"📅 Tanggal Rilis: {data['date']}",
+            font=("Segoe UI", 10),
+            text_color=("#64748B", "#94A3B8"),
+        )
+        date_lbl.pack(anchor="w", padx=14, pady=(0, 10))
+
+        # Items list
+        for title, desc in data["items"]:
+            item_box = ctk.CTkFrame(
+                self.content_scroll,
+                fg_color=("#F8FAFC", "#1E222D"),
+                corner_radius=8,
+                border_width=1,
+                border_color=("#E2E8F0", "#2E3345"),
+            )
+            item_box.pack(fill="x", padx=10, pady=5)
+
+            h_box = ctk.CTkFrame(item_box, fg_color="transparent")
+            h_box.pack(fill="x", padx=12, pady=(8, 2))
+
+            ctk.CTkLabel(
+                h_box,
+                text=title,
+                font=("Segoe UI", 11, "bold"),
+                text_color=("#D97706", "#F59E0B"),
+            ).pack(side="left")
+
+            ctk.CTkLabel(
+                item_box,
+                text=desc,
+                font=("Segoe UI", 10),
+                text_color=("#334155", "#CBD5E1"),
+                wraplength=600,
+                justify="left",
+            ).pack(anchor="w", padx=12, pady=(0, 8))

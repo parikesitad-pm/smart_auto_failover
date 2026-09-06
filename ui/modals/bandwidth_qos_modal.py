@@ -232,6 +232,18 @@ class BandwidthQoSModal(ctk.CTkToplevel):
             r_lbl.pack(anchor="w")
             self.rate_labels[app.name] = r_lbl
 
+            # Category Badge Pill
+            cat_color = ("#D1FAE5", "#064E3B") if app.category == "Video Conference" else (("#FEE2E2", "#7F1D1D") if app.category == "Live Broadcast" else ("#E0F2FE", "#0C4A6E"))
+            cat_text_color = "#059669" if app.category == "Video Conference" else ("#DC2626" if app.category == "Live Broadcast" else "#0284C7")
+            ctk.CTkLabel(
+                name_box,
+                text=f" {app.category} ",
+                font=("Segoe UI", 8, "bold"),
+                fg_color=cat_color,
+                text_color=cat_text_color,
+                corner_radius=4,
+            ).pack(anchor="w", pady=(1, 0))
+
             # Middle: Slider
             var = ctk.DoubleVar(value=app.allocated_pct)
             self.slider_vars[app.name] = var
@@ -283,35 +295,29 @@ class BandwidthQoSModal(ctk.CTkToplevel):
 
     def _preset_zoom_vip(self):
         SoundEngine.play(SoundType.ACTION)
-        for name, var in self.slider_vars.items():
-            if "zoom" in name.lower():
-                var.set(75)
-            elif "obs" in name.lower() or "vmix" in name.lower():
-                var.set(15)
-            else:
-                var.set(5)
-            self.slider_labels[name].configure(text=f"{int(var.get())}%")
+        allocs = BandwidthQoSEngine.calculate_preset("conference", self.apps)
+        for name, pct in allocs.items():
+            if name in self.slider_vars:
+                self.slider_vars[name].set(pct)
+                self.slider_labels[name].configure(text=f"{int(pct)}%")
         self._update_total_display()
 
     def _preset_broadcast(self):
         SoundEngine.play(SoundType.ACTION)
-        for name, var in self.slider_vars.items():
-            if "obs" in name.lower() or "vmix" in name.lower():
-                var.set(70)
-            elif "zoom" in name.lower():
-                var.set(20)
-            else:
-                var.set(5)
-            self.slider_labels[name].configure(text=f"{int(var.get())}%")
+        allocs = BandwidthQoSEngine.calculate_preset("streaming", self.apps)
+        for name, pct in allocs.items():
+            if name in self.slider_vars:
+                self.slider_vars[name].set(pct)
+                self.slider_labels[name].configure(text=f"{int(pct)}%")
         self._update_total_display()
 
     def _preset_balanced(self):
         SoundEngine.play(SoundType.ACTION)
-        count = max(1, len(self.slider_vars))
-        share = int(100 / count)
-        for name, var in self.slider_vars.items():
-            var.set(share)
-            self.slider_labels[name].configure(text=f"{share}%")
+        allocs = BandwidthQoSEngine.calculate_preset("balanced", self.apps)
+        for name, pct in allocs.items():
+            if name in self.slider_vars:
+                self.slider_vars[name].set(pct)
+                self.slider_labels[name].configure(text=f"{int(pct)}%")
         self._update_total_display()
 
     def _apply_allocation(self):

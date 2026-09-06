@@ -3,6 +3,7 @@ import os
 import platform
 import shutil
 import subprocess
+import threading
 import time
 from typing import Dict, List, Optional, Tuple
 import psutil
@@ -37,6 +38,8 @@ class LiveMetrics:
     ram_percent: float
     ram_used_gb: float
     ram_total_gb: float
+    gpu_percent: float = 0.0
+    gpu_name: str = "GPU"
 
 
 
@@ -163,16 +166,72 @@ class SystemTelemetry:
         cls._last_specs_time = now
         return cls._cached_specs
 
+    _gpu_percent: float = 0.0
+    _gpu_name: str = "GPU"
+    _gpu_sampler_running: bool = False
+    _gpu_sampler_thread: Optional[threading.Thread] = None
+    _gpu_lock = threading.Lock()
+
+    @classmethod
+    def start_gpu_sampler(cls):
+        with cls._gpu_lock:
+            if cls._gpu_sampler_running:
+                return
+            cls._gpu_sampler_running = True
+            cls._gpu_sampler_thread = threading.Thread(target=cls._gpu_worker, daemon=True)
+            cls._gpu_sampler_thread.start()
+
+    @classmethod
+    def _gpu_worker(cls):
+        """Non-blocking background sampler for GPU utilization."""
+        while cls._gpu_sampler_running:
+            util = 0.0
+            name = "GPU"
+            found = False
+
+            # 1. Try nvidia-smi query
+            try:
+                creationflags = 0x08000000 if platform.system() == "Windows" else 0
+                res = subprocess.run(
+                    ["nvidia-smi", "--query-gpu=utilization.gpu,name", "--format=csv,noheader,nounits"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2.0,
+                    creationflags=creationflags,
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    parts = res.stdout.strip().split("\n")[0].split(",")
+                    if len(parts) >= 1:
+                        util = float(parts[0].strip())
+                        found = True
+                    if len(parts) >= 2:
+                        name = parts[1].strip()
+            except Exception:
+                pass
+
+            # 2. Update cached values safely
+            with cls._gpu_lock:
+                cls._gpu_percent = util
+                cls._gpu_name = name
+
+            time.sleep(2.5)
+
     @classmethod
     def get_live_metrics(cls) -> LiveMetrics:
-        """Get live CPU & RAM metrics as a typed LiveMetrics object."""
+        """Get live CPU, RAM & GPU metrics as a typed LiveMetrics object."""
+        cls.start_gpu_sampler()
         cpu = psutil.cpu_percent(interval=None)
         vm = psutil.virtual_memory()
+        with cls._gpu_lock:
+            gpu_pct = cls._gpu_percent
+            gpu_name = cls._gpu_name
         return LiveMetrics(
             cpu_percent=cpu,
             ram_percent=vm.percent,
             ram_used_gb=round(vm.used / (1024**3), 1),
             ram_total_gb=round(vm.total / (1024**3), 1),
+            gpu_percent=gpu_pct,
+            gpu_name=gpu_name,
         )
 
     @classmethod
@@ -185,19 +244,27 @@ class SystemTelemetry:
 
     _cpu_history: List[float] = []
     _ram_history: List[float] = []
+    _gpu_history: List[float] = []
 
     @classmethod
-    def record_history_sample(cls, cpu: float, ram: float):
+    def record_history_sample(cls, cpu: float, ram: float, gpu: float = 0.0):
         cls._cpu_history.append(cpu)
         cls._ram_history.append(ram)
+        cls._gpu_history.append(gpu)
         if len(cls._cpu_history) > 60:
             cls._cpu_history.pop(0)
         if len(cls._ram_history) > 60:
             cls._ram_history.pop(0)
+        if len(cls._gpu_history) > 60:
+            cls._gpu_history.pop(0)
 
     @classmethod
     def get_history(cls) -> Tuple[List[float], List[float]]:
         return list(cls._cpu_history), list(cls._ram_history)
+
+    @classmethod
+    def get_gpu_history(cls) -> List[float]:
+        return list(cls._gpu_history)
 
     @classmethod
     def get_top_processes(cls, limit: int = 5) -> List[Dict[str, any]]:

@@ -1,4 +1,4 @@
-# MODULA - Smart Auto Failover v2.2
+# MODULA - Smart Auto Failover v2.3
 
 <div align="center">
 
@@ -17,11 +17,11 @@
 
 \*Dibuat dengan dedikasi oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
-[![Release](https://img.shields.io/badge/Release-v2.2-amber?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
+[![Release](https://img.shields.io/badge/Release-v2.3-amber?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-emerald?style=for-the-badge)](https://github.com/parikesitad-pm)
 [![GUI](https://img.shields.io/badge/GUI-CustomTkinter-indigo?style=for-the-badge)](https://github.com/TomSchimansky/CustomTkinter)
-[![Tests](https://img.shields.io/badge/Tests-51%2F51%20PASS-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-60%2F60%20PASS-brightgreen?style=for-the-badge)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 </div>
@@ -93,22 +93,24 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 
 ---
 
-## ⚡ Fitur Unggulan MODULA v2.2
+## ⚡ Fitur Unggulan MODULA v2.3
 
-| Fitur                             | Deskripsi                                                                                                                                                                       |
-| :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **🚀 Multi-Platform Releases**    | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                           |
-| **✨ Enterprise HUD Splash**      | Splash screen frameless 560x340 dengan background radial dark, rotating gradient spinner 60 FPS, circular Barong logo, CTkProgressBar, dynamic status text, dan fadeout 100%.   |
-| **🎯 3 Backbone Probing Bar**     | Status bar pill di dashboard menampilkan probing aktif simultan ke `1.1.1.1` (Cloudflare), `8.8.8.8` (Google), dan `9.9.9.9` (Quad9) secara transparan.                         |
-| **🔊 Smart Sound Alert Engine**   | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM (>85%) dengan master mute switch.                           |
-| **💬 Toast Bubble Notifications** | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                        |
-| **🎛️ Bandwidth QoS Allocator**    | Modul alokasi persentase bandwidth ke aplikasi aktif (**Zoom, OBS Studio, vMix, Spotify, Discord, Chrome**) dengan slider auto-balancing 100% dan Windows NetQoS DSCP policies. |
-| **💻 Fastfetch & 60s Live Graph** | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                              |
-| **⚡ 60 FPS Speedtest + Detail**  | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).  |
-| **📊 Smooth Visualizer Modes**    | Tiga mode grafik estetik: `⚡ Cyber Spectrum Bars` (32-band iconic equalizer), `📡 RF Internet Wave`, dan `🌊 Smooth Curve` anti-patah.                                         |
-| **⏳ Hot & Cinematic Preloader**  | Pilihan Hot Reload instan (`⚡`) dan Slow Cinematic Reload (`⏳ Preloader`) dengan counter digital `0% - 100%`, progress bar, dan efek dissolve fadeout.                        |
-| **⛶ Browser Fullscreen (F11)**    | Tombol toggle layar penuh borderless di header dengan shortcut keyboard `<F11>` dan `<Escape>`.                                                                                 |
-| **🌓 Dual Theme (Dark & Light)**  | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                             |
+| Fitur                               | Deskripsi                                                                                                                                                                               |
+| :---------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **🚀 Multi-Platform Releases**      | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                                   |
+| **🎯 Custom Ping & Probing**        | Kustomisasi IP target probing ICMP dengan **Simple Mode** (cukup masukkan IP) dan **Advanced Mode** (tuning interval ms, timeout ms, RTO threshold, payload size, & Source IP Binding). |
+| **⌨️ Shortcut Keyboard Manager**    | Dukungan pintasan keyboard global (F11 Fullscreen, F5 Refresh, Ctrl+M Monitoring, Ctrl+T Speedtest, Ctrl+Q QoS, Ctrl+P Settings) yang dapat dikustomisasi di jendela Settings.          |
+| **🎮 Live GPU Usage & Mini Meters** | Pemantauan utilisasi GPU real-time via daemon thread non-blocking serta visual meter mini mulus (`██░░`) pada footer untuk CPU, RAM, dan GPU.                                           |
+| **🎛️ QoS Priority Presets**         | Tombol preset instan 1-klik untuk **Video Conference** (Zoom, Teams, Meet) dan **Live Streaming** (OBS Studio, vMix) dengan auto-balancing 100% dan filter proses background bersih.    |
+| **🖥️ Auto-Maximized & Responsive**  | Aplikasi otomatis terbuka maximized / fit screen tanpa kepotong, serta adaptif saat diresize hingga resolusi compact 820x560.                                                           |
+| **🔄 Unified Module Refresh**       | Tombol 🔄 Refresh tunggal yang memicu animasi preloader skeleton dan merefresh seluruh adapter serta telemetri perangkat secara seamless.                                               |
+| **✨ Enterprise HUD Splash**        | Splash screen frameless 560x340 dengan background radial dark, rotating gradient spinner 60 FPS, circular Barong logo, CTkProgressBar, dynamic status text, dan fadeout 100%.           |
+| **🔊 Smart Sound Alert Engine**     | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM/GPU (>85%) dengan master mute switch.                               |
+| **💬 Toast Bubble Notifications**   | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                                |
+| **💻 Fastfetch & 60s Live Graph**   | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                                      |
+| **⚡ 60 FPS Speedtest + Detail**    | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).          |
+| **📊 Smooth Visualizer Modes**      | Tiga mode grafik estetik: `⚡ Cyber Spectrum Bars` (32-band iconic equalizer), `📡 RF Internet Wave`, dan `🌊 Smooth Curve` anti-patah.                                                 |
+| **🌓 Dual Theme (Dark & Light)**    | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                                     |
 
 ---
 
@@ -116,7 +118,7 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│                      MODULA DESKTOP GUI (v2.2)                         │
+│                      MODULA DESKTOP GUI (v2.3)                         │
 │  [ CustomTkinter 6.0 ] • [ Pillow 12 ] • [ Barong Theming Engine ]     │
 │  • 40 FPS Canvas Visualizer • Toast Manager • Telemetry Hub • QoS GUI  │
 └──────────────────────────────────┬─────────────────────────────────────┘
@@ -214,14 +216,14 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 Jika Anda ingin membuild ulang paket rilis mandiri (_standalone distribution_) untuk tim Anda:
 
 ```bash
-# 1. Build Bundle Windows (Menghasilkan MODULA-v2.2-windows-x64.zip & MODULA.exe)
+# 1. Build Bundle Windows (Menghasilkan MODULA-v2.3-windows-x64.zip & MODULA.exe)
 python build_windows_bundle.py
 
-# 2. Build Bundle macOS (Menghasilkan MODULA-v2.2-macos-arm64.dmg di Mac)
+# 2. Build Bundle macOS (Menghasilkan MODULA-v2.3-macos-arm64.dmg di Mac)
 chmod +x build_macos_dmg.sh
 ./build_macos_dmg.sh
 
-# 3. Build Bundle Linux (Menghasilkan MODULA-v2.2-linux-x86_64.tar.gz di Linux)
+# 3. Build Bundle Linux (Menghasilkan MODULA-v2.3-linux-x86_64.tar.gz di Linux)
 chmod +x build_linux.sh
 ./build_linux.sh
 ```
@@ -261,7 +263,7 @@ Bagi para pengembang, insinyur jaringan, dan kontributor open-source, arsitektur
 
 ## 🧪 Quality Assessment (QA) & Test Suite
 
-MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **50 unit test** dan simulasi skenario **20 persona tester**:
+MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **60 unit test** dan simulasi skenario **20 persona tester**:
 
 ```bash
 python -m unittest discover tests
@@ -270,14 +272,15 @@ python -m unittest discover tests
 ### Hasil Eksekusi:
 
 ```text
-Ran 50 tests in 8.022s
+Ran 60 tests in 8.004s
 
-OK (All 50 unit tests & 20-persona QA simulation passed 100%)
+OK (All 60 unit tests & 20-persona QA simulation passed 100%)
 ```
 
+- `[PASS] TestV23Features`: Verifikasi Custom Ping Probing, Settings Modal, Keyboard Shortcuts, Telemetri GPU, QoS Presets, dan filter vMixService.
 - `[PASS] TestSoundEngine`: Verifikasi synthesizer audio, nada connect/disconnect, failover, high-load (>85%), dan master mute.
 - `[PASS] TestBandwidthQoS`: Pemindaian proses aktif Zoom/OBS/vMix, auto-balance slider 100%, dan registrasi NetQoS.
-- `[PASS] TestSystemTelemetry`: Deteksi akurat spesifikasi hardware PC, rolling history CPU/RAM 60s, dan pemantauan top active processes.
+- `[PASS] TestSystemTelemetry`: Deteksi akurat spesifikasi hardware PC, rolling history CPU/RAM/GPU 60s, dan pemantauan top active processes.
 - `[PASS] TestUIComponents`: Verifikasi TrafficChartWidget 60 FPS, Toast Bubble, modal SpeedtestDetail, Skeleton preloader, dan Interface Cards.
 - `[PASS] TestQA20Personas`: 20 skenario nyata pengguna (Zoom call zero-drop, docking unplugged, jitter RFC 3550, UAC elevation, anti-flapping 5x recovery).
 

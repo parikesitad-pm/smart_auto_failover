@@ -35,6 +35,7 @@ from .modals import (
     BandwidthQoSModal,
     ChangelogModal,
     HelpFaqModal,
+    SettingsModal,
     SpeedtestModal,
     SystemDiagnosticsModal,
     TelemetrySourcesModal,
@@ -49,9 +50,9 @@ ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
 class AppWindow(ctk.CTk):
     """
-    Main application window for MODULA - Smart Auto Failover v2.2.
+    Main application window for MODULA - Smart Auto Failover v2.3.
     Supports Dual Mode (Dark/Light), 4-Engine Speedtest, Fullscreen (F11),
-    Audio Alerts, Toast Bubbles, App Bandwidth QoS, and System Telemetry.
+    Audio Alerts, Toast Bubbles, App Bandwidth QoS, Custom Ping, and System Telemetry.
     """
 
     def __init__(self):
@@ -67,11 +68,20 @@ class AppWindow(ctk.CTk):
         # Configure Sound Engine from config
         SoundEngine.set_enabled(getattr(self.config, "sound_enabled", True))
 
-        # Window configuration
-        self.title("MODULA - Smart Auto Failover v2.2 • Zero-Drop Zoom")
-        self.geometry("1080x840")
-        self.minsize(980, 720)
+        # Window configuration - Auto-maximized for zero-clipping responsive view
+        self.title("MODULA - Smart Auto Failover v2.3 • Zero-Drop Zoom")
+        self.geometry("1100x820")
+        self.minsize(820, 560)
         self.is_fullscreen = False
+
+        # Maximize window on startup
+        try:
+            if sys.platform == "win32":
+                self.state("zoomed")
+            elif sys.platform.startswith("linux"):
+                self.attributes("-zoomed", True)
+        except Exception:
+            pass
 
         # Set Window Icon
         ico_path = os.path.join(ASSETS_DIR, "modula.ico")
@@ -81,9 +91,8 @@ class AppWindow(ctk.CTk):
             except Exception:
                 pass
 
-        # Keyboard shortcuts (F11 Fullscreen, Escape Exit)
-        self.bind("<F11>", lambda e: self._toggle_fullscreen())
-        self.bind("<Escape>", lambda e: self._exit_fullscreen())
+        # Global Keyboard Shortcuts
+        self._bind_shortcuts()
 
         # Thread-safe event queue for GUI updates
         self.update_queue = queue.Queue()
@@ -254,37 +263,7 @@ class AppWindow(ctk.CTk):
             padx=8,
             pady=2,
         )
-        self.os_badge.pack(side="left", padx=(0, 6))
-
-        # Hot Reload Button (Instant Hardware Rescan)
-        self.reload_btn = ctk.CTkButton(
-            right_header,
-            text="⚡ Reload",
-            command=self._hot_reload,
-            font=("Segoe UI", 10, "bold"),
-            fg_color=("#E2E8F0", "#2D3139"),
-            hover_color=("#CBD5E1", "#374151"),
-            text_color=("#0F172A", "#F8FAFC"),
-            width=68,
-            height=26,
-            corner_radius=6,
-        )
-        self.reload_btn.pack(side="left", padx=(0, 6))
-
-        # Slow Opening Preloader Reload
-        self.slow_reload_btn = ctk.CTkButton(
-            right_header,
-            text="⏳ Preloader",
-            command=self._slow_reload,
-            font=("Segoe UI", 10, "bold"),
-            fg_color=("#E2E8F0", "#2D3139"),
-            hover_color=("#CBD5E1", "#374151"),
-            text_color=("#D97706", "#F59E0B"),
-            width=80,
-            height=26,
-            corner_radius=6,
-        )
-        self.slow_reload_btn.pack(side="left", padx=(0, 6))
+        self.os_badge.pack(side="left", padx=(0, 8))
 
         # Fullscreen Toggle Button (F11)
         self.fs_btn = ctk.CTkButton(
@@ -365,14 +344,14 @@ class AppWindow(ctk.CTk):
             left_actions,
             text="▶ Start Monitoring",
             command=self._toggle_monitoring,
-            font=("Segoe UI", 13, "bold"),
+            font=("Segoe UI", 12, "bold"),
             fg_color=("#10B981", "#059669"),
             hover_color=("#059669", "#047857"),
-            width=150,
-            height=34,
+            width=140,
+            height=32,
             corner_radius=8,
         )
-        self.toggle_btn.pack(side="left", padx=(0, 8))
+        self.toggle_btn.pack(side="left", padx=(0, 6))
 
         # Auto-detect button
         detect_btn = ctk.CTkButton(
@@ -383,26 +362,26 @@ class AppWindow(ctk.CTk):
             fg_color=("#E2E8F0", "#2D3139"),
             hover_color=("#CBD5E1", "#374151"),
             text_color=("#0F172A", "#F8FAFC"),
-            width=120,
-            height=34,
+            width=110,
+            height=32,
             corner_radius=8,
         )
-        detect_btn.pack(side="left", padx=4)
+        detect_btn.pack(side="left", padx=3)
 
-        # Refresh button
+        # Refresh button (triggers unified preloader & full rescan)
         refresh_btn = ctk.CTkButton(
             left_actions,
             text="🔄 Refresh",
-            command=self.refresh_adapters,
+            command=self.trigger_refresh,
             font=("Segoe UI", 12),
             fg_color=("#E2E8F0", "#2D3139"),
             hover_color=("#CBD5E1", "#374151"),
             text_color=("#0F172A", "#F8FAFC"),
-            width=100,
-            height=34,
+            width=95,
+            height=32,
             corner_radius=8,
         )
-        refresh_btn.pack(side="left", padx=4)
+        refresh_btn.pack(side="left", padx=3)
 
         # Speedtest Button (Barong Gold)
         speedtest_btn = ctk.CTkButton(
@@ -413,11 +392,11 @@ class AppWindow(ctk.CTk):
             fg_color=("#D97706", "#F59E0B"),
             hover_color=("#B45309", "#D97706"),
             text_color=("#FFFFFF", "#0F172A"),
-            width=175,
-            height=34,
+            width=165,
+            height=32,
             corner_radius=8,
         )
-        speedtest_btn.pack(side="left", padx=4)
+        speedtest_btn.pack(side="left", padx=3)
 
         # App Bandwidth QoS Button (Cyan / Accent)
         qos_btn = ctk.CTkButton(
@@ -428,11 +407,11 @@ class AppWindow(ctk.CTk):
             fg_color=("#0284C7", "#0EA5E9"),
             hover_color=("#0369A1", "#0284C7"),
             text_color=("#FFFFFF", "#0F172A"),
-            width=150,
-            height=34,
+            width=140,
+            height=32,
             corner_radius=8,
         )
-        qos_btn.pack(side="left", padx=4)
+        qos_btn.pack(side="left", padx=3)
 
         # Right Actions
         right_actions = ctk.CTkFrame(action_bar, fg_color="transparent")
@@ -442,29 +421,29 @@ class AppWindow(ctk.CTk):
             right_actions,
             text="Reset Auto-Metrics",
             command=self._reset_metrics,
-            font=("Segoe UI", 12),
+            font=("Segoe UI", 11),
             fg_color=("#E2E8F0", "#374151"),
             hover_color=("#CBD5E1", "#4B5563"),
             text_color=("#0F172A", "#F8FAFC"),
-            width=140,
-            height=34,
+            width=130,
+            height=32,
             corner_radius=8,
         )
-        reset_btn.pack(side="left", padx=6)
+        reset_btn.pack(side="left", padx=4)
 
         settings_btn = ctk.CTkButton(
             right_actions,
             text="⚙️ Settings",
             command=self._open_settings,
-            font=("Segoe UI", 12),
+            font=("Segoe UI", 11),
             fg_color=("#E2E8F0", "#2D3139"),
             hover_color=("#CBD5E1", "#374151"),
             text_color=("#0F172A", "#F8FAFC"),
-            width=90,
-            height=34,
+            width=85,
+            height=32,
             corner_radius=8,
         )
-        settings_btn.pack(side="left", padx=(4, 0))
+        settings_btn.pack(side="left", padx=(3, 0))
 
         # 4. Status Banner & Traffic Visualizer (Side by side)
         banner_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -482,8 +461,8 @@ class AppWindow(ctk.CTk):
         )
         self.active_banner.pack(fill="x", pady=(0, 4))
 
-        # Probing Targets Pill Bar (Prominently displaying 1.1.1.1, 8.8.8.8, 9.9.9.9)
-        targets_pill_bar = ctk.CTkFrame(
+        # Probing Targets Pill Bar (Dynamically updated based on Custom Ping config)
+        self.targets_pill_bar = ctk.CTkFrame(
             banner_container,
             fg_color=("#F8FAFC", "#181B24"),
             corner_radius=8,
@@ -491,44 +470,8 @@ class AppWindow(ctk.CTk):
             border_color=("#CBD5E1", "#2D3345"),
             height=30,
         )
-        targets_pill_bar.pack(fill="x", pady=(0, 4))
-
-        ctk.CTkLabel(
-            targets_pill_bar,
-            text="🌐 ACTIVE ICMP BACKBONES:",
-            font=("Segoe UI", 10, "bold"),
-            text_color=("#D97706", "#F59E0B"),
-        ).pack(side="left", padx=(10, 8), pady=3)
-
-        pills_data = [
-            ("⚡ 1.1.1.1 Cloudflare Anycast", "#10B981", ("#D1FAE5", "#064E3B")),
-            ("🔍 8.8.8.8 Google Primary DNS", "#38BDF8", ("#E0F2FE", "#0C4A6E")),
-            ("🛡️ 9.9.9.9 Quad9 Secure Anycast", "#A78BFA", ("#EDE9FE", "#4C1D95")),
-        ]
-        for pill_text, pill_text_col, pill_bg in pills_data:
-            ctk.CTkLabel(
-                targets_pill_bar,
-                text=pill_text,
-                font=("Segoe UI", 9, "bold"),
-                fg_color=pill_bg,
-                text_color=pill_text_col,
-                corner_radius=6,
-                padx=8,
-                pady=2,
-            ).pack(side="left", padx=4, pady=3)
-
-        info_pill_btn = ctk.CTkButton(
-            targets_pill_bar,
-            text="ℹ️ Info Target & Jitter",
-            command=self._open_telemetry_sources,
-            font=("Segoe UI", 9, "bold"),
-            fg_color="transparent",
-            hover_color=("#E2E8F0", "#2D3139"),
-            text_color=("#D97706", "#F59E0B"),
-            width=120,
-            height=20,
-        )
-        info_pill_btn.pack(side="right", padx=(0, 6))
+        self.targets_pill_bar.pack(fill="x", pady=(0, 4))
+        self._update_targets_pill_bar()
 
         # Live Traffic Chart Widget
         self.traffic_chart = TrafficChartWidget(banner_container, height=68)
@@ -593,10 +536,10 @@ class AppWindow(ctk.CTk):
         center_footer = ctk.CTkFrame(footer, fg_color="transparent")
         center_footer.grid(row=0, column=1, pady=2, sticky="n")
 
-        # Version Pill (v2.2 Gold/Amber)
+        # Version Pill (v2.3 Gold/Amber)
         ver_pill = ctk.CTkLabel(
             center_footer,
-            text=" v2.2 ",
+            text=" v2.3 ",
             font=("Segoe UI", 10, "bold"),
             fg_color=("#FEF3C7", "#78350F"),
             text_color=("#92400E", "#FDE68A"),
@@ -666,9 +609,9 @@ class AppWindow(ctk.CTk):
 
         self.sys_diag_btn = ctk.CTkButton(
             right_footer,
-            text="💻 CPU: --% | RAM: --GB",
+            text="💻 CPU: --%  🧠 RAM: --%  🎮 GPU: --%",
             command=self._open_system_diagnostics,
-            font=("Segoe UI", 10, "bold"),
+            font=("Segoe UI", 9, "bold"),
             fg_color=("#F1F5F9", "#1E212B"),
             hover_color=("#E2E8F0", "#2D3139"),
             text_color=("#0F172A", "#38BDF8"),
@@ -791,21 +734,21 @@ class AppWindow(ctk.CTk):
             )
         )
 
-    def _hot_reload(self):
-        """Instant fast reload: refresh hardware adapters, clear cache, update telemetry."""
+    def trigger_refresh(self):
+        """Unified Refresh: plays sound, clears cache, shows preloader, and rescans all hardware."""
         SoundEngine.play(SoundType.ACTION)
         backend = NetworkManager.get_backend()
         if hasattr(backend, "clear_cache"):
             backend.clear_cache()
+        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_ready, min_duration=1.2)
         self.refresh_adapters()
-        SoundEngine.play(SoundType.SUCCESS)
-        self.toast.success("⚡ Hot Reload Selesai: Adapter & routing tersinkronisasi.")
+        self.toast.success("🔄 Semua modul & port adapter berhasil diperbarui.")
+
+    def _hot_reload(self):
+        self.trigger_refresh()
 
     def _slow_reload(self):
-        """Cinematic Slow Reload: re-runs animated skeleton preloader with % bar."""
-        SoundEngine.play(SoundType.ACTION)
-        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_ready, min_duration=2.4)
-        self.toast.info("⏳ Memulai Cinematic Preloader Reload...")
+        self.trigger_refresh()
 
     def _auto_detect_interfaces(self):
         """
@@ -1006,10 +949,136 @@ class AppWindow(ctk.CTk):
             summary = NetworkManager.get_port_summary(self.all_adapters, "")
             self.summary_bar.update_summary(summary)
 
+    def _bind_shortcuts(self):
+        """Bind global keyboard shortcuts dynamically based on user configuration."""
+        shortcuts = getattr(self.config, "shortcuts", {})
+
+        mapping = {
+            "start_stop": lambda e: self._toggle_monitoring(),
+            "refresh": lambda e: self.trigger_refresh(),
+            "auto_detect": lambda e: self._auto_detect_interfaces(),
+            "speedtest": lambda e: self._open_speedtest(),
+            "qos": lambda e: self._open_bandwidth_qos(),
+            "settings": lambda e: self._open_settings(),
+            "fullscreen": lambda e: self._toggle_fullscreen(),
+        }
+
+        # Always bind Escape to exit fullscreen
+        self.bind("<Escape>", lambda e: self._exit_fullscreen())
+
+        for action, default_key in [
+            ("start_stop", shortcuts.get("start_stop", "Ctrl+M")),
+            ("refresh", shortcuts.get("refresh", "F5")),
+            ("auto_detect", shortcuts.get("auto_detect", "Ctrl+D")),
+            ("speedtest", shortcuts.get("speedtest", "Ctrl+T")),
+            ("qos", shortcuts.get("qos", "Ctrl+Q")),
+            ("settings", shortcuts.get("settings", "Ctrl+P")),
+            ("fullscreen", shortcuts.get("fullscreen", "F11")),
+        ]:
+            tk_sequence = self._to_tk_key(default_key)
+            if tk_sequence and action in mapping:
+                try:
+                    self.bind(tk_sequence, mapping[action])
+                except Exception as ex:
+                    print(f"Failed to bind {tk_sequence} for {action}: {ex}")
+
     @staticmethod
-    def _render_mini_meter(pct: float) -> str:
-        filled = min(4, max(0, int(round((pct / 100.0) * 4))))
-        return "▮" * filled + "▯" * (4 - filled)
+    def _to_tk_key(key_combo: str) -> str:
+        """Convert 'Ctrl+M' -> '<Control-m>', 'F11' -> '<F11>', 'Alt+R' -> '<Alt-r>'."""
+        if not key_combo:
+            return ""
+        parts = [p.strip() for p in key_combo.split("+")]
+        modifiers = []
+        key = ""
+        for p in parts:
+            p_lower = p.lower()
+            if p_lower in ("ctrl", "control"):
+                modifiers.append("Control")
+            elif p_lower in ("alt", "option"):
+                modifiers.append("Alt")
+            elif p_lower in ("shift",):
+                modifiers.append("Shift")
+            else:
+                key = p
+        if not key and modifiers:
+            return ""
+        if len(key) == 1:
+            key = key.lower()
+        if modifiers:
+            return f"<{'-'.join(modifiers)}-{key}>"
+        return f"<{key}>"
+
+    def _update_targets_pill_bar(self):
+        """Dynamically render the ICMP target pills based on current config."""
+        for w in self.targets_pill_bar.winfo_children():
+            w.destroy()
+
+        ctk.CTkLabel(
+            self.targets_pill_bar,
+            text="🌐 ACTIVE ICMP BACKBONES:",
+            font=("Segoe UI", 10, "bold"),
+            text_color=("#D97706", "#F59E0B"),
+        ).pack(side="left", padx=(10, 8), pady=3)
+
+        pills_data = [
+            (f"⚡ P1: {self.config.ping_target_primary}", "#10B981", ("#D1FAE5", "#064E3B")),
+            (f"🔍 P2: {self.config.ping_target_secondary}", "#38BDF8", ("#E0F2FE", "#0C4A6E")),
+            (f"🛡️ P3: {self.config.ping_target_tertiary}", "#A78BFA", ("#EDE9FE", "#4C1D95")),
+        ]
+        for pill_text, pill_text_col, pill_bg in pills_data:
+            ctk.CTkLabel(
+                self.targets_pill_bar,
+                text=pill_text,
+                font=("Segoe UI", 9, "bold"),
+                fg_color=pill_bg,
+                text_color=pill_text_col,
+                corner_radius=6,
+                padx=8,
+                pady=2,
+            ).pack(side="left", padx=4, pady=3)
+
+        info_pill_btn = ctk.CTkButton(
+            self.targets_pill_bar,
+            text="ℹ️ Info Target & Jitter",
+            command=self._open_telemetry_sources,
+            font=("Segoe UI", 9, "bold"),
+            fg_color="transparent",
+            hover_color=("#E2E8F0", "#2D3139"),
+            text_color=("#D97706", "#F59E0B"),
+            width=115,
+            height=20,
+        )
+        info_pill_btn.pack(side="right", padx=(0, 6))
+
+        edit_ping_btn = ctk.CTkButton(
+            self.targets_pill_bar,
+            text="⚙️ Custom Ping",
+            command=self._open_settings,
+            font=("Segoe UI", 9, "bold"),
+            fg_color="transparent",
+            hover_color=("#E2E8F0", "#2D3139"),
+            text_color=("#0284C7", "#38BDF8"),
+            width=90,
+            height=20,
+        )
+        edit_ping_btn.pack(side="right", padx=(0, 4))
+
+    @staticmethod
+    def _render_smooth_bar(pct: float, length: int = 4) -> str:
+        pct = max(0.0, min(100.0, pct))
+        total_steps = length * 4
+        current_step = int(round((pct / 100.0) * total_steps))
+        full_blocks = min(length, current_step // 4)
+        remainder = current_step % 4
+        shades = ["", "░", "▒", "▓"]
+        bar = "█" * full_blocks
+        if full_blocks < length:
+            if remainder > 0:
+                bar += shades[remainder]
+                bar += "░" * (length - full_blocks - 1)
+            else:
+                bar += "░" * (length - full_blocks)
+        return bar[:length]
 
     def _reset_metrics(self):
         SoundEngine.play(SoundType.ACTION)
@@ -1017,20 +1086,24 @@ class AppWindow(ctk.CTk):
         self.toast.info("Route metrics direset ke otomatis")
 
     def _open_settings(self):
-        SettingsDialog(self, config=self.config, on_save=self._on_settings_saved)
+        SoundEngine.play(SoundType.ACTION)
+        SettingsModal(self, config=self.config, on_save=self._on_settings_saved)
 
     def _on_settings_saved(self, new_config: FailoverConfig):
         self.config = new_config
         self.engine.update_config(new_config)
         self._save_config()
+        self._bind_shortcuts()
+        self._update_targets_pill_bar()
         self.footer_right.configure(
-            text=f"Target: {self.config.ping_target_primary} • Ping: {int(self.config.ping_interval_sec * 1000)}ms / {self.config.ping_timeout_ms}ms timeout"
+            text=f"Target: {self.config.ping_target_primary} • Ping: {int(self.config.ping_interval_sec * 1000)}ms / {self.config.ping_timeout_ms}ms"
         )
+        self.toast.success("⚙️ Pengaturan & Shortcut Berhasil Disimpan!")
         self.log_panel.append_log(
             LogEvent(
                 timestamp=time.strftime("%H:%M:%S"),
                 level=LogLevel.INFO,
-                message="Konfigurasi diperbarui.",
+                message=f"Konfigurasi diperbarui: Target [{self.config.ping_target_primary}, {self.config.ping_target_secondary}, {self.config.ping_target_tertiary}] | Method: {self.config.probe_method}",
             )
         )
 
@@ -1065,26 +1138,34 @@ class AppWindow(ctk.CTk):
     def _process_traffic_update(self):
         """Update live traffic throughput stats and telemetry every second."""
         try:
-            # Update telemetry mini meter on footer with ASCII bar & high-load alert
+            # Update telemetry mini meter on footer with smooth bars & high-load alert
             try:
                 metrics = SystemTelemetry.get_live_metrics()
-                SystemTelemetry.record_history_sample(metrics.cpu_percent, metrics.ram_percent)
+                SystemTelemetry.record_history_sample(metrics.cpu_percent, metrics.ram_percent, metrics.gpu_percent)
 
-                cpu_bar = self._render_mini_meter(metrics.cpu_percent)
-                ram_bar = self._render_mini_meter(metrics.ram_percent)
+                cpu_bar = self._render_smooth_bar(metrics.cpu_percent, length=4)
+                ram_bar = self._render_smooth_bar(metrics.ram_percent, length=4)
+                gpu_bar = self._render_smooth_bar(metrics.gpu_percent, length=4)
                 self.sys_diag_btn.configure(
-                    text=f"💻 CPU {cpu_bar} {metrics.cpu_percent:.0f}% | RAM {ram_bar} {metrics.ram_percent:.0f}%"
+                    text=f"💻 CPU {cpu_bar} {metrics.cpu_percent:.0f}%  🧠 RAM {ram_bar} {metrics.ram_percent:.0f}%  🎮 GPU {gpu_bar} {metrics.gpu_percent:.0f}%"
                 )
 
-                # Audio alert when CPU or RAM load > 85% (obeying global mute)
-                if (metrics.cpu_percent > 85.0 or metrics.ram_percent > 85.0):
+                # Audio alert when CPU, RAM, or GPU load > 85% (obeying global mute)
+                if (metrics.cpu_percent > 85.0 or metrics.ram_percent > 85.0 or metrics.gpu_percent > 85.0):
                     now_t = time.time()
                     if (now_t - getattr(self, "_last_high_load_alert", 0.0)) > 30.0:
                         self._last_high_load_alert = now_t
                         if SoundEngine.is_enabled():
                             SoundEngine.play(SoundType.HIGH_LOAD)
-                        load_src = "CPU" if metrics.cpu_percent > 85.0 else "RAM"
-                        val = max(metrics.cpu_percent, metrics.ram_percent)
+                        if metrics.cpu_percent > 85.0:
+                            load_src = "CPU"
+                            val = metrics.cpu_percent
+                        elif metrics.ram_percent > 85.0:
+                            load_src = "RAM"
+                            val = metrics.ram_percent
+                        else:
+                            load_src = "GPU"
+                            val = metrics.gpu_percent
                         self.toast.warning(f"⚠️ Beban Tinggi: {load_src} mencapai {val:.0f}%! (>85%)")
             except Exception:
                 pass

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 import time
 
 
@@ -113,6 +113,17 @@ class SpeedtestResult:
     isp_info: str = ""
 
 
+DEFAULT_SHORTCUTS = {
+    "fullscreen": "<F11>",
+    "refresh": "<Control-r>",
+    "toggle_monitoring": "<Control-m>",
+    "speedtest": "<Control-t>",
+    "bandwidth_qos": "<Control-q>",
+    "toggle_sound": "<Control-u>",
+    "settings": "<Control-s>",
+}
+
+
 @dataclass
 class FailoverConfig:
     ping_target_primary: str = "1.1.1.1"
@@ -122,6 +133,9 @@ class FailoverConfig:
     ping_timeout_ms: int = 800
     failover_rto_threshold: int = 2
     recovery_success_threshold: int = 5
+    ping_payload_size: int = 32
+    probe_method: str = "ICMP"  # "ICMP" or "TCP_SYN"
+    source_ip_binding: bool = True
     metric_p1_normal: int = 10
     metric_p2_normal: int = 20
     metric_p3_normal: int = 30
@@ -132,6 +146,16 @@ class FailoverConfig:
     auto_start: bool = False
     theme_mode: str = "Dark"  # "Dark" or "Light"
     sound_enabled: bool = True
+    shortcuts: Optional[Dict[str, str]] = None
+
+    def __post_init__(self):
+        if self.shortcuts is None:
+            self.shortcuts = dict(DEFAULT_SHORTCUTS)
+        else:
+            # Ensure all keys exist
+            for k, v in DEFAULT_SHORTCUTS.items():
+                if k not in self.shortcuts:
+                    self.shortcuts[k] = v
 
     def to_dict(self) -> dict:
         return {
@@ -142,6 +166,9 @@ class FailoverConfig:
             "ping_timeout_ms": self.ping_timeout_ms,
             "failover_rto_threshold": self.failover_rto_threshold,
             "recovery_success_threshold": self.recovery_success_threshold,
+            "ping_payload_size": self.ping_payload_size,
+            "probe_method": self.probe_method,
+            "source_ip_binding": self.source_ip_binding,
             "metric_p1_normal": self.metric_p1_normal,
             "metric_p2_normal": self.metric_p2_normal,
             "metric_p3_normal": self.metric_p3_normal,
@@ -152,6 +179,7 @@ class FailoverConfig:
             "auto_start": self.auto_start,
             "theme_mode": self.theme_mode,
             "sound_enabled": self.sound_enabled,
+            "shortcuts": self.shortcuts,
         }
 
     @classmethod

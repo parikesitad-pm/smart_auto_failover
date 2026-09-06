@@ -15,24 +15,39 @@ class AppTrafficInfo:
     friendly_name: str
     icon: str
     exe_path: str
+    category: str = "General"
     dl_kbps: float = 0.0
     up_kbps: float = 0.0
     allocated_pct: float = 0.0
     is_target: bool = False
 
 
+IGNORE_PATTERNS = ["service", "helper", "daemon", "crashpad", "updater", "broker", "crash", "cleaner"]
+
 KNOWN_APPS = {
-    "zoom": ("Zoom Meeting", "🎥", 70.0),
-    "obs64": ("OBS Studio", "🔴", 20.0),
-    "obs": ("OBS Studio", "🔴", 20.0),
-    "vmix64": ("vMix Production", "🎬", 20.0),
-    "vmix": ("vMix Production", "🎬", 20.0),
-    "spotify": ("Spotify Music", "🎵", 5.0),
-    "discord": ("Discord Voice", "💬", 5.0),
-    "teams": ("Microsoft Teams", "👥", 5.0),
-    "chrome": ("Google Chrome", "🌐", 5.0),
-    "msedge": ("Microsoft Edge", "🌐", 5.0),
-    "firefox": ("Mozilla Firefox", "🦊", 5.0),
+    # Video Conference (Zoom, Google Meet, Teams, Webex, Discord)
+    "zoom": ("Zoom Meeting", "🎥", "Video Conference", 70.0),
+    "teams": ("Microsoft Teams", "👥", "Video Conference", 65.0),
+    "ms-teams": ("Microsoft Teams", "👥", "Video Conference", 65.0),
+    "discord": ("Discord Voice & Video", "💬", "Video Conference", 25.0),
+    "webex": ("Cisco Webex", "🌐", "Video Conference", 60.0),
+    "skype": ("Skype", "📞", "Video Conference", 30.0),
+
+    # Live Streaming & Broadcast (OBS Studio, vMix, Streamlabs, Wirecast)
+    "obs64": ("OBS Studio", "🔴", "Live Broadcast", 70.0),
+    "obs32": ("OBS Studio", "🔴", "Live Broadcast", 70.0),
+    "obs": ("OBS Studio", "🔴", "Live Broadcast", 70.0),
+    "vmix64": ("vMix Live Production", "🎬", "Live Broadcast", 70.0),
+    "vmix": ("vMix Live Production", "🎬", "Live Broadcast", 70.0),
+    "streamlabs obs": ("Streamlabs Desktop", "📡", "Live Broadcast", 70.0),
+    "wirecast": ("Telestream Wirecast", "📺", "Live Broadcast", 70.0),
+
+    # Media & Browsers (Google Meet in browser, Spotify)
+    "spotify": ("Spotify Music", "🎵", "Media & Audio", 10.0),
+    "chrome": ("Google Chrome / Meet", "🌐", "Web & Meeting", 10.0),
+    "msedge": ("Microsoft Edge / Teams", "🌐", "Web & Meeting", 10.0),
+    "firefox": ("Mozilla Firefox", "🦊", "Web & Meeting", 10.0),
+    "brave": ("Brave Browser", "🦁", "Web & Meeting", 10.0),
 }
 
 
@@ -44,6 +59,12 @@ class BandwidthQoSEngine:
     """
 
     _last_io: Dict[int, Tuple[float, int, int]] = {} # pid -> (time, read_bytes, write_bytes)
+
+    @staticmethod
+    def should_ignore(proc_name: str) -> bool:
+        """Return True if the process is a background service, daemon, helper, or updater."""
+        base_name = proc_name.lower().replace(".exe", "")
+        return any(ig in base_name for ig in IGNORE_PATTERNS)
 
     @classmethod
     def get_active_media_apps(cls) -> List[AppTrafficInfo]:
@@ -57,16 +78,23 @@ class BandwidthQoSEngine:
                 p_name = (proc.info['name'] or "").lower()
                 base_name = p_name.replace(".exe", "")
 
+                # Strictly filter out background services, daemons, helpers (e.g. vMixService.exe)
+                if cls.should_ignore(base_name):
+                    continue
+
                 # Check if known media or communication app
                 matched_key = None
-                for k in KNOWN_APPS:
-                    if k in base_name:
-                        matched_key = k
-                        break
+                if base_name in KNOWN_APPS:
+                    matched_key = base_name
+                else:
+                    for k in KNOWN_APPS:
+                        if base_name == k or (base_name.startswith(k) and (base_name[len(k):].isdigit() or base_name.endswith("64") or base_name.endswith("32"))):
+                            matched_key = k
+                            break
 
                 if matched_key and base_name not in found_names:
                     found_names.add(base_name)
-                    friendly, icon, default_pct = KNOWN_APPS[matched_key]
+                    friendly, icon, category, default_pct = KNOWN_APPS[matched_key]
                     exe = proc.info.get('exe') or ""
 
                     # Calculate I/O rate
@@ -91,6 +119,7 @@ class BandwidthQoSEngine:
                             friendly_name=friendly,
                             icon=icon,
                             exe_path=exe,
+                            category=category,
                             dl_kbps=round(dl_kbps, 1),
                             up_kbps=round(up_kbps, 1),
                             allocated_pct=default_pct,
@@ -100,19 +129,79 @@ class BandwidthQoSEngine:
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
 
-        # Sort: Zoom, OBS, vMix first, then others
+        # Sort: Video Conference & Broadcast first, then others
         def sort_priority(app: AppTrafficInfo):
-            nl = app.name.lower()
-            if "zoom" in nl:
+            if app.category == "Video Conference":
                 return 1
-            elif "obs" in nl or "vmix" in nl:
+            elif app.category == "Live Broadcast":
                 return 2
-            elif "spotify" in nl:
+            elif app.category == "Media & Audio":
                 return 3
             return 4
 
         results.sort(key=sort_priority)
         return results
+
+    @classmethod
+    def calculate_preset(cls, preset_type: str, apps: List[AppTrafficInfo]) -> Dict[str, float]:
+        """
+        Calculate 100% balanced allocations according to preset type:
+        - 'conference': 75% to Video Conference apps (Zoom, Meet, Teams), rest distributed
+        - 'streaming': 75% to Live Broadcast apps (OBS, vMix), rest distributed
+        - 'balanced': evenly split 100% across all active apps
+        """
+        if not apps:
+            return {}
+
+        allocations: Dict[str, float] = {}
+        if preset_type == "balanced":
+            share = round(100.0 / len(apps), 1)
+            rem = 100.0
+            for i, a in enumerate(apps):
+                if i == len(apps) - 1:
+                    allocations[a.name] = round(rem, 1)
+                else:
+                    allocations[a.name] = share
+                    rem -= share
+            return allocations
+
+        # Target apps by category
+        targets = []
+        others = []
+        for a in apps:
+            if preset_type == "conference" and (a.category == "Video Conference" or "zoom" in a.name.lower() or "teams" in a.name.lower()):
+                targets.append(a)
+            elif preset_type == "streaming" and (a.category == "Live Broadcast" or "obs" in a.name.lower() or "vmix" in a.name.lower()):
+                targets.append(a)
+            else:
+                others.append(a)
+
+        if not targets:
+            return cls.calculate_preset("balanced", apps)
+
+        target_pool = 75.0 if others else 100.0
+        other_pool = 100.0 - target_pool
+
+        t_share = round(target_pool / len(targets), 1)
+        t_rem = target_pool
+        for i, a in enumerate(targets):
+            if i == len(targets) - 1:
+                allocations[a.name] = round(t_rem, 1)
+            else:
+                allocations[a.name] = t_share
+                t_rem -= t_share
+
+        if others:
+            o_share = round(other_pool / len(others), 1)
+            o_rem = other_pool
+            for i, a in enumerate(others):
+                if i == len(others) - 1:
+                    allocations[a.name] = round(o_rem, 1)
+                else:
+                    allocations[a.name] = o_share
+                    o_rem -= o_share
+
+        return allocations
 
     @classmethod
     def apply_qos_policy(cls, allocations: Dict[str, float]) -> Tuple[bool, str]:
