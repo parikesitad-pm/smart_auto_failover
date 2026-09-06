@@ -54,9 +54,9 @@ ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
 class AppWindow(ctk.CTk):
     """
-    Main application window for MODULA - Smart Auto Failover v2.4.
+    Main application window for MODULA - Smart Auto Failover v2.6.
     Supports Dual Mode (Dark/Light), 4-Engine Speedtest, Fullscreen (F11),
-    Sports Car Gauge HUD, Inline Bandwidth QoS, Custom Ping (up to 4 targets),
+    Sports Car Gauge HUD (Dual RPM/MPH & Circular ICMP Dials), Inline Bandwidth QoS,
     and Dynamic 1-8 Adapter Interface Cards.
     """
 
@@ -76,7 +76,7 @@ class AppWindow(ctk.CTk):
         SoundEngine.set_enabled(getattr(self.config, "sound_enabled", True))
 
         # Window configuration - Auto-maximized for zero-clipping responsive view
-        self.title("MODULA - Smart Auto Failover v2.4 • Zero-Drop Zoom")
+        self.title("MODULA - Smart Auto Failover v2.6 • Zero-Drop Zoom")
         self.geometry("1100x820")
         self.minsize(820, 560)
         self.is_fullscreen = False
@@ -522,10 +522,10 @@ class AppWindow(ctk.CTk):
         center_footer = ctk.CTkFrame(footer, fg_color="transparent")
         center_footer.grid(row=0, column=1, pady=2, sticky="n")
 
-        # Version Pill (v2.4 Gold/Amber)
+        # Version Pill (v2.6 Gold/Amber)
         ver_pill = ctk.CTkLabel(
             center_footer,
-            text=" v2.4 ",
+            text=" v2.6 ",
             font=("Segoe UI", 10, "bold"),
             fg_color=("#FEF3C7", "#78350F"),
             text_color=("#92400E", "#FDE68A"),
@@ -779,21 +779,36 @@ class AppWindow(ctk.CTk):
             )
         )
 
-    def trigger_refresh(self):
-        """Unified Refresh: plays sound, clears cache, shows preloader, and rescans all hardware."""
+    def trigger_refresh(self, duration: float = 2.2):
+        """Unified Refresh: plays sound, clears cache, shows preloader with tactile pacing, and rescans all hardware."""
         SoundEngine.play(SoundType.ACTION)
         backend = NetworkManager.get_backend()
         if hasattr(backend, "clear_cache"):
             backend.clear_cache()
-        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_ready, min_duration=1.2)
+        self.toast.info("⏳ Memindai hardware adapter & kalibrasi ulang modul...")
+        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_refresh_complete, min_duration=duration)
+
+    def _on_skeleton_refresh_complete(self):
+        """Executed upon completion of refresh animation to apply new topology cleanly."""
         self.refresh_adapters()
-        self.toast.success("🔄 Semua modul & port adapter berhasil diperbarui.")
+        if hasattr(self, "app_qos"):
+            self.app_qos.update_stats()
+        self._update_targets_pill_bar()
+        SoundEngine.play(SoundType.SUCCESS)
+        self.toast.success("🔄 Semua modul, port adapter & QoS berhasil diperbarui!")
+        self.log_panel.append_log(
+            LogEvent(
+                timestamp=time.strftime("%H:%M:%S"),
+                level=LogLevel.SUCCESS,
+                message="Unified Hardware & QoS Refresh completed successfully.",
+            )
+        )
 
     def _hot_reload(self):
-        self.trigger_refresh()
+        self.trigger_refresh(duration=1.2)
 
     def _slow_reload(self):
-        self.trigger_refresh()
+        self.trigger_refresh(duration=2.5)
 
     def _auto_detect_interfaces(self):
         """
@@ -1111,19 +1126,6 @@ class AppWindow(ctk.CTk):
         )
         info_pill_btn.pack(side="right", padx=(0, 6))
 
-        edit_ping_btn = ctk.CTkButton(
-            self.targets_pill_bar,
-            text="⚙️ Custom Ping",
-            command=self._open_settings,
-            font=("Segoe UI", 9, "bold"),
-            fg_color="transparent",
-            hover_color=("#E2E8F0", "#2D3139"),
-            text_color=("#0284C7", "#38BDF8"),
-            width=90,
-            height=20,
-        )
-        edit_ping_btn.pack(side="right", padx=(0, 4))
-
     def _open_add_target(self):
         SoundEngine.play(SoundType.ACTION)
         AddTargetModal(self, config=self.config, on_saved=self._on_target_saved)
@@ -1133,11 +1135,12 @@ class AppWindow(ctk.CTk):
         self.engine.update_config(self.config)
         self._save_config()
         self._update_targets_pill_bar()
+        self.sports_gauge.set_targets(self.config.get_configured_targets())
         SoundEngine.play(SoundType.SUCCESS)
         if new_ip:
-            self.toast.success(f"🎯 Target ke-4 aktif: {new_ip}! Bilah spectrum kini 8 bilah.")
+            self.toast.success(f"🎯 Target ke-4 aktif: {new_ip}! 4 Dial ICMP Backbone aktif.")
         else:
-            self.toast.info("Target ke-4 dinonaktifkan. Bilah spectrum kembali 6 bilah.")
+            self.toast.info("Target ke-4 dinonaktifkan. Kembali 3 Dial ICMP Backbone.")
 
     @staticmethod
     def _render_smooth_bar(pct: float, length: int = 4) -> str:
@@ -1265,18 +1268,19 @@ class AppWindow(ctk.CTk):
             if not active_alias:
                 active_alias = self.config.p1_alias or (self.all_adapters[0].alias if self.all_adapters else "")
 
-            speed_mbps = 0.0
-            if active_alias and active_alias in stats_map:
-                st = stats_map[active_alias]
-                speed_mbps = st.download_mbps + st.upload_mbps
+            connected_candidates = [a.alias for a in self.all_adapters if a.is_connected]
+            stats = self.traffic_monitor.resolve_traffic_stats(active_alias, connected_candidates)
 
-            # Update Sports Car Tachometer Gauge HUD + Backbone Spectrum Bars
+            # Update Sports Car Dual RPM/MPH Gauges + Circular Backbone Dials
             targets = self.config.get_configured_targets()
-            self.sports_gauge.update_gauge(
-                speed_mbps=speed_mbps,
-                latency_ms=active_latency,
-                jitter_ms=active_jitter,
-                targets=targets,
+            latencies = {t: active_latency for t in targets}
+            self.sports_gauge.update_telemetry(
+                stats=stats,
+                jitter=active_jitter,
+                active_route_alias=self._get_active_alias() or active_alias,
+                latencies=latencies,
+                dl_kbps=stats.download_kbps,
+                up_kbps=stats.upload_kbps,
             )
 
             # Update Inline Bandwidth QoS Monitor

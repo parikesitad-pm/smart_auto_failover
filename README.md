@@ -1,4 +1,4 @@
-# MODULA - Smart Auto Failover v2.4
+# MODULA - Smart Auto Failover v2.6
 
 <div align="center">
 
@@ -17,11 +17,11 @@
 
 \*Dibuat dengan dedikasi oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
-[![Release](https://img.shields.io/badge/Release-v2.4-amber?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
+[![Release](https://img.shields.io/badge/Release-v2.6-amber?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-emerald?style=for-the-badge)](https://github.com/parikesitad-pm)
 [![GUI](https://img.shields.io/badge/GUI-CustomTkinter-indigo?style=for-the-badge)](https://github.com/TomSchimansky/CustomTkinter)
-[![Tests](https://img.shields.io/badge/Tests-66%2F66%20PASS-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-67%2F67%20PASS-brightgreen?style=for-the-badge)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 </div>
@@ -94,25 +94,27 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 
 ---
 
-## ⚡ Fitur Unggulan MODULA v2.4
+## ⚡ Fitur Unggulan MODULA v2.5
 
-| Fitur                               | Deskripsi                                                                                                                                                                                        |
-| :---------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **🏎️ Sports Car Tachometer HUD**    | Speedometer instrumen tachometer supercar 60 FPS needle sweep analog, redline glow, HUD digital, dan bilah spectrum ganda per backbone target (6 bilah default, 8 bilah saat target ke-4 aktif). |
-| **🎛️ Inline Bandwidth QoS Monitor** | Alokasi bandwidth real-time tepat di dashboard utama di bawah speedometer dengan 1-klik tombol cepat **Boost Meeting** (Zoom/Teams/Meet) dan **Boost Streaming** (OBS/vMix).                     |
-| **🔌 Adaptif 1 s.d. 8 Port Card**   | Menyesuaikan otomatis dengan perangkat Anda: laptop 1 LAN tampil 1 kartu lebar; 2 LAN + 1 Wi-Fi tampil 3 kolom; PC server hingga 8 port tertata otomatis dalam 2 baris responsif.                |
-| **🎯 Custom Target IP ke-4**        | Modal popup instan untuk menambah IP server ke-4 langsung dari dashboard dengan regex validator IPv4 dan preset kilat.                                                                           |
-| **⚡ Zero-Delay Splash Startup**    | Eliminasi total kedipan jendela sebelum splash screen; jendela utama disembunyikan sempurna sampai transisi fadeout splash screen selesai.                                                       |
-| **🔍 Dialog Riwayat Log Lengkap**   | Panel log dashboard diperamping (~95px) dan dilengkapi tombol **Buka Log Lengkap** untuk membuka dialog pencarian, filter tingkat log, dan ekspor berkas.                                        |
-| **👶 Bahasa Formal & Sangat Ramah** | Panduan pengaturan dirancang ulang dalam bahasa Indonesia formal yang mudah dipahami pemula, manula, hingga teknisi jaringan profesional (tersedia Mode Praktis & Mode Lanjutan).                |
-| **🚀 Multi-Platform Releases**      | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                                            |
-| **⌨️ Shortcut Keyboard Manager**    | Dukungan pintasan keyboard global (F11 Fullscreen, F5 Refresh, Ctrl+M Monitoring, Ctrl+T Speedtest, Ctrl+Q QoS, Ctrl+P Settings) yang dapat dikustomisasi di jendela Settings.                   |
-| **🎮 Live GPU Usage & Mini Meters** | Pemantauan utilisasi GPU real-time via daemon thread non-blocking serta visual meter mini mulus (`██░░`) pada footer untuk CPU, RAM, dan GPU.                                                    |
-| **🔊 Smart Sound Alert Engine**     | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM/GPU (>85%) dengan master mute switch.                                        |
-| **💬 Toast Bubble Notifications**   | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                                         |
-| **💻 Fastfetch Hardware Info**      | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                                               |
-| **⚡ 60 FPS Speedtest + Detail**    | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).                   |
-| **🌓 Dual Theme (Dark & Light)**    | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                                              |
+| Fitur                                | Deskripsi                                                                                                                                                                                                |
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **🏎️ Supercar Tachometer Speedtest** | Gauge speedtest bergaya tachometer kokpit supercar (`SportsCarSpeedGauge`) dengan 250° arc, redline rev-meter zone (>80%), dynamic peak hold pip, HUD digital, dan dynamic scale tiers hingga 1000 Mbps. |
+| **⏳ Staged Refresh Tactile Delay**  | Animasi refresh modul (~2.2 detik) dengan feedback tahapan pemindaian visual dan eksekusi callback otomatis yang tactile dan memuaskan.                                                                  |
+| **🏎️ Sports Car Tachometer HUD**     | Speedometer instrumen tachometer supercar 60 FPS needle sweep analog, redline glow, HUD digital, dan bilah spectrum ganda per backbone target (6 bilah default, 8 bilah saat target ke-4 aktif).         |
+| **🎛️ Inline Bandwidth QoS Monitor**  | Alokasi bandwidth real-time tepat di dashboard utama di bawah speedometer dengan 1-klik tombol cepat **Boost Meeting** (Zoom/Teams/Meet) dan **Boost Streaming** (OBS/vMix).                             |
+| **🔌 Adaptif 1 s.d. 8 Port Card**    | Menyesuaikan otomatis dengan perangkat Anda: laptop 1 LAN tampil 1 kartu lebar; 2 LAN + 1 Wi-Fi tampil 3 kolom; PC server hingga 8 port tertata otomatis dalam 2 baris responsif.                        |
+| **🎯 Custom Target IP ke-4**         | Modal popup instan untuk menambah IP server ke-4 langsung dari dashboard dengan regex validator IPv4 dan preset kilat.                                                                                   |
+| **⚡ Zero-Delay Splash Startup**     | Eliminasi total kedipan jendela sebelum splash screen; jendela utama disembunyikan sempurna sampai transisi fadeout splash screen selesai.                                                               |
+| **🔍 Dialog Riwayat Log Lengkap**    | Panel log dashboard diperamping (~95px) dan dilengkapi tombol **Buka Log Lengkap** untuk membuka dialog pencarian, filter tingkat log, dan ekspor berkas.                                                |
+| **👶 Bahasa Formal & Sangat Ramah**  | Panduan pengaturan dirancang ulang dalam bahasa Indonesia formal yang mudah dipahami pemula, manula, hingga teknisi jaringan profesional (tersedia Mode Praktis & Mode Lanjutan).                        |
+| **🚀 Multi-Platform Releases**       | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                                                    |
+| **⌨️ Shortcut Keyboard Manager**     | Dukungan pintasan keyboard global (F11 Fullscreen, F5 Refresh, Ctrl+M Monitoring, Ctrl+T Speedtest, Ctrl+Q QoS, Ctrl+P Settings) yang dapat dikustomisasi di jendela Settings.                           |
+| **🎮 Live GPU Usage & Mini Meters**  | Pemantauan utilisasi GPU real-time via daemon thread non-blocking serta visual meter mini mulus (`██░░`) pada footer untuk CPU, RAM, dan GPU.                                                            |
+| **🔊 Smart Sound Alert Engine**      | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM/GPU (>85%) dengan master mute switch.                                                |
+| **💬 Toast Bubble Notifications**    | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                                                 |
+| **💻 Fastfetch Hardware Info**       | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                                                       |
+| **⚡ 60 FPS Speedtest + Detail**     | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).                           |
+| **🌓 Dual Theme (Dark & Light)**     | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                                                      |
 
 ---
 
@@ -266,7 +268,7 @@ Bagi para pengembang, insinyur jaringan, dan kontributor open-source, arsitektur
 
 ## 🧪 Quality Assessment (QA) & Test Suite
 
-MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **66 unit test** dan simulasi skenario **20 persona tester**:
+MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **67 unit test** dan simulasi skenario **20 persona tester**:
 
 ```bash
 python -m unittest discover tests
@@ -275,18 +277,75 @@ python -m unittest discover tests
 ### Hasil Eksekusi:
 
 ```text
-Ran 66 tests in 8.008s
+Ran 67 tests in 10.271s
 
-OK (All 66 unit tests & 20-persona QA simulation passed 100%)
+OK (All 67 unit tests & 20-persona QA simulation passed 100%)
 ```
 
-- `[PASS] TestV24Features`: Verifikasi Sports Car Tachometer HUD, Inline QoS Widget, Dynamic 1-8 Adapter Cards, dan target IP ke-4.
+- `[PASS] TestV24Features`: Verifikasi Sports Car Tachometer HUD, Speedtest Tachometer Gauge, Inline QoS Widget, Dynamic 1-8 Cards, dan target IP ke-4.
 - `[PASS] TestV23Features`: Verifikasi Custom Ping Probing, Settings Modal, Keyboard Shortcuts, Telemetri GPU, QoS Presets, dan filter vMixService.
 - `[PASS] TestSoundEngine`: Verifikasi synthesizer audio, nada connect/disconnect, failover, high-load (>85%), dan master mute.
 - `[PASS] TestBandwidthQoS`: Pemindaian proses aktif Zoom/OBS/vMix, auto-balance slider 100%, dan registrasi NetQoS.
 - `[PASS] TestSystemTelemetry`: Deteksi akurat spesifikasi hardware PC, rolling history CPU/RAM/GPU 60s, dan pemantauan top active processes.
 - `[PASS] TestUIComponents`: Verifikasi TrafficChartWidget 60 FPS, Toast Bubble, modal SpeedtestDetail, Skeleton preloader, dan Interface Cards.
 - `[PASS] TestQA20Personas`: 20 skenario nyata pengguna (Zoom call zero-drop, docking unplugged, jitter RFC 3550, UAC elevation, anti-flapping 5x recovery).
+
+---
+
+## 📜 Riwayat Versi & Changelog
+
+### 🏎️ Versi 2.6 (September 2026) — _Latest Stable_
+
+- **🏎️ Dual Supercar Cockpit Tachometers (RPM Download & MPH Upload)**: Kluster instrumen kemudi supercar 240° arc dengan jarum analog 60 FPS ultra-smooth. Dial kiri (RPM) memantau kecepatan unduh (download) real-time dengan redline glow zone, dial kanan (MPH) memantau kecepatan unggah (upload) real-time, lengkap dengan dynamic auto-scaling satuan (`Kbps / Mbps / Gbps`).
+- **🎯 Center HUD Cockpit Readout**: Layar HUD digital di tengah memantau Jitter real-time (formula standar IETF RFC 3550 dalam ms), badge stabilitas koneksi (`STABLE` / `FLUCTUATING`), dan indikator gear rute aktif (misal `🏎️ P1 LAN`).
+- **🌐 100% Dial-Based ICMP Backbone Indicators**: Seluruh bilah spektrum vertikal dihapus sepenuhnya dan digantikan instrumen dial sirkular murni untuk tiap backbone aktif (3 dial sirkular default untuk `1.1.1.1`, `8.8.8.8`, `9.9.9.9`, dan otomatis berkembang menjadi 4 dial saat target ke-4 diaktifkan).
+- **➕ Dedicated 1-Form Modal (+ Tambah Target ke-4)**: Menghapus tombol redundan `Custom Ping`, memusatkan seluruh konfigurasi penambahan target ke-4 pada tombol `+ Tambah Target ke-4` / `✏️ Edit Target 4` dengan preset cepat dan tombol hapus.
+- **⚡ Fallback Throughput Total Sistem (`resolve_traffic_stats`)**: Mengatasi jarum kecepatan yang diam di 0 Kbps dengan pemindaian cerdas adapter aktif, adapter kandidat yang terhubung, dan fallback ke total I/O throughput sistem.
+- **🚀 Ultra-Smooth 60 FPS Exponential Lerping & 0.0% CPU Idle**: Interpolasi eksponensial halus dengan canvas idle sleep otomatis saat kecepatan konstan.
+
+### 🏎️ Versi 2.5 (September 2026)
+
+- **🏎️ Supercar Tachometer Speedtest**: Menggantikan gauge speedtest lama dengan `SportsCarSpeedGauge` berdesain tachometer 250° kokpit supercar, Redline Rev-Meter Zone (>80%), Dynamic Scale Tiers (100, 250, 500, hingga 1000 Mbps), Dynamic Peak Hold Pip cyan `#38BDF8`, dan digital center HUD readout.
+- **⏳ Staged Refresh Tactile Delay**: Animasi refresh modul (~2.2 detik) dengan umpan balik bertahap yang nyata saat memindai adapter hardware PCIe/Docking, routing table, target ICMP, dan QoS sebelum mengeksekusi chimes audio sukses dan notifikasi toast.
+- **✨ Splash Screen Synchronized v2.5**: Splash screen frameless kini menampilkan label `v2.5 • Zero-Drop Zoom` secara presisi, didukung eliminasi total jeda/flicker jendela saat aplikasi pertama kali dibuka.
+- **⚡ Re-Optimasi 0.0% CPU Idle**: Canvas redraw dihentikan secara cerdas saat kecepatan diam/konstan, dilengkapi implementasi `destroy()` bersih pada seluruh komponen animasi untuk mencegah memory leaks.
+- **📜 Dynamic Version History Navigation**: Bilah navigasi tombol pintas versi pada jendela Changelog kini dibuat dinamis otomatis dari database riwayat rilis tanpa batasan hardcoded.
+
+### 🏎️ Versi 2.4 (September 2026)
+
+- **Cluster Tachometer Supercar & Spectrum Bar Ganda**: Instrumen monitor bergaya kluster supercar dengan jarum tachometer analog 60 FPS, redline glow dinamis, speedometer HUD digital, dan bilah spectrum ganda per backbone target (6 bilah default, 8 bilah saat target ke-4 aktif).
+- **Inline Bandwidth QoS Monitor**: Monitor alokasi bandwidth langsung di layar utama tepat di bawah speedometer dengan 1-klik tombol cepat `Boost Meeting` dan `Boost Streaming`.
+- **Kartu Antarmuka Adaptif (1 s.d. 8 Port)**: Menyesuaikan tata letak kartu secara cerdas dengan perangkat (1 LAN lebar, 2 LAN + 1 Wi-Fi 3 kolom, hingga 8 port workstation dalam 2 baris responsif).
+- **Target Server Ke-4**: Modal interaktif untuk menambahkan IP target ke-4 (OpenDNS, gateway router) langsung dari dashboard dengan validasi regex IPv4 otomatis.
+- **Zero-Delay Splash Startup**: Eliminasi kedipan jendela sebelum splash screen selesai memutar animasinya.
+- **Dialog Riwayat Log Lengkap**: Panel log diperamping (~95px) dilengkapi tombol _Buka Log Lengkap_ dengan fitur live search, filter kategori, dan ekspor berkas.
+
+### ⚡ Versi 2.3 (September 2026)
+
+- **Enterprise Frameless Splash Screen**: Window 560x340 frameless radial gradient gelap dengan 60 FPS gradient ring spinner.
+- **Custom Ping Target & Advanced Probing**: Kustomisasi IP target probing dengan Simple Mode dan Advanced Mode.
+- **Keyboard Shortcuts & Settings Modal**: Tombol pintas global (F11, F5, Ctrl+M, Ctrl+T, Ctrl+Q, Ctrl+P).
+- **Live GPU Usage & Sleek Mini Meters**: Pemantauan beban GPU real-time dan meter mini mulus pada footer.
+- **Bandwidth QoS Presets**: Pembersihan filter background service `vMixService.exe` dan preset 1-klik untuk konferensi & streaming.
+
+### 🚀 Versi 2.2 (September 2026)
+
+- **Multi-Platform Releases**: Paket rilis mandiri Windows (.zip/.exe), macOS Apple Silicon (.dmg) dengan icon resmi Barong `modula.icns`, dan Linux (.tar.gz).
+- **Audio Alert Engine**: Sintesis audio real-time untuk event port, failover, dan beban tinggi (>85%).
+- **Toast Bubble Manager & Fastfetch Hardware Info**: Notifikasi mengambang dan kartu spesifikasi hardware lengkap.
+- **Speedtest 4-Engine**: Integrasi benchmark Cloudflare, Fast.com, nPerf, dan Ookla dengan modal analisis telemetri mendalam.
+
+### 🐲 Versi 2.1 (September 2026)
+
+- **Rebranding MODULA**: Nama resmi berganti menjadi _MODULA - Smart Auto Failover_ dengan tema Topeng Barong Bali dan palet warna dual-theme.
+
+### 🛡️ Versi 2.0 (September 2026)
+
+- **Multi-Port Failover & Dark/Light Mode**: Dukungan routing metric hingga 3 adapter jaringan, visualisasi throughput live, dan penghitungan Jitter real-time sesuai formula IETF RFC 3550.
+
+### 📦 Versi 1.0 (September 2026)
+
+- **Fondasi Zero-Drop Failover**: Manipulasi Layer-3 Interface Routing Metric untuk failover tanpa memutus socket transport video call.
 
 ---
 

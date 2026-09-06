@@ -10,10 +10,13 @@ Unit Tests for v2.4 Features:
 import unittest
 import customtkinter as ctk
 
-from core.models import FailoverConfig, PriorityLevel
+from core.models import FailoverConfig, PriorityLevel, TrafficStats
 from core.failover_engine import FailoverEngine
+from core.traffic_monitor import TrafficMonitor
 from ui.components.sports_car_gauge import SportsCarGaugeWidget
 from ui.components.app_qos_widget import AppQoSWidget
+from ui.modals.speedtest_modal import SportsCarSpeedGauge, OoklaGauge
+from ui.modals.add_target_modal import AddTargetModal
 
 
 class TestV24Features(unittest.TestCase):
@@ -69,24 +72,70 @@ class TestV24Features(unittest.TestCase):
             self.assertIn(p, engine.states)
             self.assertEqual(engine.states[p].priority, p)
 
-    def test_sports_car_gauge_dual_bars(self):
-        """Verify SportsCarGaugeWidget renders multi-channel dual bars per target."""
-        gauge = SportsCarGaugeWidget(self.root, height=135)
-        # 3 targets -> 6 bars
-        gauge.update_gauge(speed_mbps=45.2, latency_ms=16.0, jitter_ms=1.8, targets=["1.1.1.1", "8.8.8.8", "9.9.9.9"])
-        self.assertEqual(gauge.speed_val, 45.2)
+    def test_sports_car_cockpit_gauges_and_backbone_dials(self):
+        """Verify SportsCarGaugeWidget dual tachometer gauges, auto units, and circular backbone dials."""
+        gauge = SportsCarGaugeWidget(self.root, height=140)
+        # Default 3 targets -> 3 circular backbone dials
         self.assertEqual(len(gauge.targets), 3)
+        self.assertEqual(len(gauge.bb_data), 3)
 
-        # 4 targets -> 8 bars
-        gauge.update_gauge(
-            speed_mbps=88.5,
-            latency_ms=12.0,
-            jitter_ms=0.9,
-            targets=["1.1.1.1", "8.8.8.8", "9.9.9.9", "208.67.222.222"],
+        # Update telemetry with stats and explicit dl/up kbps
+        stats = TrafficStats(alias="Wi-Fi", download_kbps=25400.0, upload_kbps=8500.0, jitter_ms=1.4)
+        gauge.update_telemetry(
+            stats=stats,
+            jitter=1.4,
+            active_route_alias="P1 LAN 1",
+            dl_kbps=25400.0,
+            up_kbps=8500.0,
         )
-        self.assertEqual(gauge.speed_val, 88.5)
+        self.assertEqual(gauge.target_dl_kbps, 25400.0)
+        self.assertEqual(gauge.target_up_kbps, 8500.0)
+        self.assertEqual(gauge.target_jitter, 1.4)
+
+        # Test speed formatting unit helper
+        self.assertEqual(gauge._fmt_speed_val(500.0), ("500", "Kbps"))
+        self.assertEqual(gauge._fmt_speed_val(12500.0), ("12.5", "Mbps"))
+        self.assertEqual(gauge._fmt_speed_val(1250000.0), ("1.25", "Gbps"))
+
+        # Add 4th target dynamically -> 4 circular dials
+        gauge.set_targets(["1.1.1.1", "8.8.8.8", "9.9.9.9", "208.67.222.222"])
         self.assertEqual(len(gauge.targets), 4)
+        self.assertEqual(len(gauge.bb_data), 4)
+        self.assertIn("208.67.222.222", gauge.bb_data)
+
+        # Backward compatible update_gauge call
+        gauge.update_gauge(speed_mbps=55.0, latency_ms=14.0, jitter_ms=1.1)
+        self.assertEqual(gauge.speed_val, 55.0)
+
         gauge.destroy()
+        self.assertFalse(gauge._animating)
+
+    def test_traffic_monitor_resolve_stats_fallback(self):
+        """Verify TrafficMonitor.resolve_traffic_stats gracefully falls back to system total."""
+        tm = TrafficMonitor()
+        # Non-matching active alias falls back safely without KeyError
+        stats = tm.resolve_traffic_stats("NonExistentAdapter", candidates=["LAN 1", "Wi-Fi"])
+        self.assertIsInstance(stats, TrafficStats)
+        self.assertGreaterEqual(stats.download_kbps, 0.0)
+        self.assertGreaterEqual(stats.upload_kbps, 0.0)
+
+    def test_add_target_modal_interface(self):
+        """Verify AddTargetModal initializes with config/on_saved and handles save/delete."""
+        cfg = FailoverConfig(ping_target_quaternary="208.67.222.222")
+        saved_ips = []
+        modal = AddTargetModal(self.root, config=cfg, on_saved=lambda ip: saved_ips.append(ip))
+        self.assertEqual(modal.current_ip, "208.67.222.222")
+
+        # Test valid save
+        modal.ip_entry.delete(0, "end")
+        modal.ip_entry.insert(0, "1.0.0.1")
+        modal._save_target()
+        self.assertIn("1.0.0.1", saved_ips)
+
+        # Test delete target
+        modal2 = AddTargetModal(self.root, current_ip="1.0.0.1", on_save=lambda ip: saved_ips.append(ip))
+        modal2._delete_target()
+        self.assertIn("", saved_ips)
 
     def test_app_qos_widget_controls(self):
         """Verify AppQoSWidget correctly initializes and handles priority quick-boosts."""
@@ -120,6 +169,41 @@ class TestV24Features(unittest.TestCase):
 
         for ip in invalid_ips:
             self.assertIsNone(re.match(ip_regex, ip), f"Should be invalid: {ip}")
+
+    def test_sports_car_speedtest_gauge(self):
+        """Verify SportsCarSpeedGauge renders tachometer dial, dynamic scale, peak hold, and lerp."""
+        gauge = SportsCarSpeedGauge(self.root, width=330, height=175)
+        self.assertEqual(gauge.max_scale, 100.0)
+        self.assertEqual(gauge.stage_text, "READY")
+
+        # Set speed below max scale
+        gauge.set_speed(48.5, stage="DOWNLOAD")
+        self.assertEqual(gauge.target_speed, 48.5)
+        self.assertEqual(gauge.stage_text, "DOWNLOAD")
+        self.assertEqual(gauge.peak_speed, 48.5)
+
+        # Scale tier promotion when exceeding 88%
+        gauge.set_speed(150.0, stage="FAST OOKLA")
+        self.assertEqual(gauge.max_scale, 250.0)
+        self.assertEqual(gauge.peak_speed, 150.0)
+
+        # Peak hold remains even if current drops
+        gauge.set_speed(20.0, stage="UPLOAD")
+        self.assertEqual(gauge.peak_speed, 150.0)
+
+        # Reset returns to clean 0 state
+        gauge.reset()
+        self.assertEqual(gauge.current_speed, 0.0)
+        self.assertEqual(gauge.target_speed, 0.0)
+        self.assertEqual(gauge.peak_speed, 0.0)
+        self.assertEqual(gauge.stage_text, "READY")
+        self.assertEqual(gauge.max_scale, 100.0)
+
+        # Backwards compatibility alias check
+        self.assertIs(OoklaGauge, SportsCarSpeedGauge)
+
+        gauge.destroy()
+        self.assertFalse(gauge._animating)
 
 
 if __name__ == "__main__":

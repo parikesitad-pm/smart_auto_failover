@@ -15,8 +15,12 @@ class TrafficMonitor:
         self.history_len = history_len
         self._last_snapshot_time: float = time.time()
         self._last_io: Dict[str, psutil._common.snetio] = {}
+        self._last_total_io: Optional[psutil._common.snetio] = None
         self._last_latency: Dict[str, float] = {}
         self._jitter: Dict[str, float] = {}
+
+        self.total_download_kbps: float = 0.0
+        self.total_upload_kbps: float = 0.0
 
         # History of download and upload kbps per interface for charting
         self.download_history: Dict[str, List[float]] = {}
@@ -25,8 +29,10 @@ class TrafficMonitor:
         # Initialize first snapshot
         try:
             self._last_io = psutil.net_io_counters(pernic=True)
+            self._last_total_io = psutil.net_io_counters()
         except Exception:
             self._last_io = {}
+            self._last_total_io = None
 
     def update(self) -> Dict[str, TrafficStats]:
         """Sample current IO counters and compute kbps and jitter."""
@@ -81,7 +87,66 @@ class TrafficMonitor:
             )
 
         self._last_io = current_io
+
+        # Update system-wide total IO as reliable fallback
+        try:
+            curr_total = psutil.net_io_counters()
+            if self._last_total_io is not None:
+                d_tot_sent = max(0, curr_total.bytes_sent - self._last_total_io.bytes_sent)
+                d_tot_recv = max(0, curr_total.bytes_recv - self._last_total_io.bytes_recv)
+                self.total_download_kbps = round((d_tot_recv / elapsed * 8.0) / 1000.0, 1)
+                self.total_upload_kbps = round((d_tot_sent / elapsed * 8.0) / 1000.0, 1)
+            self._last_total_io = curr_total
+        except Exception:
+            pass
+
         return stats_map
+
+    def resolve_traffic_stats(
+        self,
+        target_alias: str,
+        active_candidates: Optional[List[str]] = None,
+        candidates: Optional[List[str]] = None,
+    ) -> TrafficStats:
+        """
+        Smart throughput resolution:
+        1. Checks target_alias directly.
+        2. Checks connected candidate adapters (e.g. Wi-Fi / LAN 1).
+        3. If still 0, falls back to machine total IO so the speedometer always revs during real internet activity!
+        """
+        if active_candidates is None and candidates is not None:
+            active_candidates = candidates
+        # 1. Direct match
+        alias_clean = target_alias.strip().lower()
+        matched = None
+        for k, v in self.download_history.items():
+            if k.strip().lower() == alias_clean or alias_clean in k.strip().lower():
+                matched = k
+                break
+
+        if matched:
+            st = self.get_stats(matched)
+            if st.download_kbps > 0.5 or st.upload_kbps > 0.5:
+                return st
+
+        # 2. Check candidate adapters
+        if active_candidates:
+            for cand in active_candidates:
+                c_clean = cand.strip().lower()
+                for k, v in self.download_history.items():
+                    if k.strip().lower() == c_clean or c_clean in k.strip().lower():
+                        st = self.get_stats(k)
+                        if st.download_kbps > 0.5 or st.upload_kbps > 0.5:
+                            return st
+
+        # 3. Fallback to machine-wide throughput
+        jitter = self._jitter.get(target_alias, 0.8)
+        return TrafficStats(
+            alias=target_alias or "Active",
+            download_kbps=self.total_download_kbps,
+            upload_kbps=self.total_upload_kbps,
+            jitter_ms=round(jitter, 2),
+        )
 
     def record_latency_sample(self, alias: str, latency_ms: float) -> float:
         """

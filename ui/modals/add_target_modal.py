@@ -1,6 +1,7 @@
 """
-MODULA - Smart Auto Failover v2.4
-Modal dialog to add or update a 4th custom ICMP ping target.
+MODULA - Smart Auto Failover v2.6
+Modal dialog to add, edit, or remove the 4th custom ICMP ping target.
+Spawns the 4th circular backbone tachometer gauge on the sports car cluster.
 """
 import re
 from typing import Callable, Optional
@@ -11,19 +12,29 @@ from core.sound_engine import SoundEngine, SoundType
 
 class AddTargetModal(ctk.CTkToplevel):
     """
-    Popup dialog to add or edit the 4th ICMP target IP.
+    Popup dialog to add, edit, or remove the 4th ICMP target IP.
     """
 
-    def __init__(self, master, current_ip: str = "", on_save: Optional[Callable[[str], None]] = None):
+    def __init__(
+        self,
+        master,
+        current_ip: str = "",
+        on_save: Optional[Callable[[str], None]] = None,
+        config=None,
+        on_saved: Optional[Callable[[str], None]] = None,
+    ):
         super().__init__(master)
-        self.title("➕ Tambah Alamat Server Internet ke-4 • MODULA")
-        self.geometry("520x360")
+        self.title("➕ Target ICMP Backbone ke-4 • MODULA v2.6")
+        self.geometry("540x380")
         self.minsize(460, 320)
 
         self.transient(master)
         self.grab_set()
 
-        self.on_save = on_save
+        # Support both (current_ip, on_save) and (config, on_saved) signatures
+        if config is not None and not current_ip:
+            current_ip = getattr(config, "ping_target_quaternary", "")
+        self.on_save = on_saved if on_saved is not None else on_save
         self.current_ip = current_ip.strip()
 
         self._build_ui()
@@ -45,7 +56,7 @@ class AddTargetModal(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             hdr,
-            text="Tambahkan 1 alamat server tambahan untuk redundansi pengujian koneksi.\nSpektrum live gauge otomatis bertambah dari 6 bar menjadi 8 bar.",
+            text="Tambahkan 1 alamat server tambahan untuk redundansi pengujian koneksi.\nKluster instrumen otomatis menampilkan dial sirkular ICMP ke-4 (100% circular dial).",
             font=("Segoe UI", 10),
             text_color=("#64748B", "#94A3B8"),
             justify="left",
@@ -119,6 +130,20 @@ class AddTargetModal(ctk.CTkToplevel):
         btn_box = ctk.CTkFrame(self, fg_color="transparent")
         btn_box.pack(fill="x", padx=24, pady=(6, 16))
 
+        if self.current_ip:
+            ctk.CTkButton(
+                btn_box,
+                text="🗑️ Hapus Target 4",
+                command=self._delete_target,
+                font=("Segoe UI", 11),
+                fg_color=("#FEE2E2", "#7F1D1D"),
+                hover_color=("#FECACA", "#991B1B"),
+                text_color=("#991B1B", "#FCA5A5"),
+                width=120,
+                height=32,
+                corner_radius=6,
+            ).pack(side="left")
+
         ctk.CTkButton(
             btn_box,
             text="Batal",
@@ -127,20 +152,20 @@ class AddTargetModal(ctk.CTkToplevel):
             fg_color=("#E2E8F0", "#282C3D"),
             hover_color=("#CBD5E1", "#374151"),
             text_color=("#0F172A", "#F8FAFC"),
-            width=90,
+            width=80,
             height=32,
             corner_radius=6,
         ).pack(side="right", padx=(6, 0))
 
         ctk.CTkButton(
             btn_box,
-            text="💾 Simpan & Aktifkan Target",
+            text="💾 Simpan & Aktifkan",
             command=self._save_target,
             font=("Segoe UI", 11, "bold"),
             fg_color=("#D97706", "#F59E0B"),
             hover_color=("#B45309", "#D97706"),
             text_color=("#FFFFFF", "#0F172A"),
-            width=180,
+            width=160,
             height=32,
             corner_radius=6,
         ).pack(side="right")
@@ -149,6 +174,12 @@ class AddTargetModal(ctk.CTkToplevel):
         self.ip_entry.delete(0, "end")
         self.ip_entry.insert(0, val)
         self.err_lbl.configure(text="")
+
+    def _delete_target(self):
+        SoundEngine.play(SoundType.ACTION)
+        if self.on_save:
+            self.on_save("")
+        self.destroy()
 
     def _save_target(self):
         val = self.ip_entry.get().strip()

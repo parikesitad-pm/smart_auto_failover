@@ -150,7 +150,7 @@ class SkeletonLoader(ctk.CTkFrame):
         elif pct < 50:
             self.status_lbl.configure(text="⚡ Memverifikasi link gateway & routing table OS...")
         elif pct < 75:
-            self.status_lbl.configure(text="🎯 Menginisialisasi probe target (1.1.1.1, 8.8.8.8, 9.9.9.9)...")
+            self.status_lbl.configure(text="🎯 Menginisialisasi probe target & ICMP backbone...")
         elif pct < 95:
             self.status_lbl.configure(text="🛡️ Mengaktifkan Zero-Drop Failover Engine & Audio...")
         else:

@@ -120,7 +120,9 @@ class TestV23ModalsUI(unittest.TestCase):
         from ui.modals.changelog_modal import CHANGELOG_DATA
         modal = ChangelogModal(self.root)
         self.assertIsNotNone(modal)
-        self.assertIn(modal.current_version, ["v2.3", "v2.4"])
+        self.assertIn(modal.current_version, ["v2.3", "v2.4", "v2.5", "v2.6"])
+        self.assertIn("v2.6", CHANGELOG_DATA)
+        self.assertIn("v2.5", CHANGELOG_DATA)
         self.assertIn("v2.3", CHANGELOG_DATA)
         modal.destroy()
 

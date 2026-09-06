@@ -10,12 +10,41 @@ from core.sound_engine import SoundEngine, SoundType
 
 
 CHANGELOG_DATA: Dict[str, dict] = {
+    "v2.6": {
+        "title": "🏎️ VERSI 2.6 (Pure Sports Car Cockpit Gauges, 100% Circular Backbone Dials & Live I/O Fallback)",
+        "date": "September 2026",
+        "badge": "LATEST STABLE v2.6",
+        "badge_color": ("#D1FAE5", "#064E3B"),
+        "badge_text_color": "#059669",
+        "items": [
+            ("🏎️ Kluster Instrumen Kokpit Supercar Ganda (RPM Download & MPH Upload)", "Menggantikan speedometer lama dengan tachometer analog ganda bergaya kokpit supercar 240° arc. Dial kiri (RPM) memantau kecepatan unduh (download) real-time dengan redline zone glow, dial kanan (MPH) memantau kecepatan unggah (upload) real-time, lengkap dengan dynamic auto-scaling satuan (Kbps / Mbps / Gbps) dan jarum 60 FPS."),
+            ("🎯 Center HUD Readout (Jitter RFC 3550 & Rute Aktif)", "Layar HUD digital di bagian tengah kluster menampilkan metrik jitter real-time (rumus IETF RFC 3550), status stabilitas koneksi ('STABLE' / 'FLUCTUATING'), serta badge gear rute jaringan aktif (misal: '🏎️ P1 LAN')."),
+            ("🌐 100% Dial-Based ICMP Backbone Indicators (Bilah Dihapus Penuh)", "Bilah vertikal spektrum dihapus sepenuhnya sesuai permintaan desain. Digantikan instrumen dial sirkular murni untuk masing-masing server backbone aktif (3 dial sirkular default untuk 1.1.1.1, 8.8.8.8, 9.9.9.9, dan otomatis bertambah menjadi 4 dial sirkular saat target ke-4 diaktifkan)."),
+            ("➕ Modal Form Tunggal Langsung (+ Tambah Target ke-4)", "Tombol '⚙️ Custom Ping' yang redundan dihilangkan dari bilah target. Seluruh alur kini terpusat pada tombol '+ Tambah Target ke-4' / '✏️ Edit Target 4' yang membuka dialog praktis 1-form dengan preset cepat (Cloudflare 1.0.0.1, OpenDNS 208.67.222.222, Gateway Lokal) serta tombol hapus target."),
+            ("⚡ Mesin Fallback Throughput Total Sistem (resolve_traffic_stats)", "Memperbaiki bug jarum speed dial yang diam di 0 Kbps akibat ketidakcocokan nama alias Windows. Sistem secara cerdas memindai adapter aktif, adapter kandidat yang terhubung, dan fallback ke total delta I/O sistem sehingga jarum speedometer selalu responsif mengayun saat trafik internet berjalan."),
+            ("🚀 Ultra-Smooth 60 FPS Exponential Lerping & Zero Idle CPU", "Animasi jarum analog dan dial sirkular bergerak sangat halus dengan interpolasi eksponensial (lerp), dan siklus animasi canvas otomatis tidur saat kecepatan konstan untuk memastikan pemakaian CPU tetap 0.0%."),
+        ],
+    },
+    "v2.5": {
+        "title": "🏎️ VERSI 2.5 (Sports Car Speedtest Tachometer, Staged Refresh Delay & 60 FPS Ultra-Smooth)",
+        "date": "September 2026",
+        "badge": "STABLE RELEASE",
+        "badge_color": ("#E0F2FE", "#0C4A6E"),
+        "badge_text_color": "#0284C7",
+        "items": [
+            ("🏎️ Sports Car Tachometer Speedometer di Speedtest Suite", "Menggantikan speedometer lama dengan SportsCarSpeedGauge berdesain instrumen supercar 250° arc, Redline Rev-Meter Zone (>80% skala), Dynamic Scale Tiers (100, 250, 500, hingga 1000 Mbps), Dynamic Peak Hold Pip cyan #38BDF8, serta digital center HUD readout."),
+            ("⏳ Animasi Refresh Staged Delay & Tactile Pacing", "Peningkatan timing dan tahapan animasi refresh modul (~2.2 detik) yang memberikan jeda visual nyata dan berbobot saat memindai adapter PCIe/Docking, routing table, ICMP probing, dan QoS sebelum memperbarui modul dan memainkan chimes audio."),
+            ("✨ Splash Screen Synchronized v2.5 & Zero Flicker", "Label versi pada splash screen frameless kini menampilkan 'v2.5 • Zero-Drop Zoom' secara presisi, didukung eliminasi total jeda/flicker jendela sebelum animasi splash screen selesai."),
+            ("⚡ Re-Optimasi 0.0% CPU Idle & Clean Teardown", "Canvas redraw dihentikan secara cerdas saat kecepatan konstan untuk menjaga utilisasi CPU 0%, dilengkapi implementasi destroy() bersih pada seluruh komponen animasi untuk mencegah background memory leaks."),
+            ("📜 Dynamic Version History & Changelog Navigation", "Bilah navigasi tombol versi di dialog Changelog kini di-generate secara dinamis otomatis dari database riwayat versi tanpa batasan hardcoded."),
+        ],
+    },
     "v2.4": {
         "title": "🏎️ VERSI 2.4 (Sports Car Cluster, Inline QoS, Dynamic 1-8 Adapters & 4th Target)",
         "date": "September 2026",
-        "badge": "LATEST STABLE v2.4",
-        "badge_color": ("#D1FAE5", "#064E3B"),
-        "badge_text_color": "#059669",
+        "badge": "STABLE RELEASE",
+        "badge_color": ("#E0F2FE", "#0C4A6E"),
+        "badge_text_color": "#0284C7",
         "items": [
             ("🏎️ Cluster Tachometer Supercar & Spectrum Bar Ganda", "Instrumen monitor bergaya kluster supercar dengan jarum tachometer analog 60 FPS, redline glow dinamis, dan speedometer HUD digital. Dilengkapi bilah spectrum ganda untuk tiap target server aktif (6 bilah untuk 3 target default, 8 bilah saat target ke-4 diaktifkan)."),
             ("🎛️ Inline Bandwidth QoS Monitor di Dashboard Utama", "Monitor alokasi bandwidth langsung di layar utama tepat di bawah speedometer. Pantau lalu lintas data aplikasi konferensi video (Zoom, Google Meet, Microsoft Teams) dan live streaming (OBS Studio, vMix) dengan tombol cepat 1-klik 'Boost Meeting' dan 'Boost Streaming'."),
@@ -115,9 +144,9 @@ class ChangelogModal(ctk.CTkToplevel):
         self.transient(master)
         self.grab_set()
 
-        self.current_version = "v2.4"
+        self.current_version = "v2.6"
         self._build_ui()
-        self._show_version("v2.4")
+        self._show_version("v2.6")
 
     def _build_ui(self):
         self.configure(fg_color=("#F8FAFC", "#12141C"))
@@ -160,27 +189,21 @@ class ChangelogModal(ctk.CTkToplevel):
         ).pack(side="left", padx=12, pady=10)
 
         self.ver_buttons: Dict[str, ctk.CTkButton] = {}
-        versions = [
-            ("v2.3", "⚡ v2.3 (Terbaru)"),
-            ("v2.2", "🚀 v2.2"),
-            ("v2.1", "🐲 v2.1"),
-            ("v2.0", "🛡️ v2.0"),
-            ("v1.0", "📦 v1.0"),
-        ]
-
-        for ver_key, ver_lbl in versions:
+        for idx, ver_key in enumerate(CHANGELOG_DATA.keys()):
+            is_latest = (idx == 0)
+            ver_lbl = f"🏎️ {ver_key} (Terbaru)" if is_latest else f"📦 {ver_key}"
             btn = ctk.CTkButton(
                 nav_bar,
                 text=ver_lbl,
                 command=lambda v=ver_key: self._show_version(v),
                 font=("Segoe UI", 10, "bold"),
-                fg_color=("#D97706", "#F59E0B") if ver_key == "v2.3" else ("#E2E8F0", "#242938"),
+                fg_color=("#D97706", "#F59E0B") if is_latest else ("#E2E8F0", "#242938"),
                 hover_color=("#B45309", "#D97706"),
-                text_color=("#FFFFFF", "#0F172A") if ver_key == "v2.3" else ("#0F172A", "#F8FAFC"),
+                text_color=("#FFFFFF", "#0F172A") if is_latest else ("#0F172A", "#F8FAFC"),
                 height=28,
-                width=85 if "Terbaru" not in ver_lbl else 115,
+                width=115 if is_latest else 68,
             )
-            btn.pack(side="left", padx=3)
+            btn.pack(side="left", padx=2)
             self.ver_buttons[ver_key] = btn
 
         # 3. Scrollable Release Content Card

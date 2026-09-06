@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# MODULA - Smart Auto Failover v2.4
+# MODULA - Smart Auto Failover v2.6
 # macOS Apple Silicon (M1 / M2 / M3) .app & .dmg Packaging Script
-# Produces: dist_app/MODULA-v2.4-macos-arm64.dmg
+# Produces: dist_app/MODULA-v2.6-macos-arm64.dmg
 # ==============================================================================
 
 set -e
 
-VERSION="v2.4"
+VERSION="v2.6"
 ARCH="macos-arm64"
 APP_NAME="MODULA"
 DMG_NAME="MODULA-${VERSION}-${ARCH}.dmg"

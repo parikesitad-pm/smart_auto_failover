@@ -1,6 +1,6 @@
 """
 MODULA - Smart Auto Failover
-Enterprise Frameless Splash Screen (v2.2)
+Enterprise Frameless Splash Screen (v2.6)
 
 Spesifikasi:
 - Window frameless (overrideredirect), 560x340, center screen, always on top
@@ -48,6 +48,7 @@ class SplashScreen(ctk.CTkToplevel):
         master=None,
         on_finish: Optional[Callable[[], None]] = None,
         duration: float = 3.0,
+        version_text: str = "v2.6",
     ):
         if master is None:
             self._own_root = ctk.CTk()
@@ -61,6 +62,7 @@ class SplashScreen(ctk.CTkToplevel):
 
         self.on_finish = on_finish
         self.duration = max(1.0, duration)
+        self.version_text = version_text
         self.start_time = time.time()
         self.spin_angle = 0
         self.current_progress = 0.0
@@ -233,7 +235,7 @@ class SplashScreen(ctk.CTkToplevel):
         foot_font = ("Segoe UI", 8)
         foot_color = "#6B625B"
         # Left: App Version
-        self.canvas.create_text(28, 314, text="v2.2 • Zero-Drop Zoom", font=foot_font, fill=foot_color, anchor="w")
+        self.canvas.create_text(28, 314, text=f"{self.version_text} • Zero-Drop Zoom", font=foot_font, fill=foot_color, anchor="w")
         # Right: Developer Name
         self.canvas.create_text(532, 314, text="Dibuat oleh parikesitad-pm", font=foot_font, fill=foot_color, anchor="e")
 
