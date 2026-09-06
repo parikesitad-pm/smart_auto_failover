@@ -21,7 +21,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-emerald?style=for-the-badge)](https://github.com/parikesitad-pm)
 [![GUI](https://img.shields.io/badge/GUI-CustomTkinter-indigo?style=for-the-badge)](https://github.com/TomSchimansky/CustomTkinter)
-[![Tests](https://img.shields.io/badge/Tests-50%2F50%20PASS-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-51%2F51%20PASS-brightgreen?style=for-the-badge)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 </div>
@@ -98,6 +98,7 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 | Fitur                             | Deskripsi                                                                                                                                                                       |
 | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **🚀 Multi-Platform Releases**    | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                           |
+| **✨ Enterprise HUD Splash**      | Splash screen frameless 560x340 dengan background radial dark, rotating gradient spinner 60 FPS, circular Barong logo, CTkProgressBar, dynamic status text, dan fadeout 100%.   |
 | **🎯 3 Backbone Probing Bar**     | Status bar pill di dashboard menampilkan probing aktif simultan ke `1.1.1.1` (Cloudflare), `8.8.8.8` (Google), dan `9.9.9.9` (Quad9) secara transparan.                         |
 | **🔊 Smart Sound Alert Engine**   | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM (>85%) dengan master mute switch.                           |
 | **💬 Toast Bubble Notifications** | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                        |

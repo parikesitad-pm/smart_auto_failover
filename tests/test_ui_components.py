@@ -181,6 +181,23 @@ class TestUIComponents(unittest.TestCase):
         self.assertIsNotNone(modal)
         modal.destroy()
 
+    def test_splash_screen(self):
+        """Verify SplashScreen HUD creation, canvas arcs, corner brackets, and completion."""
+        from splash_screen import SplashScreen
+        done_called = False
+
+        def on_done():
+            nonlocal done_called
+            done_called = True
+
+        splash = SplashScreen(master=self.root, on_finish=on_done, duration=0.1)
+        self.assertIsNotNone(splash)
+        self.assertEqual(splash.WIDTH, 560)
+        self.assertEqual(splash.HEIGHT, 340)
+        self.assertTrue(splash.is_active)
+        splash._complete()
+        self.assertTrue(done_called)
+
 
 if __name__ == "__main__":
     unittest.main()
