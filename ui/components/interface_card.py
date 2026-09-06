@@ -209,8 +209,8 @@ class InterfaceCard(ctk.CTkFrame):
         if selected and selected in vals:
             self.adapter_dropdown.set(selected)
             self.current_alias = selected
-        elif not selected and vals:
-            self.adapter_dropdown.set(vals[0])
+        else:
+            self.adapter_dropdown.set(vals[0] if vals else "(Not Monitored)")
             self.current_alias = ""
 
     def _on_dropdown_change(self, value: str):

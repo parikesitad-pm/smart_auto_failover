@@ -41,6 +41,7 @@ python3 -m PyInstaller \
     --distpath "${DIST_DIR}" \
     --workpath "${BUILD_DIR}/pyi_work_mac" \
     --name "${APP_NAME}" \
+    --icon "${ASSETS_DIR}/modula.icns" \
     --add-data "${ASSETS_DIR}:assets" \
     --collect-all customtkinter \
     --collect-all darkdetect \
@@ -52,6 +53,13 @@ if [ ! -d "${APP_PATH}" ]; then
     echo "[-] App bundle failed to build: ${APP_PATH}"
     exit 1
 fi
+
+# Ensure executable permissions inside the app bundle
+chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>/dev/null || true
+
+# 3b. Ad-hoc codesign for Apple Silicon (M1/M2/M3 requires valid Mach-O signature)
+echo "[*] Ad-hoc codesigning ${APP_NAME}.app for macOS Apple Silicon..."
+codesign --force --deep -s - "${APP_PATH}" 2>/dev/null || echo "[!] Notice: codesign tool not found or failed, continuing..."
 
 # 4. Copy launcher helper and readme into bundle
 cp "${SCRIPT_DIR}/run_mac.sh" "${DIST_DIR}/run_mac.sh" || true
@@ -70,6 +78,15 @@ cp -R "${APP_PATH}" "${DMG_STAGING}/"
 ln -s /Applications "${DMG_STAGING}/Applications"
 cp "${SCRIPT_DIR}/README.md" "${DMG_STAGING}/" 2>/dev/null || true
 
+# Create quick launcher script inside DMG that clears Gatekeeper quarantine
+cat << 'EOF' > "${DMG_STAGING}/Open_MODULA.command"
+#!/bin/bash
+DIR="$(cd "$(dirname "$0")" && pwd)"
+xattr -cr "$DIR/MODULA.app" 2>/dev/null || true
+open "$DIR/MODULA.app"
+EOF
+chmod +x "${DMG_STAGING}/Open_MODULA.command"
+
 echo "[*] Packaging .dmg with hdiutil: ${DMG_OUTPUT}..."
 hdiutil create \
     -volname "MODULA-${VERSION}" \
@@ -87,5 +104,7 @@ echo "======================================================================"
 echo "📦 Output DMG : ${DMG_OUTPUT}"
 echo "📂 App Bundle : ${APP_PATH}"
 echo "💡 Usage      : Open .dmg and drag MODULA to Applications."
+echo "   Gatekeeper : If macOS blocks opening after download, run in Terminal:"
+echo "                xattr -cr /Applications/MODULA.app"
 echo "               (Or run via: sudo python3 main.py for full route metric bonding)"
 echo "======================================================================"

@@ -28,6 +28,7 @@ from ui.modals import (
     BandwidthQoSModal,
     ChangelogModal,
     HelpFaqModal,
+    SpeedtestDetailModal,
     SpeedtestModal,
     SystemDiagnosticsModal,
     TelemetrySourcesModal,
@@ -151,9 +152,32 @@ class TestUIComponents(unittest.TestCase):
         self.assertIsNotNone(modal)
         modal.destroy()
 
-    def test_system_diagnostics_modal(self):
-        """Verify Fastfetch System Diagnostics modal opens cleanly."""
-        modal = SystemDiagnosticsModal(self.root)
+    def test_skeleton_loader(self):
+        """Verify SkeletonLoader creation, progress updates, and dismiss."""
+        sk = SkeletonLoader(self.root, on_finish=None, min_duration=0.1)
+        self.assertIsNotNone(sk)
+        sk.update_status("Testing network topology...", 0.45)
+        self.assertEqual(sk.progress_bar.get(), 0.45)
+        sk.destroy()
+
+    def test_speedtest_detail_modal(self):
+        """Verify SpeedtestDetailModal renders rich network quality telemetry."""
+        sample_result = {
+            "name": "Cloudflare Speed",
+            "provider": "Cloudflare Edge CDN (Anycast)",
+            "adapter": "Wi-Fi (Primary)",
+            "download_mbps": 88.5,
+            "upload_mbps": 42.1,
+            "ping_ms": 11.2,
+            "jitter_ms": 1.4,
+            "packet_loss": 0.0,
+            "bufferbloat_ms": 4.2,
+            "location": "Jakarta / Singapore",
+            "server": "Cloudflare CDN Anycast Node #42",
+            "asn": "AS13335 (Cloudflare, Inc.)",
+            "ip": "192.168.1.181",
+        }
+        modal = SpeedtestDetailModal(self.root, sample_result)
         self.assertIsNotNone(modal)
         modal.destroy()
 

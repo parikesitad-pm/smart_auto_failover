@@ -9,26 +9,31 @@ from core.system_telemetry import HardwareSpecs, SystemTelemetry
 
 class SystemDiagnosticsModal(ctk.CTkToplevel):
     """
-    MODULA System Diagnostics & CCleaner-Style Junk Maintenance Hub.
+    MODULA System Diagnostics & Fastfetch-Style Hardware Telemetry Hub.
     Displays Linux Fastfetch-style PC hardware specifications, live CPU/RAM gauges,
-    and provides a 1-click cleaner for obsolete builds and temporary cache files.
+    rolling resource history graph, and active high-load process telemetry.
     """
 
-    def __init__(self, master, project_root: Optional[str] = None, on_cleaned: Optional[callable] = None):
+    def __init__(self, master, project_root: Optional[str] = None):
         super().__init__(master)
-        self.title("💻 MODULA • System Diagnostics & CCleaner Clean Hub")
-        self.geometry("740x660")
-        self.minsize(680, 560)
+        self.title("💻 MODULA • System Telemetry & Fastfetch Hardware Hub")
+        self.geometry("740x680")
+        self.minsize(680, 580)
 
         self.project_root = project_root or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        self.on_cleaned = on_cleaned
         self.specs: HardwareSpecs = SystemTelemetry.get_hardware_specs()
 
         self.transient(master)
         self.grab_set()
 
         self._build_ui()
-        self._scan_junk_status()
+        self._is_alive = True
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.after(1000, self._tick_metrics)
+
+    def _on_close(self):
+        self._is_alive = False
+        self.destroy()
 
     def _build_ui(self):
         self.configure(fg_color=("#F8FAFC", "#12141C"))
@@ -41,14 +46,14 @@ class SystemDiagnosticsModal(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             header,
-            text="💻 MODULA Hardware Telemetry & Maintenance Hub",
+            text="💻 MODULA Hardware Telemetry & Fastfetch Hub",
             font=("Segoe UI", 16, "bold"),
             text_color=("#D97706", "#F59E0B"),
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header,
-            text="Informasi Sistem ala Fastfetch • Live Resource Monitor • CCleaner Build Cleaner",
+            text="Informasi Sistem ala Fastfetch • Live Resource Monitor • Active Process Telemetry",
             font=("Segoe UI", 11),
             text_color=("#64748B", "#94A3B8"),
         ).pack(anchor="w")
@@ -169,44 +174,53 @@ class SystemDiagnosticsModal(ctk.CTkToplevel):
         self.ram_bar.set(ram / 100.0)
         self.ram_bar.pack(fill="x", pady=4)
 
-        # 2c. CCleaner-Style Junk Cleaner Tool Card
-        clean_card = ctk.CTkFrame(
+        # 2c. Real-Time Rolling Resource Graph
+        graph_card = ctk.CTkFrame(
             scroll_box,
             corner_radius=8,
             border_width=1,
             border_color=("#E2E8F0", "#242938"),
             fg_color=("#F8FAFC", "#1E222D"),
         )
-        clean_card.pack(fill="x", padx=4, pady=6)
-        clean_card.grid_columnconfigure(0, weight=1)
+        graph_card.pack(fill="x", padx=4, pady=6)
 
         ctk.CTkLabel(
-            clean_card,
-            text="🧹 CCLEANER PROYEK • PEMBERSIH BUILD LAMA & SAMPAH",
+            graph_card,
+            text="📈 LIVE CPU & RAM UTILIZATION GRAPH (Rolling 60s)",
             font=("Segoe UI", 11, "bold"),
             text_color=("#D97706", "#F59E0B"),
         ).pack(anchor="w", padx=14, pady=(10, 4))
 
-        self.junk_status_lbl = ctk.CTkLabel(
-            clean_card,
-            text="Memindai folder build lama (dist/, build/, pycache)...",
-            font=("Segoe UI", 10),
-            text_color=("#64748B", "#94A3B8"),
-            justify="left",
+        is_dark = (ctk.get_appearance_mode() == "Dark")
+        self.canvas_bg = "#12141A" if is_dark else "#FFFFFF"
+        self.res_canvas = tk.Canvas(
+            graph_card,
+            height=90,
+            bg=self.canvas_bg,
+            highlightthickness=0,
         )
-        self.junk_status_lbl.pack(anchor="w", padx=14, pady=2)
+        self.res_canvas.pack(fill="x", padx=14, pady=(2, 10))
 
-        self.clean_btn = ctk.CTkButton(
-            clean_card,
-            text="🧹 Bersihkan File Sampah & Build Lama",
-            command=self._do_clean_junk,
-            font=("Segoe UI", 12, "bold"),
-            fg_color=("#DC2626", "#E11D48"),
-            hover_color=("#B91C1C", "#BE123C"),
-            height=32,
-            width=260,
+        # 2d. Active Top Processes by Resource
+        proc_card = ctk.CTkFrame(
+            scroll_box,
+            corner_radius=8,
+            border_width=1,
+            border_color=("#E2E8F0", "#242938"),
+            fg_color=("#F8FAFC", "#1E222D"),
         )
-        self.clean_btn.pack(anchor="w", padx=14, pady=(8, 12))
+        proc_card.pack(fill="x", padx=4, pady=6)
+
+        ctk.CTkLabel(
+            proc_card,
+            text="⚡ ACTIVE HIGH-LOAD PROCESS TELEMETRY (Top Apps)",
+            font=("Segoe UI", 11, "bold"),
+            text_color=("#0284C7", "#38BDF8"),
+        ).pack(anchor="w", padx=14, pady=(10, 4))
+
+        self.proc_container = ctk.CTkFrame(proc_card, fg_color="transparent")
+        self.proc_container.pack(fill="x", padx=14, pady=(2, 10))
+        self._refresh_process_list()
 
         # 3. Bottom Close Button
         bottom = ctk.CTkFrame(self, fg_color="transparent")
@@ -223,25 +237,105 @@ class SystemDiagnosticsModal(ctk.CTkToplevel):
             height=30,
         ).pack(side="right")
 
-    def _scan_junk_status(self):
-        items, total_bytes = SystemTelemetry.scan_junk(self.project_root)
-        mb = total_bytes / (1024 * 1024)
-        if items:
-            self.junk_status_lbl.configure(
-                text=f"Ditemukan {len(items)} item sampah & build lama ({mb:.1f} MB) yang dapat dibersihkan.",
-                text_color=("#DC2626", "#F87171"),
-            )
-            self.clean_btn.configure(state="normal")
-        else:
-            self.junk_status_lbl.configure(
-                text="Direktori proyek bersih! Tidak ada folder build lama yang menumpuk.",
-                text_color=("#059669", "#10B981"),
-            )
-            self.clean_btn.configure(state="disabled")
+    def _refresh_process_list(self):
+        for w in self.proc_container.winfo_children():
+            w.destroy()
 
-    def _do_clean_junk(self):
-        SoundEngine.play(SoundType.CLEAN_COMPLETE)
-        cnt, freed, msg = SystemTelemetry.clean_junk(self.project_root)
-        self._scan_junk_status()
-        if self.on_cleaned:
-            self.on_cleaned(cnt, freed, msg)
+        procs = SystemTelemetry.get_top_processes(limit=5)
+        if not procs:
+            ctk.CTkLabel(
+                self.proc_container,
+                text="Memindai proses aktif...",
+                font=("Segoe UI", 10),
+                text_color=("#64748B", "#94A3B8"),
+            ).pack(anchor="w")
+            return
+
+        for p in procs:
+            row = ctk.CTkFrame(self.proc_container, fg_color="transparent")
+            row.pack(fill="x", pady=1)
+            ctk.CTkLabel(
+                row,
+                text=f"• {p['name']}",
+                font=("Segoe UI", 10, "bold"),
+                text_color=("#0F172A", "#F8FAFC"),
+                width=180,
+                anchor="w",
+            ).pack(side="left")
+            ctk.CTkLabel(
+                row,
+                text=f"CPU: {p['cpu']}%",
+                font=("Segoe UI", 10),
+                text_color=("#D97706", "#F59E0B"),
+                width=90,
+                anchor="w",
+            ).pack(side="left")
+            ctk.CTkLabel(
+                row,
+                text=f"RAM: {p['ram']}%",
+                font=("Segoe UI", 10),
+                text_color=("#DC2626", "#F43F5E"),
+                width=90,
+                anchor="w",
+            ).pack(side="left")
+
+    def _tick_metrics(self):
+        if not getattr(self, "_is_alive", True):
+            return
+
+        try:
+            cpu, ram, ram_txt = SystemTelemetry.get_live_cpu_ram()
+            self.cpu_lbl.configure(text=f"CPU USAGE: {cpu:.1f}%")
+            self.cpu_bar.set(cpu / 100.0)
+            self.ram_lbl.configure(text=f"RAM USAGE: {ram:.1f}% ({ram_txt})")
+            self.ram_bar.set(ram / 100.0)
+
+            # Record sample
+            SystemTelemetry.record_history_sample(cpu, ram)
+
+            # Redraw rolling history graph
+            self._draw_rolling_graph()
+            self._refresh_process_list()
+        except Exception:
+            pass
+
+        self.after(1000, self._tick_metrics)
+
+    def _draw_rolling_graph(self):
+        self.res_canvas.delete("all")
+        w = self.res_canvas.winfo_width() or 660
+        h = self.res_canvas.winfo_height() or 90
+
+        cpu_hist, ram_hist = SystemTelemetry.get_history()
+        if len(cpu_hist) < 2:
+            return
+
+        # Draw grid lines
+        for y_pct in [0.25, 0.5, 0.75]:
+            gy = h * y_pct
+            self.res_canvas.create_line(0, gy, w, gy, fill="#2D3345", width=1, dash=(2, 4))
+
+        # Plot CPU (Amber)
+        step = w / max(1, len(cpu_hist) - 1)
+        cpu_points = []
+        for idx, val in enumerate(cpu_hist):
+            x = idx * step
+            y = h - (val / 100.0 * (h - 8)) - 4
+            cpu_points.extend([x, y])
+
+        if len(cpu_points) >= 4:
+            self.res_canvas.create_line(cpu_points, fill="#F59E0B", width=2, smooth=True)
+
+        # Plot RAM (Red / Rose)
+        ram_points = []
+        for idx, val in enumerate(ram_hist):
+            x = idx * step
+            y = h - (val / 100.0 * (h - 8)) - 4
+            ram_points.extend([x, y])
+
+        if len(ram_points) >= 4:
+            self.res_canvas.create_line(ram_points, fill="#F43F5E", width=2, smooth=True)
+
+        # Legend
+        self.res_canvas.create_text(50, 12, text="― CPU", fill="#F59E0B", font=("Segoe UI", 9, "bold"))
+        self.res_canvas.create_text(110, 12, text="― RAM", fill="#F43F5E", font=("Segoe UI", 9, "bold"))

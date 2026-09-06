@@ -7,6 +7,7 @@ import customtkinter as ctk
 
 from core.models import AdapterInfo, SpeedtestProvider, SpeedtestResult
 from core.speedtest_engine import SpeedtestManager
+from .speedtest_detail_modal import SpeedtestDetailModal
 
 
 ALL_4_PROVIDERS = "⚡ 1-Click All 4 Providers (Ookla, Fast.com, nPerf, Cloudflare)"
@@ -32,24 +33,44 @@ class OoklaGauge(tk.Canvas):
         self.target_speed = 0.0
         self.stage_text = "Ready"
         self.max_scale = 100.0  # Dynamic scale: 50, 100, 250, 500, 1000
+        self._animating = True
 
         self.draw_gauge(0.0)
+        self._anim_tick()
+
+    def _anim_tick(self):
+        """60 FPS continuous exponential lerp for buttery smooth speedometer animation."""
+        if not getattr(self, "_animating", True):
+            return
+
+        diff = self.target_speed - self.current_speed
+        if abs(diff) > 0.05:
+            self.current_speed += diff * 0.16
+            self.draw_gauge(self.current_speed)
+        elif self.current_speed != self.target_speed:
+            self.current_speed = self.target_speed
+            self.draw_gauge(self.current_speed)
+
+        try:
+            self.after(16, self._anim_tick)
+        except Exception:
+            pass
+
+    def destroy(self):
+        self._animating = False
+        super().destroy()
 
     def set_speed(self, speed_mbps: float, stage: str = ""):
         self.target_speed = max(0.0, speed_mbps)
         if stage:
             self.stage_text = stage
-        if self.target_speed > self.max_scale * 0.9:
+        if self.target_speed > self.max_scale * 0.88:
             if self.max_scale <= 100.0:
                 self.max_scale = 250.0
             elif self.max_scale <= 250.0:
                 self.max_scale = 500.0
             elif self.max_scale <= 500.0:
                 self.max_scale = 1000.0
-
-        # Smooth needle transition
-        self.current_speed += (self.target_speed - self.current_speed) * 0.4
-        self.draw_gauge(self.current_speed)
 
     def reset(self):
         self.current_speed = 0.0
@@ -489,14 +510,31 @@ class SpeedtestModal(ctk.CTkToplevel):
             text_color=("#0F172A", "#F8FAFC"),
         ).pack(side="left", padx=6)
 
-        # Right side telemetry badges
+        # Right side telemetry badges & Detail Button
         right_box = ctk.CTkFrame(row, fg_color="transparent")
         right_box.pack(side="right", padx=8)
 
-        ctk.CTkLabel(right_box, text=f"⬇ {res.download_mbps}M", font=("Segoe UI", 10, "bold"), text_color="#10B981").pack(side="left", padx=5)
-        ctk.CTkLabel(right_box, text=f"⬆ {res.upload_mbps}M", font=("Segoe UI", 10, "bold"), text_color="#3B82F6").pack(side="left", padx=5)
-        ctk.CTkLabel(right_box, text=f"⏱ {res.ping_ms}ms", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8")).pack(side="left", padx=5)
-        ctk.CTkLabel(right_box, text=f"Buf: {res.loaded_latency_ms}ms", font=("Segoe UI", 9), text_color="#06B6D4").pack(side="left", padx=5)
+        ctk.CTkLabel(right_box, text=f"⬇ {res.download_mbps:.1f}M", font=("Segoe UI", 10, "bold"), text_color="#10B981").pack(side="left", padx=5)
+        ctk.CTkLabel(right_box, text=f"⬆ {res.upload_mbps:.1f}M", font=("Segoe UI", 10, "bold"), text_color="#3B82F6").pack(side="left", padx=5)
+        ctk.CTkLabel(right_box, text=f"⏱ {res.ping_ms:.0f}ms", font=("Segoe UI", 10), text_color=("#64748B", "#94A3B8")).pack(side="left", padx=5)
+        ctk.CTkLabel(right_box, text=f"Buf: {res.loaded_latency_ms:.0f}ms", font=("Segoe UI", 9), text_color="#06B6D4").pack(side="left", padx=5)
+
+        detail_btn = ctk.CTkButton(
+            right_box,
+            text="🔍 Detail",
+            command=lambda r=res: SpeedtestDetailModal(self, r),
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#D97706", "#F59E0B"),
+            hover_color=("#B45309", "#D97706"),
+            text_color=("#FFFFFF", "#0F172A"),
+            width=68,
+            height=24,
+            corner_radius=4,
+        )
+        detail_btn.pack(side="left", padx=(6, 2))
+
+        # Also make row click open the detail modal
+        row.bind("<Button-1>", lambda e, r=res: SpeedtestDetailModal(self, r))
 
     def _on_finish(self):
         self.is_testing = False

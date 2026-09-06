@@ -91,27 +91,41 @@ class SkeletonLoader(ctk.CTkFrame):
         status_box = ctk.CTkFrame(center_box, fg_color="transparent")
         status_box.pack(fill="x", pady=(10, 0))
 
+        # Progress text and percentage row
+        prog_header = ctk.CTkFrame(status_box, fg_color="transparent")
+        prog_header.pack(fill="x", padx=60)
+
         self.status_lbl = ctk.CTkLabel(
-            status_box,
+            prog_header,
             text="⚡ Scanning hardware interfaces (PCIe / USB GbE Docking / Wi-Fi)...",
             font=("Segoe UI", 11, "bold"),
             text_color=("#0F172A", "#F8FAFC"),
         )
-        self.status_lbl.pack()
+        self.status_lbl.pack(side="left")
+
+        self.pct_lbl = ctk.CTkLabel(
+            prog_header,
+            text="0%",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("#D97706", "#F59E0B"),
+        )
+        self.pct_lbl.pack(side="right")
 
         self.progress_bar = ctk.CTkProgressBar(
             status_box,
-            height=5,
+            height=6,
             corner_radius=3,
             progress_color=("#D97706", "#F59E0B"),
         )
-        self.progress_bar.set(0.2)
+        self.progress_bar.set(0.0)
         self.progress_bar.pack(fill="x", padx=60, pady=8)
 
     def update_status(self, text: str, progress: float):
         if not self.is_active:
             return
         self.status_lbl.configure(text=text)
+        pct = int(progress * 100)
+        self.pct_lbl.configure(text=f"{pct}%")
         self.progress_bar.set(progress)
 
     def _animate_shimmer(self):
@@ -124,19 +138,26 @@ class SkeletonLoader(ctk.CTkFrame):
         # Draw wireframe skeletons on canvas
         self._draw_skeleton_rects()
 
-        # Update progress simulation
-        if elapsed < self.min_duration * 0.4:
-            self.progress_bar.set(0.15 + (elapsed / self.min_duration) * 0.4)
-            self.status_lbl.configure(text="🔍 Detecting physical Ethernet ports & active gateways...")
-        elif elapsed < self.min_duration * 0.8:
-            self.progress_bar.set(0.55 + (elapsed / self.min_duration) * 0.35)
-            self.status_lbl.configure(text="🛡️ Calibrating interface route metrics & failover triggers...")
+        # Compute accurate percentage
+        progress_ratio = min(1.0, elapsed / max(0.1, self.min_duration))
+        pct = int(progress_ratio * 100)
+        self.progress_bar.set(progress_ratio)
+        self.pct_lbl.configure(text=f"{pct}%")
+
+        # Multi-stage status descriptions
+        if pct < 25:
+            self.status_lbl.configure(text="🔍 Memindai hardware adapter PCIe, GbE Docking & Wi-Fi...")
+        elif pct < 50:
+            self.status_lbl.configure(text="⚡ Memverifikasi link gateway & routing table OS...")
+        elif pct < 75:
+            self.status_lbl.configure(text="🎯 Menginisialisasi probe target (1.1.1.1, 8.8.8.8, 9.9.9.9)...")
+        elif pct < 95:
+            self.status_lbl.configure(text="🛡️ Mengaktifkan Zero-Drop Failover Engine & Audio...")
         else:
-            self.progress_bar.set(0.95)
-            self.status_lbl.configure(text="✨ Ready! Launching Modula Dashboard...")
+            self.status_lbl.configure(text="✨ Sistem Siap! Membuka Dashboard MODULA...")
 
         if elapsed >= self.min_duration:
-            self.finish()
+            self._fadeout_step(0)
             return
 
         self.after(35, self._animate_shimmer)
@@ -195,6 +216,22 @@ class SkeletonLoader(ctk.CTkFrame):
             is_dark = (ctk.get_appearance_mode() == "Dark")
             glow_col = "#2B3245" if is_dark else "#FFFFFF"
             self.skel_canvas.create_rectangle(ix1, y1, ix2, y2, fill=glow_col, outline="")
+
+    def _fadeout_step(self, step: int = 0):
+        """Smooth dissolve / slide-up fadeout transition over 8 frames."""
+        if not self.is_active:
+            return
+
+        if step >= 8:
+            self.finish()
+            return
+
+        try:
+            # Gradually slide up and dissolve
+            self.place_configure(rely=-0.03 * (step + 1))
+            self.after(20, lambda: self._fadeout_step(step + 1))
+        except Exception:
+            self.finish()
 
     def finish(self):
         if not self.is_active:

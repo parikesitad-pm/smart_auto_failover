@@ -1,6 +1,7 @@
 {
   "ping_target_primary": "1.1.1.1",
   "ping_target_secondary": "8.8.8.8",
+  "ping_target_tertiary": "9.9.9.9",
   "ping_interval_sec": 1.0,
   "ping_timeout_ms": 800,
   "failover_rto_threshold": 2,
@@ -9,9 +10,10 @@
   "metric_p2_normal": 20,
   "metric_p3_normal": 30,
   "metric_demoted": 50,
-  "p1_alias": "Ethernet 4",
-  "p2_alias": "Ethernet",
+  "p1_alias": "Ethernet",
+  "p2_alias": "",
   "p3_alias": "Wi-Fi",
   "auto_start": false,
-  "theme_mode": "Dark"
+  "theme_mode": "Dark",
+  "sound_enabled": true
 }

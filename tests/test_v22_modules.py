@@ -34,6 +34,7 @@ class TestSoundEngine(unittest.TestCase):
             SoundType.SUCCESS,
             SoundType.QOS_APPLIED,
             SoundType.CLEAN_COMPLETE,
+            SoundType.HIGH_LOAD,
         ]
         # In test environment, mute to prevent actual beep noise during test runs
         SoundEngine.set_enabled(False)
@@ -90,10 +91,20 @@ class TestSystemTelemetry(unittest.TestCase):
         self.assertGreater(metrics.ram_total_gb, 0.0)
         self.assertGreater(metrics.ram_percent, 0.0)
 
-    def test_scan_junk(self):
-        items, size_bytes = SystemTelemetry.scan_junk()
-        self.assertIsInstance(items, list)
-        self.assertGreaterEqual(size_bytes, 0)
+    def test_system_history_and_top_processes(self):
+        SystemTelemetry.record_history_sample(45.0, 60.0)
+        cpu_hist, ram_hist = SystemTelemetry.get_history()
+        self.assertGreater(len(cpu_hist), 0)
+        self.assertGreater(len(ram_hist), 0)
+
+        procs = SystemTelemetry.get_top_processes(limit=5)
+        self.assertIsInstance(procs, list)
+        self.assertLessEqual(len(procs), 5)
+        for p in procs:
+            self.assertIn("pid", p)
+            self.assertIn("name", p)
+            self.assertIn("cpu", p)
+            self.assertIn("ram", p)
 
 
 class TestFailoverConfigV22(unittest.TestCase):
@@ -101,15 +112,18 @@ class TestFailoverConfigV22(unittest.TestCase):
         cfg = FailoverConfig()
         self.assertTrue(hasattr(cfg, "sound_enabled"))
         self.assertTrue(cfg.sound_enabled)
+        self.assertEqual(cfg.ping_target_tertiary, "9.9.9.9")
 
         # Test dict round-trip
         d = cfg.to_dict()
         self.assertIn("sound_enabled", d)
         self.assertTrue(d["sound_enabled"])
+        self.assertEqual(d["ping_target_tertiary"], "9.9.9.9")
 
         d["sound_enabled"] = False
         loaded = FailoverConfig.from_dict(d)
         self.assertFalse(loaded.sound_enabled)
+        self.assertEqual(loaded.ping_target_tertiary, "9.9.9.9")
 
 
 if __name__ == "__main__":

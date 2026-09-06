@@ -43,7 +43,7 @@ from .modals import (
 
 CONFIG_FILE = "config.json"
 GITHUB_URL = "https://github.com/parikesitad-pm"
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+PROJECT_ROOT = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(__file__)))
 ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
 
@@ -128,22 +128,33 @@ class AppWindow(ctk.CTk):
         """Called when skeleton preloader finishes animating."""
         pass
 
+    def _get_config_path(self) -> str:
+        if os.path.exists(CONFIG_FILE) and os.access(CONFIG_FILE, os.W_OK):
+            return CONFIG_FILE
+        if os.access(".", os.W_OK):
+            return CONFIG_FILE
+        home_cfg = os.path.expanduser("~/.modula")
+        os.makedirs(home_cfg, exist_ok=True)
+        return os.path.join(home_cfg, "config.json")
+
     def _load_config(self) -> FailoverConfig:
-        if os.path.exists(CONFIG_FILE):
+        cfg_path = self._get_config_path()
+        if os.path.exists(cfg_path):
             try:
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                with open(cfg_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     return FailoverConfig.from_dict(data)
             except Exception as e:
-                print(f"Failed to load {CONFIG_FILE}: {e}")
+                print(f"Failed to load {cfg_path}: {e}")
         return FailoverConfig()
 
     def _save_config(self):
+        cfg_path = self._get_config_path()
         try:
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            with open(cfg_path, "w", encoding="utf-8") as f:
                 json.dump(self.config.to_dict(), f, indent=2)
         except Exception as e:
-            print(f"Failed to save {CONFIG_FILE}: {e}")
+            print(f"Failed to save {cfg_path}: {e}")
 
     def _build_ui(self):
         self.configure(fg_color=("#F1F5F9", "#12141A"))
@@ -224,6 +235,57 @@ class AppWindow(ctk.CTk):
         )
         self.sound_btn.pack(side="left", padx=(0, 6))
 
+        # OS Info & Logo Badge
+        os_sys = NetworkManager.get_os_name()
+        if os_sys == "macOS":
+            os_badge_text = "🍎 macOS"
+        elif os_sys == "Windows":
+            os_badge_text = "🪟 Windows"
+        else:
+            os_badge_text = "🐧 Linux"
+
+        self.os_badge = ctk.CTkLabel(
+            right_header,
+            text=os_badge_text,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#F1F5F9", "#1E212B"),
+            text_color=("#0284C7", "#38BDF8"),
+            corner_radius=6,
+            padx=8,
+            pady=2,
+        )
+        self.os_badge.pack(side="left", padx=(0, 6))
+
+        # Hot Reload Button (Instant Hardware Rescan)
+        self.reload_btn = ctk.CTkButton(
+            right_header,
+            text="⚡ Reload",
+            command=self._hot_reload,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#E2E8F0", "#2D3139"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#0F172A", "#F8FAFC"),
+            width=68,
+            height=26,
+            corner_radius=6,
+        )
+        self.reload_btn.pack(side="left", padx=(0, 6))
+
+        # Slow Opening Preloader Reload
+        self.slow_reload_btn = ctk.CTkButton(
+            right_header,
+            text="⏳ Preloader",
+            command=self._slow_reload,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=("#E2E8F0", "#2D3139"),
+            hover_color=("#CBD5E1", "#374151"),
+            text_color=("#D97706", "#F59E0B"),
+            width=80,
+            height=26,
+            corner_radius=6,
+        )
+        self.slow_reload_btn.pack(side="left", padx=(0, 6))
+
         # Fullscreen Toggle Button (F11)
         self.fs_btn = ctk.CTkButton(
             right_header,
@@ -237,7 +299,7 @@ class AppWindow(ctk.CTk):
             height=26,
             corner_radius=6,
         )
-        self.fs_btn.pack(side="left", padx=(0, 10))
+        self.fs_btn.pack(side="left", padx=(0, 8))
 
         # Admin Badge & Elevation
         os_name = NetworkManager.get_os_name()
@@ -419,6 +481,54 @@ class AppWindow(ctk.CTk):
             height=34,
         )
         self.active_banner.pack(fill="x", pady=(0, 4))
+
+        # Probing Targets Pill Bar (Prominently displaying 1.1.1.1, 8.8.8.8, 9.9.9.9)
+        targets_pill_bar = ctk.CTkFrame(
+            banner_container,
+            fg_color=("#F8FAFC", "#181B24"),
+            corner_radius=8,
+            border_width=1,
+            border_color=("#CBD5E1", "#2D3345"),
+            height=30,
+        )
+        targets_pill_bar.pack(fill="x", pady=(0, 4))
+
+        ctk.CTkLabel(
+            targets_pill_bar,
+            text="🌐 ACTIVE ICMP BACKBONES:",
+            font=("Segoe UI", 10, "bold"),
+            text_color=("#D97706", "#F59E0B"),
+        ).pack(side="left", padx=(10, 8), pady=3)
+
+        pills_data = [
+            ("⚡ 1.1.1.1 Cloudflare Anycast", "#10B981", ("#D1FAE5", "#064E3B")),
+            ("🔍 8.8.8.8 Google Primary DNS", "#38BDF8", ("#E0F2FE", "#0C4A6E")),
+            ("🛡️ 9.9.9.9 Quad9 Secure Anycast", "#A78BFA", ("#EDE9FE", "#4C1D95")),
+        ]
+        for pill_text, pill_text_col, pill_bg in pills_data:
+            ctk.CTkLabel(
+                targets_pill_bar,
+                text=pill_text,
+                font=("Segoe UI", 9, "bold"),
+                fg_color=pill_bg,
+                text_color=pill_text_col,
+                corner_radius=6,
+                padx=8,
+                pady=2,
+            ).pack(side="left", padx=4, pady=3)
+
+        info_pill_btn = ctk.CTkButton(
+            targets_pill_bar,
+            text="ℹ️ Info Target & Jitter",
+            command=self._open_telemetry_sources,
+            font=("Segoe UI", 9, "bold"),
+            fg_color="transparent",
+            hover_color=("#E2E8F0", "#2D3139"),
+            text_color=("#D97706", "#F59E0B"),
+            width=120,
+            height=20,
+        )
+        info_pill_btn.pack(side="right", padx=(0, 6))
 
         # Live Traffic Chart Widget
         self.traffic_chart = TrafficChartWidget(banner_container, height=68)
@@ -655,6 +765,15 @@ class AppWindow(ctk.CTk):
 
             self._prev_conn_status[a.alias] = a.is_connected
 
+        # Auto-sanitize config if all configured aliases are missing from current machine (e.g. freshly cloned)
+        has_any_configured = any(
+            a in adapter_names for a in [self.config.p1_alias, self.config.p2_alias, self.config.p3_alias] if a
+        )
+        if not has_any_configured and self.all_adapters and self._initial_adapter_scan:
+            self._initial_adapter_scan = False
+            self._auto_detect_interfaces()
+            return
+
         self._initial_adapter_scan = False
 
         self.cards[PriorityLevel.P1].set_adapter_options(adapter_names, self.config.p1_alias)
@@ -672,12 +791,31 @@ class AppWindow(ctk.CTk):
             )
         )
 
+    def _hot_reload(self):
+        """Instant fast reload: refresh hardware adapters, clear cache, update telemetry."""
+        SoundEngine.play(SoundType.ACTION)
+        backend = NetworkManager.get_backend()
+        if hasattr(backend, "clear_cache"):
+            backend.clear_cache()
+        self.refresh_adapters()
+        SoundEngine.play(SoundType.SUCCESS)
+        self.toast.success("⚡ Hot Reload Selesai: Adapter & routing tersinkronisasi.")
+
+    def _slow_reload(self):
+        """Cinematic Slow Reload: re-runs animated skeleton preloader with % bar."""
+        SoundEngine.play(SoundType.ACTION)
+        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_ready, min_duration=2.4)
+        self.toast.info("⏳ Memulai Cinematic Preloader Reload...")
+
     def _auto_detect_interfaces(self):
         """
         Automatically identify and assign Ethernet 1, Ethernet 2, and Wi-Fi adapters.
         Strictly prioritizes physical Ethernet (docking / onboard GbE) over virtual/USB tethering.
         """
         SoundEngine.play(SoundType.ACTION)
+        backend = NetworkManager.get_backend()
+        if hasattr(backend, "clear_cache"):
+            backend.clear_cache()
         self.all_adapters = NetworkManager.get_all_adapters()
 
         ethernets = [a for a in self.all_adapters if a.adapter_type == "Ethernet"]
@@ -714,31 +852,36 @@ class AppWindow(ctk.CTk):
         ethernets.sort(key=score_ethernet, reverse=True)
         wifis.sort(key=score_wifi, reverse=True)
 
-        if len(ethernets) >= 1:
-            self.config.p1_alias = ethernets[0].alias
         if len(ethernets) >= 2:
+            self.config.p1_alias = ethernets[0].alias
             self.config.p2_alias = ethernets[1].alias
-        elif len(ethernets) == 1 and not self.config.p2_alias:
+        elif len(ethernets) == 1:
+            self.config.p1_alias = ethernets[0].alias
+            self.config.p2_alias = ""
+        else:
+            self.config.p1_alias = ""
             self.config.p2_alias = ""
 
         if wifis:
             self.config.p3_alias = wifis[0].alias
+        else:
+            self.config.p3_alias = ""
 
         self.engine.update_config(self.config)
         self.refresh_adapters()
         self._save_config()
 
         SoundEngine.play(SoundType.SUCCESS)
-        self.toast.success(f"Auto-detect: LAN 1='{self.config.p1_alias}', LAN 2='{self.config.p2_alias}', Wi-Fi='{self.config.p3_alias}'")
+        self.toast.success(f"Auto-detect: LAN 1='{self.config.p1_alias or 'None'}', LAN 2='{self.config.p2_alias or 'None'}', Wi-Fi='{self.config.p3_alias or 'None'}'")
 
         self.log_panel.append_log(
             LogEvent(
                 timestamp=time.strftime("%H:%M:%S"),
                 level=LogLevel.SUCCESS,
                 message=(
-                    f"Auto-assigned: LAN 1='{self.config.p1_alias}', "
-                    f"LAN 2='{self.config.p2_alias}', "
-                    f"Wi-Fi='{self.config.p3_alias}'"
+                    f"Auto-assigned: LAN 1='{self.config.p1_alias or 'None'}', "
+                    f"LAN 2='{self.config.p2_alias or 'None'}', "
+                    f"Wi-Fi='{self.config.p3_alias or 'None'}'"
                 ),
             )
         )
@@ -813,14 +956,26 @@ class AppWindow(ctk.CTk):
 
     def _toggle_monitoring(self):
         if not self.engine._is_running:
-            if not any([self.config.p1_alias, self.config.p2_alias, self.config.p3_alias]):
+            adapter_names = [a.alias for a in self.all_adapters]
+            valid_active = [
+                a for a in [self.config.p1_alias, self.config.p2_alias, self.config.p3_alias]
+                if a and a in adapter_names
+            ]
+            if not valid_active and self.all_adapters:
+                self._auto_detect_interfaces()
+                valid_active = [
+                    a for a in [self.config.p1_alias, self.config.p2_alias, self.config.p3_alias]
+                    if a and a in adapter_names
+                ]
+
+            if not valid_active:
                 SoundEngine.play(SoundType.DISCONNECT)
-                self.toast.error("Pilih setidaknya satu adapter sebelum monitoring!")
+                self.toast.error("Pilih setidaknya satu adapter yang terhubung sebelum monitoring!")
                 self.log_panel.append_log(
                     LogEvent(
                         timestamp=time.strftime("%H:%M:%S"),
                         level=LogLevel.ERROR,
-                        message="Pilih setidaknya satu adapter sebelum memulai monitoring.",
+                        message="Pilih setidaknya satu adapter aktif sebelum memulai monitoring.",
                     )
                 )
                 return
@@ -850,6 +1005,11 @@ class AppWindow(ctk.CTk):
             )
             summary = NetworkManager.get_port_summary(self.all_adapters, "")
             self.summary_bar.update_summary(summary)
+
+    @staticmethod
+    def _render_mini_meter(pct: float) -> str:
+        filled = min(4, max(0, int(round((pct / 100.0) * 4))))
+        return "▮" * filled + "▯" * (4 - filled)
 
     def _reset_metrics(self):
         SoundEngine.play(SoundType.ACTION)
@@ -905,12 +1065,27 @@ class AppWindow(ctk.CTk):
     def _process_traffic_update(self):
         """Update live traffic throughput stats and telemetry every second."""
         try:
-            # Update telemetry mini meter on footer
+            # Update telemetry mini meter on footer with ASCII bar & high-load alert
             try:
                 metrics = SystemTelemetry.get_live_metrics()
+                SystemTelemetry.record_history_sample(metrics.cpu_percent, metrics.ram_percent)
+
+                cpu_bar = self._render_mini_meter(metrics.cpu_percent)
+                ram_bar = self._render_mini_meter(metrics.ram_percent)
                 self.sys_diag_btn.configure(
-                    text=f"💻 CPU {metrics.cpu_percent:.0f}% • RAM {metrics.ram_used_gb:.1f}/{metrics.ram_total_gb:.1f}GB"
+                    text=f"💻 CPU {cpu_bar} {metrics.cpu_percent:.0f}% | RAM {ram_bar} {metrics.ram_percent:.0f}%"
                 )
+
+                # Audio alert when CPU or RAM load > 85% (obeying global mute)
+                if (metrics.cpu_percent > 85.0 or metrics.ram_percent > 85.0):
+                    now_t = time.time()
+                    if (now_t - getattr(self, "_last_high_load_alert", 0.0)) > 30.0:
+                        self._last_high_load_alert = now_t
+                        if SoundEngine.is_enabled():
+                            SoundEngine.play(SoundType.HIGH_LOAD)
+                        load_src = "CPU" if metrics.cpu_percent > 85.0 else "RAM"
+                        val = max(metrics.cpu_percent, metrics.ram_percent)
+                        self.toast.warning(f"⚠️ Beban Tinggi: {load_src} mencapai {val:.0f}%! (>85%)")
             except Exception:
                 pass
 

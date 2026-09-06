@@ -21,7 +21,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-emerald?style=for-the-badge)](https://github.com/parikesitad-pm)
 [![GUI](https://img.shields.io/badge/GUI-CustomTkinter-indigo?style=for-the-badge)](https://github.com/TomSchimansky/CustomTkinter)
-[![Tests](https://img.shields.io/badge/Tests-49%2F49%20PASS-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-50%2F50%20PASS-brightgreen?style=for-the-badge)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 </div>
@@ -63,11 +63,11 @@ Banyak pengguna bertanya: _"Ping-nya dikirim kemana saja? Dari mana asal angka J
 
 ### 1. Kemana Saja Ping / Probing Dikirim?
 
-MODULA melakukan ICMP Echo Probing aktif secara simultan ke target Anycast BGP Tier-1 global dengan latensi terendah:
+MODULA melakukan ICMP Echo Probing aktif secara simultan ke 3 target Anycast BGP Tier-1 global dengan latensi terendah (ditampilkan jelas di status bar header utama):
 
 - **🥇 Target Primer**: `1.1.1.1` (Cloudflare Global Anycast DNS) — Peering langsung ke gateway data center lokal.
 - **🥈 Target Sekunder**: `8.8.8.8` (Google Public Anycast DNS) — Verifikasi sekunder untuk mencegah _false-positive_.
-- **🥉 Target Tersier**: `9.9.9.9` (Quad9 Anycast) & Default Gateway lokal.
+- **🥉 Target Tersier**: `9.9.9.9` (Quad9 Anycast) — Resolusi independen Swiss/Global untuk redundansi total.
 - **🔒 Source IP Binding**: Ping TIDAK dikirim via rute default semata, melainkan di-bind secara eksplisit ke Source IP lokal masing-masing kartu jaringan (`ping -S <source_ip>` pada Windows, atau bind socket pada macOS/Linux). Hal ini memungkinkan LAN 1, LAN 2, dan Wi-Fi dites jalurnya secara independen dan simultan!
 
 ### 2. Dari Mana Angka Jitter Dihitung?
@@ -98,14 +98,15 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 | Fitur                             | Deskripsi                                                                                                                                                                       |
 | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **🚀 Multi-Platform Releases**    | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                           |
-| **🔊 Audio Alert Engine**         | Notifikasi suara sintetis real-time untuk event port terhubung (_Connect_), kabel putus (_Disconnect_), failover darurat (_Failover Alarm_), dan master toggle mute di header.  |
-| **💬 Toast Bubble Notifications** | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi dan event jaringan.                                                                          |
+| **🎯 3 Backbone Probing Bar**     | Status bar pill di dashboard menampilkan probing aktif simultan ke `1.1.1.1` (Cloudflare), `8.8.8.8` (Google), dan `9.9.9.9` (Quad9) secara transparan.                         |
+| **🔊 Smart Sound Alert Engine**   | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM (>85%) dengan master mute switch.                           |
+| **💬 Toast Bubble Notifications** | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                        |
 | **🎛️ Bandwidth QoS Allocator**    | Modul alokasi persentase bandwidth ke aplikasi aktif (**Zoom, OBS Studio, vMix, Spotify, Discord, Chrome**) dengan slider auto-balancing 100% dan Windows NetQoS DSCP policies. |
-| **💻 Fastfetch PC Diagnostics**   | Kartu spesifikasi hardware lengkap ala Fastfetch Linux (Model Laptop, CPU, Dual GPU Iris Xe & RTX 3050 Ti, RAM, Storage NTFS).                                                  |
-| **🧹 CCleaner Junk Cleaner**      | Fitur 1-klik untuk membersihkan build usang, cache PyInstaller, dan file sampah proyek, menghemat ruang disk.                                                                   |
-| **📊 Smooth 40 FPS Visualizer**   | Tiga mode grafik ikonik: `⚡ Cyber Spectrum Bars` (32-band equalizer), `📡 RF Internet Wave`, dan `🌊 Smooth Curve` dengan ambient heartbeat 40 FPS anti-patah.                 |
+| **💻 Fastfetch & 60s Live Graph** | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                              |
+| **⚡ 60 FPS Speedtest + Detail**  | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).  |
+| **📊 Smooth Visualizer Modes**    | Tiga mode grafik estetik: `⚡ Cyber Spectrum Bars` (32-band iconic equalizer), `📡 RF Internet Wave`, dan `🌊 Smooth Curve` anti-patah.                                         |
+| **⏳ Hot & Cinematic Preloader**  | Pilihan Hot Reload instan (`⚡`) dan Slow Cinematic Reload (`⏳ Preloader`) dengan counter digital `0% - 100%`, progress bar, dan efek dissolve fadeout.                        |
 | **⛶ Browser Fullscreen (F11)**    | Tombol toggle layar penuh borderless di header dengan shortcut keyboard `<F11>` dan `<Escape>`.                                                                                 |
-| **⚡ 4-Engine Speedtest Suite**   | 1-Click benchmark ke 4 provider terkemuka sekaligus (Ookla, Fast.com Netflix, nPerf, Cloudflare) dengan speedometer gauge beranimasi sweep.                                     |
 | **🌓 Dual Theme (Dark & Light)**  | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                             |
 
 ---
@@ -123,9 +124,9 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
 │                      CORE ORCHESTRATION LAYER                          │
 │  • FailoverEngine (State Machine & 5x Anti-Flapping Recovery)          │
 │  • TrafficMonitor (RFC 3550 Jitter & Kernel NetIO Delta Sampling)      │
-│  • SoundEngine (Synthesizer Chimes & Master Mute)                      │
+│  • SoundEngine (Synthesizer Chimes, High-Load Alert & Master Mute)     │
 │  • BandwidthQoSEngine (NetQoS DSCP & Windows Process Priority)         │
-│  • SystemTelemetry (WMI / CIM Hardware Specs & CCleaner Scanner)       │
+│  • SystemTelemetry (WMI / CIM Hardware Specs & Top Processes Engine)   │
 └──────────────────────────────────┬─────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼─────────────────────────────────────┐
@@ -172,7 +173,14 @@ Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi lat
    ```
    dist_app/MODULA-v2.2-macos-arm64.dmg
    ```
-2. Klik ganda file `.dmg`, lalu tarik icon **MODULA** ke folder **Applications**.
+2. Klik ganda file `.dmg`, lalu tarik icon **MODULA** (dengan icon resmi Barong `modula.icns`) ke folder **Applications**.
+3. **PENTING - Mengatasi macOS Gatekeeper Quarantine**:
+   Karena file didownload dari internet dan belum didaftarkan sertifikat Apple Developer berbayar ($99/thn), macOS Gatekeeper akan menampilkan pesan _"MODULA is damaged and can't be opened"_ atau memblokir aplikasi.
+   Solusi sangat mudah (cukup jalankan 1 kali di Terminal Mac):
+   ```bash
+   xattr -cr /Applications/MODULA.app
+   ```
+   Atau di dalam file DMG sudah disediakan script pembuka cepat: klik ganda **`Open_MODULA.command`**.
 
 #### Opsi B: Menjalankan dari Terminal Mac
 
@@ -252,7 +260,7 @@ Bagi para pengembang, insinyur jaringan, dan kontributor open-source, arsitektur
 
 ## 🧪 Quality Assessment (QA) & Test Suite
 
-MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **49 unit test** dan simulasi skenario **20 persona tester**:
+MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **50 unit test** dan simulasi skenario **20 persona tester**:
 
 ```bash
 python -m unittest discover tests
@@ -261,15 +269,15 @@ python -m unittest discover tests
 ### Hasil Eksekusi:
 
 ```text
-Ran 49 tests in 9.768s
+Ran 50 tests in 8.022s
 
-OK (All 49 unit tests & 20-persona QA simulation passed 100%)
+OK (All 50 unit tests & 20-persona QA simulation passed 100%)
 ```
 
-- `[PASS] TestSoundEngine`: Verifikasi synthesizer audio, nada connect/disconnect, dan master mute.
+- `[PASS] TestSoundEngine`: Verifikasi synthesizer audio, nada connect/disconnect, failover, high-load (>85%), dan master mute.
 - `[PASS] TestBandwidthQoS`: Pemindaian proses aktif Zoom/OBS/vMix, auto-balance slider 100%, dan registrasi NetQoS.
-- `[PASS] TestSystemTelemetry`: Deteksi akurat spesifikasi hardware laptop dan scanner pembersih CCleaner.
-- `[PASS] TestUIComponents`: Verifikasi rendering TrafficChartWidget 40 FPS, Toast Bubble, modal popup, dan card interface.
+- `[PASS] TestSystemTelemetry`: Deteksi akurat spesifikasi hardware PC, rolling history CPU/RAM 60s, dan pemantauan top active processes.
+- `[PASS] TestUIComponents`: Verifikasi TrafficChartWidget 60 FPS, Toast Bubble, modal SpeedtestDetail, Skeleton preloader, dan Interface Cards.
 - `[PASS] TestQA20Personas`: 20 skenario nyata pengguna (Zoom call zero-drop, docking unplugged, jitter RFC 3550, UAC elevation, anti-flapping 5x recovery).
 
 ---

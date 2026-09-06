@@ -117,6 +117,7 @@ class SpeedtestResult:
 class FailoverConfig:
     ping_target_primary: str = "1.1.1.1"
     ping_target_secondary: str = "8.8.8.8"
+    ping_target_tertiary: str = "9.9.9.9"
     ping_interval_sec: float = 1.0
     ping_timeout_ms: int = 800
     failover_rto_threshold: int = 2
@@ -136,6 +137,7 @@ class FailoverConfig:
         return {
             "ping_target_primary": self.ping_target_primary,
             "ping_target_secondary": self.ping_target_secondary,
+            "ping_target_tertiary": self.ping_target_tertiary,
             "ping_interval_sec": self.ping_interval_sec,
             "ping_timeout_ms": self.ping_timeout_ms,
             "failover_rto_threshold": self.failover_rto_threshold,

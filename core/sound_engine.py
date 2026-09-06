@@ -21,6 +21,7 @@ class SoundType(Enum):
     SUCCESS = "success"
     QOS_APPLIED = "qos_applied"
     CLEAN_COMPLETE = "clean_complete"
+    HIGH_LOAD = "high_load"
 
 
 class SoundEngine:
@@ -92,6 +93,10 @@ class SoundEngine:
         elif sound_type == SoundType.CLEAN_COMPLETE:
             winsound.Beep(880, 60)
             winsound.Beep(1108, 100)
+        elif sound_type == SoundType.HIGH_LOAD:
+            # Dual alert pulse for CPU/RAM > 85%
+            winsound.Beep(1400, 80)
+            winsound.Beep(1750, 120)
 
     @classmethod
     def _play_macos(cls, sound_type: SoundType):
@@ -103,6 +108,7 @@ class SoundEngine:
             SoundType.SUCCESS: "/System/Library/Sounds/Ping.aiff",
             SoundType.QOS_APPLIED: "/System/Library/Sounds/Hero.aiff",
             SoundType.CLEAN_COMPLETE: "/System/Library/Sounds/Purr.aiff",
+            SoundType.HIGH_LOAD: "/System/Library/Sounds/Sosumi.aiff",
         }
         snd_file = sound_map.get(sound_type, "/System/Library/Sounds/Tink.aiff")
         if os.path.exists(snd_file):

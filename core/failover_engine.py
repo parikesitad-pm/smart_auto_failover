@@ -90,6 +90,10 @@ class FailoverEngine:
         else:
             self.log(LogLevel.INFO, "Administrator privileges verified. Live route metric manipulation ENABLED.")
 
+        # Initialize healthy status only for configured and connected interfaces
+        for p, state in self.states.items():
+            self._healthy_status[p] = bool(state.alias and state.is_connected)
+
         # Apply initial normal metric scheme
         self.log(LogLevel.INFO, "Initializing interface metrics to Normal baseline scheme...")
         self._apply_normal_metrics()
@@ -156,7 +160,7 @@ class FailoverEngine:
 
     def _apply_metric_if_changed(self, state: MonitoredInterfaceState, target_metric: int) -> bool:
         """Apply metric to interface only if target metric differs from assigned."""
-        if not state.alias:
+        if not state.alias or not state.is_connected:
             return False
 
         if state.assigned_metric == target_metric:
@@ -243,6 +247,15 @@ class FailoverEngine:
         Evaluate ping results, update RTO/success counters, and trigger metric failover/recovery.
         """
         for p, state in self.states.items():
+            # Skip evaluation for unassigned/unmonitored slots
+            if not state.alias:
+                state.is_connected = False
+                state.status = InterfaceStatus.DISCONNECTED
+                state.consecutive_rto = 0
+                state.consecutive_success = 0
+                state.last_latency_ms = 0.0
+                continue
+
             res = results.get(p)
             state.total_pings += 1
 
@@ -280,7 +293,7 @@ class FailoverEngine:
                 if len(state.latency_history) > 30:
                     state.latency_history.pop(0)
 
-                # Check failover transition
+                # Check failover transition (only alert if interface was previously healthy)
                 if self._healthy_status[p]:
                     if state.consecutive_rto >= self.config.failover_rto_threshold:
                         self._healthy_status[p] = False
@@ -291,9 +304,9 @@ class FailoverEngine:
                         )
 
         # Determine target active interface based on 3-tier priority
-        p1_healthy = self._healthy_status[PriorityLevel.P1] and self.states[PriorityLevel.P1].is_connected
-        p2_healthy = self._healthy_status[PriorityLevel.P2] and self.states[PriorityLevel.P2].is_connected
-        p3_healthy = self._healthy_status[PriorityLevel.P3] and self.states[PriorityLevel.P3].is_connected
+        p1_healthy = self._healthy_status[PriorityLevel.P1] and self.states[PriorityLevel.P1].is_connected and bool(self.states[PriorityLevel.P1].alias)
+        p2_healthy = self._healthy_status[PriorityLevel.P2] and self.states[PriorityLevel.P2].is_connected and bool(self.states[PriorityLevel.P2].alias)
+        p3_healthy = self._healthy_status[PriorityLevel.P3] and self.states[PriorityLevel.P3].is_connected and bool(self.states[PriorityLevel.P3].alias)
 
         s1 = self.states[PriorityLevel.P1]
         s2 = self.states[PriorityLevel.P2]
@@ -306,12 +319,14 @@ class FailoverEngine:
             s3.is_active_route = False
 
             s1.status = InterfaceStatus.ONLINE
-            s2.status = InterfaceStatus.STANDBY if p2_healthy else InterfaceStatus.RTO_FAILING
-            s3.status = InterfaceStatus.STANDBY if p3_healthy else InterfaceStatus.RTO_FAILING
+            s2.status = InterfaceStatus.STANDBY if p2_healthy else (InterfaceStatus.RTO_FAILING if s2.alias else InterfaceStatus.DISCONNECTED)
+            s3.status = InterfaceStatus.STANDBY if p3_healthy else (InterfaceStatus.RTO_FAILING if s3.alias else InterfaceStatus.DISCONNECTED)
 
             self._apply_metric_if_changed(s1, self.config.metric_p1_normal)  # 10
-            self._apply_metric_if_changed(s2, self.config.metric_p2_normal if p2_healthy else self.config.metric_demoted)  # 20 or 50
-            self._apply_metric_if_changed(s3, self.config.metric_p3_normal if p3_healthy else self.config.metric_demoted + 10)  # 30 or 60
+            if s2.alias:
+                self._apply_metric_if_changed(s2, self.config.metric_p2_normal if p2_healthy else self.config.metric_demoted)  # 20 or 50
+            if s3.alias:
+                self._apply_metric_if_changed(s3, self.config.metric_p3_normal if p3_healthy else self.config.metric_demoted + 10)  # 30 or 60
 
         elif p2_healthy:
             # Case 2: LAN 1 Failed -> Failover to LAN 2!
@@ -319,16 +334,18 @@ class FailoverEngine:
             s2.is_active_route = True
             s3.is_active_route = False
 
-            s1.status = InterfaceStatus.RTO_FAILING
+            s1.status = InterfaceStatus.RTO_FAILING if (s1.alias and s1.is_connected) else InterfaceStatus.DISCONNECTED
             s2.status = InterfaceStatus.ONLINE
-            s3.status = InterfaceStatus.STANDBY if p3_healthy else InterfaceStatus.RTO_FAILING
+            s3.status = InterfaceStatus.STANDBY if p3_healthy else (InterfaceStatus.RTO_FAILING if s3.alias else InterfaceStatus.DISCONNECTED)
 
             # Shift LAN 2 to Metric 10, Demote LAN 1 to Metric 50, Wi-Fi stays at 30
             changed = self._apply_metric_if_changed(s2, self.config.metric_p1_normal)  # LAN 2 -> 10
-            self._apply_metric_if_changed(s1, self.config.metric_demoted)    # LAN 1 -> 50
-            self._apply_metric_if_changed(s3, self.config.metric_p3_normal if p3_healthy else self.config.metric_demoted + 10)  # Wi-Fi -> 30
+            if s1.alias:
+                self._apply_metric_if_changed(s1, self.config.metric_demoted)    # LAN 1 -> 50
+            if s3.alias:
+                self._apply_metric_if_changed(s3, self.config.metric_p3_normal if p3_healthy else self.config.metric_demoted + 10)  # Wi-Fi -> 30
 
-            if changed:
+            if changed and s1.alias:
                 self.log(
                     LogLevel.FAILOVER,
                     f"⚡ FAILOVER EXECUTED: Default Route switched to LAN 2 ('{s2.alias}', Metric {self.config.metric_p1_normal}). "
@@ -336,21 +353,23 @@ class FailoverEngine:
                 )
 
         elif p3_healthy:
-            # Case 3: LAN 1 & LAN 2 Failed -> Failover to Wi-Fi!
+            # Case 3: LAN 1 & LAN 2 Failed -> Failover to Wi-Fi (or Standalone Wi-Fi)!
             s1.is_active_route = False
             s2.is_active_route = False
             s3.is_active_route = True
 
-            s1.status = InterfaceStatus.RTO_FAILING
-            s2.status = InterfaceStatus.RTO_FAILING
+            s1.status = InterfaceStatus.RTO_FAILING if (s1.alias and s1.is_connected) else InterfaceStatus.DISCONNECTED
+            s2.status = InterfaceStatus.RTO_FAILING if (s2.alias and s2.is_connected) else InterfaceStatus.DISCONNECTED
             s3.status = InterfaceStatus.ONLINE
 
             # Wi-Fi becomes Metric 10, LAN 2 demoted to 40, LAN 1 demoted to 50
             changed = self._apply_metric_if_changed(s3, self.config.metric_p1_normal)  # Wi-Fi -> 10
-            self._apply_metric_if_changed(s2, self.config.metric_demoted - 10)         # LAN 2 -> 40
-            self._apply_metric_if_changed(s1, self.config.metric_demoted)              # LAN 1 -> 50
+            if s2.alias:
+                self._apply_metric_if_changed(s2, self.config.metric_demoted - 10)     # LAN 2 -> 40
+            if s1.alias:
+                self._apply_metric_if_changed(s1, self.config.metric_demoted)          # LAN 1 -> 50
 
-            if changed:
+            if changed and (s1.alias or s2.alias):
                 self.log(
                     LogLevel.FAILOVER,
                     f"⚡ SECONDARY FAILOVER: Both LANs down! Default Route switched to Wi-Fi ('{s3.alias}', Metric {self.config.metric_p1_normal})."
@@ -371,5 +390,3 @@ class FailoverEngine:
                 self._last_primary = active_name
                 if not self.dry_run:
                     NetworkManager.set_network_priority_order([a for a in ordered_aliases if a])
-
-

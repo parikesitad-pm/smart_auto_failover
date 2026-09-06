@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from typing import Dict, List, Optional, Tuple
 import psutil
 
@@ -52,30 +53,45 @@ class WindowsBackend(BaseNetworkBackend):
         except Exception as e:
             return -1, "", str(e)
 
+    def __init__(self):
+        self._ps_adapters_cache: Optional[Dict[str, dict]] = None
+        self._ps_cache_timestamp: float = 0.0
+
+    def clear_cache(self):
+        """Invalidate hardware adapter cache (called on refresh or adapter plug/unplug)."""
+        self._ps_adapters_cache = None
+        self._ps_cache_timestamp = 0.0
+
     def get_all_adapters(self) -> List[AdapterInfo]:
         adapters: Dict[str, AdapterInfo] = {}
 
-        # 0. Query detailed adapter hardware info via PowerShell Get-NetAdapter
-        ps_adapters_info: Dict[str, dict] = {}
-        ps_cmd = [
-            "powershell.exe",
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            "Get-NetAdapter | Select-Object Name, InterfaceDescription, Status, MediaType, PhysicalMediaType | ConvertTo-Json",
-        ]
-        ret_ps, out_ps, _ = self._run_cmd(ps_cmd, timeout=4.0)
-        if ret_ps == 0 and out_ps.strip():
-            try:
-                raw = json.loads(out_ps.strip())
-                items = raw if isinstance(raw, list) else [raw]
-                for item in items:
-                    name = item.get("Name", "")
-                    if name:
-                        ps_adapters_info[name.strip().lower()] = item
-            except Exception:
-                pass
+        # 0. Query detailed adapter hardware info via PowerShell Get-NetAdapter (cached for 30s)
+        now = time.time()
+        if self._ps_adapters_cache is not None and (now - self._ps_cache_timestamp) < 30.0:
+            ps_adapters_info = self._ps_adapters_cache
+        else:
+            ps_adapters_info: Dict[str, dict] = {}
+            ps_cmd = [
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "Get-NetAdapter | Select-Object Name, InterfaceDescription, Status, MediaType, PhysicalMediaType | ConvertTo-Json",
+            ]
+            ret_ps, out_ps, _ = self._run_cmd(ps_cmd, timeout=4.0)
+            if ret_ps == 0 and out_ps.strip():
+                try:
+                    raw = json.loads(out_ps.strip())
+                    items = raw if isinstance(raw, list) else [raw]
+                    for item in items:
+                        name = item.get("Name", "")
+                        if name:
+                            ps_adapters_info[name.strip().lower()] = item
+                    self._ps_adapters_cache = ps_adapters_info
+                    self._ps_cache_timestamp = now
+                except Exception:
+                    pass
 
         # 0b. Query admin states via 'netsh interface show interface'
         admin_states: Dict[str, bool] = {}

@@ -183,78 +183,42 @@ class SystemTelemetry:
         ram_txt = f"{vm.used / (1024**3):.1f}/{vm.total / (1024**3):.0f}G"
         return cpu, vm.percent, ram_txt
 
-    @classmethod
-    def scan_junk(cls, project_root: Optional[str] = None) -> Tuple[List[str], int]:
-        """Scan project for obsolete build folders, old exes, and pycache."""
-        if not project_root:
-            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        junk_items = []
-        total_bytes = 0
-
-        # Check old dist directory (legacy build)
-        old_dist = os.path.join(project_root, "dist")
-        if os.path.exists(old_dist):
-            junk_items.append(old_dist)
-            total_bytes += cls._get_dir_size(old_dist)
-
-        # Check old SmartAutoFailover in dist_app
-        old_dist_app = os.path.join(project_root, "dist_app", "SmartAutoFailover")
-        if os.path.exists(old_dist_app):
-            junk_items.append(old_dist_app)
-            total_bytes += cls._get_dir_size(old_dist_app)
-
-        # Check old build folder
-        old_build = os.path.join(project_root, "build")
-        if os.path.exists(old_build):
-            junk_items.append(old_build)
-            total_bytes += cls._get_dir_size(old_build)
-
-        # Pycache directories
-        for root, dirs, files in os.walk(project_root):
-            if "__pycache__" in dirs:
-                p = os.path.join(root, "__pycache__")
-                junk_items.append(p)
-                total_bytes += cls._get_dir_size(p)
-
-        return junk_items, total_bytes
+    _cpu_history: List[float] = []
+    _ram_history: List[float] = []
 
     @classmethod
-    def clean_junk(cls, project_root: Optional[str] = None) -> Tuple[int, int, str]:
-        """Clean old builds and junk directories. Returns (count, freed_bytes, message)."""
-        if not project_root:
-            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        items, total_bytes = cls.scan_junk(project_root)
-        cleaned_count = 0
-        freed = 0
-
-        for it in items:
-            try:
-                if os.path.isdir(it):
-                    sz = cls._get_dir_size(it)
-                    shutil.rmtree(it, ignore_errors=True)
-                    cleaned_count += 1
-                    freed += sz
-                elif os.path.isfile(it):
-                    sz = os.path.getsize(it)
-                    os.remove(it)
-                    cleaned_count += 1
-                    freed += sz
-            except Exception:
-                pass
-
-        mb_freed = freed / (1024 * 1024)
-        msg = f"Berhasil membersihkan {cleaned_count} folder sampah & build lama ({mb_freed:.1f} MB dibebaskan)."
-        return cleaned_count, freed, msg
+    def record_history_sample(cls, cpu: float, ram: float):
+        cls._cpu_history.append(cpu)
+        cls._ram_history.append(ram)
+        if len(cls._cpu_history) > 60:
+            cls._cpu_history.pop(0)
+        if len(cls._ram_history) > 60:
+            cls._ram_history.pop(0)
 
     @classmethod
-    def _get_dir_size(cls, path: str) -> int:
-        total = 0
+    def get_history(cls) -> Tuple[List[float], List[float]]:
+        return list(cls._cpu_history), list(cls._ram_history)
+
+    @classmethod
+    def get_top_processes(cls, limit: int = 5) -> List[Dict[str, any]]:
+        """Get top running processes by CPU & RAM consumption."""
+        procs = []
         try:
-            for root, dirs, files in os.walk(path):
-                for f in files:
-                    fp = os.path.join(root, f)
-                    if os.path.exists(fp):
-                        total += os.path.getsize(fp)
+            for p in psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]):
+                try:
+                    info = p.info
+                    name = info.get("name", "")
+                    if name and not name.lower().startswith("system"):
+                        procs.append({
+                            "pid": info["pid"],
+                            "name": name,
+                            "cpu": round(info.get("cpu_percent") or 0.0, 1),
+                            "ram": round(info.get("memory_percent") or 0.0, 1),
+                        })
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
         except Exception:
             pass
-        return total
+
+        procs.sort(key=lambda x: (x["cpu"], x["ram"]), reverse=True)
+        return procs[:limit]
