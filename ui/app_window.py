@@ -6,6 +6,7 @@ import time
 from typing import Dict, List, Optional
 import webbrowser
 import customtkinter as ctk
+from PIL import Image
 
 from core.failover_engine import FailoverEngine
 from core.models import (
@@ -24,6 +25,7 @@ from .components import (
     InterfaceCard,
     LogPanel,
     SettingsDialog,
+    SkeletonLoader,
     TrafficChartWidget,
 )
 from .modals import ChangelogModal, HelpFaqModal, SpeedtestModal
@@ -31,12 +33,14 @@ from .modals import ChangelogModal, HelpFaqModal, SpeedtestModal
 
 CONFIG_FILE = "config.json"
 GITHUB_URL = "https://github.com/parikesitad-pm"
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
 
 
 class AppWindow(ctk.CTk):
     """
-    Main application window for Smart Auto-Failover Network Monitor v2.0.
-    Supports Dual Mode (Dark/Light), Speedtest Suite, Adapter Toggles, and Traffic Monitor.
+    Main application window for MODULA - Smart Auto Failover v2.1.
+    Supports Dual Mode (Dark/Light), Speedtest Suite (Ookla, Fast.com, nPerf, Cloudflare),
+    Adapter Toggles, Equalizer Spectrum Bars, and Zero-Drop Route Metric Orchestration.
     """
 
     def __init__(self):
@@ -50,9 +54,17 @@ class AppWindow(ctk.CTk):
         ctk.set_default_color_theme("blue")
 
         # Window configuration
-        self.title("Smart Auto-Failover Network Monitor v2.0 • Zero-Drop Zoom")
-        self.geometry("1060x820")
+        self.title("MODULA - Smart Auto Failover • Zero-Drop Zoom")
+        self.geometry("1060x830")
         self.minsize(960, 720)
+
+        # Set Window Icon
+        ico_path = os.path.join(ASSETS_DIR, "modula.ico")
+        if os.path.exists(ico_path):
+            try:
+                self.iconbitmap(ico_path)
+            except Exception:
+                pass
 
         # Thread-safe event queue for GUI updates
         self.update_queue = queue.Queue()
@@ -73,6 +85,9 @@ class AppWindow(ctk.CTk):
         # Build UI layout
         self._build_ui()
 
+        # GitHub-style animated skeleton preloader
+        self.skeleton = SkeletonLoader(self, on_finish=self._on_skeleton_ready, min_duration=1.4)
+
         # Populate adapters into dropdowns
         self.refresh_adapters()
 
@@ -84,6 +99,10 @@ class AppWindow(ctk.CTk):
 
         # Handle window close
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+    def _on_skeleton_ready(self):
+        """Called when skeleton preloader finishes animating."""
+        pass
 
     def _load_config(self) -> FailoverConfig:
         if os.path.exists(CONFIG_FILE):
@@ -115,18 +134,35 @@ class AppWindow(ctk.CTk):
         header.grid_columnconfigure(1, weight=1)
 
         title_box = ctk.CTkFrame(header, fg_color="transparent")
-        title_box.grid(row=0, column=0, padx=16, pady=8, sticky="w")
+        title_box.grid(row=0, column=0, padx=16, pady=6, sticky="w")
+
+        # Barong Logo Badge
+        logo_path = os.path.join(ASSETS_DIR, "modula_logo.png")
+        if os.path.exists(logo_path):
+            try:
+                pil_img = Image.open(logo_path)
+                aspect = pil_img.width / pil_img.height
+                logo_h = 40
+                logo_w = int(logo_h * aspect)
+                self.logo_ctk = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(logo_w, logo_h))
+                logo_lbl = ctk.CTkLabel(title_box, image=self.logo_ctk, text="")
+                logo_lbl.pack(side="left", padx=(0, 10))
+            except Exception:
+                pass
+
+        text_title_box = ctk.CTkFrame(title_box, fg_color="transparent")
+        text_title_box.pack(side="left")
 
         app_title = ctk.CTkLabel(
-            title_box,
-            text="🚀 Smart Auto-Failover Monitor v2.0",
+            text_title_box,
+            text="MODULA  •  SMART AUTO FAILOVER",
             font=("Segoe UI", 16, "bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=("#D97706", "#F59E0B"),
         )
         app_title.pack(anchor="w")
 
         app_sub = ctk.CTkLabel(
-            title_box,
+            text_title_box,
             text="Route Metric Orchestrator • Zero-Drop Zoom / UDP Failover • Dibuat oleh parikesitad-pm",
             font=("Segoe UI", 10),
             text_color=("#64748B", "#94A3B8"),
@@ -252,16 +288,16 @@ class AppWindow(ctk.CTk):
         )
         refresh_btn.pack(side="left", padx=4)
 
-        # Speedtest Button
+        # Speedtest Button (Barong Gold)
         speedtest_btn = ctk.CTkButton(
             left_actions,
-            text="⚡ Speedtest Suite",
+            text="⚡ Speedtest Suite (4 Engines)",
             command=self._open_speedtest,
             font=("Segoe UI", 12, "bold"),
-            fg_color=("#6366F1", "#4F46E5"),
-            hover_color=("#4F46E5", "#4338CA"),
-            text_color="#FFFFFF",
-            width=140,
+            fg_color=("#D97706", "#F59E0B"),
+            hover_color=("#B45309", "#D97706"),
+            text_color=("#FFFFFF", "#0F172A"),
+            width=190,
             height=34,
             corner_radius=8,
         )
@@ -316,7 +352,7 @@ class AppWindow(ctk.CTk):
         self.active_banner.pack(fill="x", pady=(0, 4))
 
         # Live Traffic Chart Widget
-        self.traffic_chart = TrafficChartWidget(banner_container, height=52)
+        self.traffic_chart = TrafficChartWidget(banner_container, height=68)
         self.traffic_chart.pack(fill="x")
 
         # 5. Interface Cards Container (3 Columns)
@@ -378,13 +414,13 @@ class AppWindow(ctk.CTk):
         center_footer = ctk.CTkFrame(footer, fg_color="transparent")
         center_footer.grid(row=0, column=1, pady=2, sticky="n")
 
-        # Version Pill
+        # Version Pill (v2.1 Gold/Amber)
         ver_pill = ctk.CTkLabel(
             center_footer,
-            text=" v2.0 ",
+            text=" v2.1 ",
             font=("Segoe UI", 10, "bold"),
-            fg_color=("#E0E7FF", "#1E1B4B"),
-            text_color=("#3730A3", "#818CF8"),
+            fg_color=("#FEF3C7", "#78350F"),
+            text_color=("#92400E", "#FDE68A"),
             corner_radius=4,
         )
         ver_pill.pack(side="left", padx=3)
@@ -473,13 +509,45 @@ class AppWindow(ctk.CTk):
         )
 
     def _auto_detect_interfaces(self):
-        """Automatically identify and assign Ethernet 1, Ethernet 2, and Wi-Fi adapters."""
+        """
+        Automatically identify and assign Ethernet 1, Ethernet 2, and Wi-Fi adapters.
+        Strictly prioritizes physical Ethernet (docking / onboard GbE) over virtual/USB tethering.
+        """
         self.all_adapters = NetworkManager.get_all_adapters()
 
         ethernets = [a for a in self.all_adapters if a.adapter_type == "Ethernet"]
         wifis = [a for a in self.all_adapters if a.adapter_type == "Wireless"]
 
-        ethernets.sort(key=lambda a: a.alias)
+        def score_ethernet(a: AdapterInfo) -> int:
+            score = 0
+            if a.is_connected:
+                score += 100
+            if a.gateway and a.gateway != "0.0.0.0":
+                score += 50
+            if a.ipv4 and not a.ipv4.startswith("169.254."):
+                score += 30
+            desc = (a.description or "").lower()
+            alias = a.alias.lower()
+            # Prioritize genuine PCIe GbE / Realtek / Intel / Docking station controllers
+            if any(k in desc or k in alias for k in ["pcie", "gbe", "gigabit", "ethernet", "lan", "dock", "realtek", "intel", "asix"]):
+                score += 25
+            # Deprioritize phone USB tethering so physical docking Ethernet is always selected first
+            if any(k in desc or k in alias for k in ["rndis", "tether", "remote ndis", "ncm", "phone"]):
+                score -= 20
+            return score
+
+        def score_wifi(a: AdapterInfo) -> int:
+            score = 0
+            if a.is_connected:
+                score += 100
+            if a.gateway and a.gateway != "0.0.0.0":
+                score += 50
+            if a.ipv4 and not a.ipv4.startswith("169.254."):
+                score += 30
+            return score
+
+        ethernets.sort(key=score_ethernet, reverse=True)
+        wifis.sort(key=score_wifi, reverse=True)
 
         if len(ethernets) >= 1:
             self.config.p1_alias = ethernets[0].alias

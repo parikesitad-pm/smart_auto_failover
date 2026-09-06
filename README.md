@@ -1,33 +1,34 @@
-# Smart Auto-Failover Network Monitor v2.0
+# MODULA - Smart Auto Failover v2.1
 
 \*Dibuat oleh: **parikesitad-pm\*** • [GitHub Profile](https://github.com/parikesitad-pm)
 
-Aplikasi Desktop modern dan ringan (**Windows & macOS**) berbasis Python & CustomTkinter yang dirancang khusus untuk memantau koneksi jaringan aktif secara simultan (**LAN 1**, **LAN 2**, **Wi-Fi**, dan **USB Tethering HP**), serta melakukan pengalihan rute default secara otomatis dan instan (**Zero-Drop Failover**) tanpa memutus panggilan Zoom meeting aktif.
+Aplikasi Desktop modern, ultra-ringan (**Windows & macOS**) berbasis Python & CustomTkinter dengan identitas visual **Topeng Barong Bali**, dirancang khusus untuk memantau koneksi jaringan aktif secara simultan (**LAN 1 Docking**, **LAN 2 Docking**, **Wi-Fi**, dan **USB Tethering HP**), serta melakukan pengalihan rute default secara otomatis dan instan (**Zero-Drop Failover**) tanpa memutus panggilan Zoom meeting atau UDP stream aktif.
 
 ---
 
-## 🚀 Fitur Baru di Versi 2.0
+## 🐲 Fitur Unggulan di Versi 2.1 (MODULA Overhaul)
 
-1. **Dual Mode (Dark & Light Mode)**:
-   - Tombol toggle instan di pojok kanan atas header untuk beralih antara tema Terang (_Light_) dan Gelap (_Dark_).
-   - Palet warna kontras tinggi yang nyaman di mata baik siang maupun malam.
-2. **Adapter Summary Bar & Manual Port Toggle**:
-   - Informasi lengkap jumlah port fisik dan virtual: `🌐 Port Jaringan: X Ethernet, Y Wireless`.
-   - Bubble status visual: `🟢 Terhubung`, `⚪ Terputus`, dan `★ Aktif (Zoom Route)`.
-   - Saklar manual di tiap adapter untuk menyambung atau memutus port secara langsung tanpa mencabut kabel fisik (_netsh admin=enabled/disabled_ di Windows & _networksetup_ di macOS).
-3. **Live Throughput & Jitter Monitoring**:
-   - Grafik kecepatan Download (Rx) dan Upload (Tx) real-time berbasis `psutil`.
-   - Kalkulasi Jitter instan (RFC 3550) dan meter Packet Loss untuk kualitas panggilan video.
-4. **Multi-Engine Speedtest Suite**:
-   - Pengujian kecepatan terpadu dengan 3 engine: **Cloudflare Speedtest**, **nPerf / Multi-CDN**, dan **Ookla Speedtest**.
-   - Mode **Individual Test** (memilih salah satu adapter yang di-bind ke Source IP) maupun **Bulk Comparison Test** (menguji semua adapter secara berurutan dan menampilkan kartu perbandingan).
-5. **Enhanced Footer & Versioning**:
-   - Label versi `v2.0`.
-   - Modal `[📜 Changelog]` berisi riwayat rilis lengkap.
-   - Modal `[❓ Help & FAQ]` berisi panduan Zero-Drop, troubleshooting, USB tethering HP, dan tips macOS vs Windows.
-   - Tautan langsung ke profil GitHub pembuat: [parikesitad-pm](https://github.com/parikesitad-pm).
-6. **20-Persona Quality Assessment Simulation**:
-   - Telah lulus pengujian otomatis yang mewakili 20 skenario pengguna nyata (Zoom call, gamer, DevOps Mac M2, USB tethering, corporate VPN, dll).
+1. **Rebranding & Identitas Visual Barong**:
+   - Desain terintegrasi dengan logo artistik **Topeng Barong Bali** dan palet warna harmoni: _Royal Gold_ (`#F59E0B`), _Crimson_ (`#DC2626`), dan _Deep Slate_ (`#12141C`).
+   - Icon aplikasi `.ico` dan badge resmi di taskbar serta window header.
+
+2. **Startup Preloader & GitHub-Style Skeleton Loader**:
+   - Tampilan pembuka beranimasi dengan efek shimmer skeleton cards saat aplikasi memindai adapter dan mengkalibrasi rute metrik awal.
+
+3. **Speedtest Suite 4-Provider (1-Click All Test)**:
+   - Pengujian kecepatan 4 engine terkemuka sekaligus dengan 1 klik: **Ookla Speedtest**, **Fast.com (Netflix Open Connect CDN)**, **nPerf / Multi-CDN**, dan **Cloudflare Anycast**.
+   - Animasi **Speedometer Circular Gauge ala Ookla** dengan jarum putar sweep dan angka digital real-time.
+   - Detail telemetri mendalam ala Cloudflare: _Idle Latency_, _Loaded Latency (Bufferbloat)_, _Jitter (RFC 3550)_, dan _Server Location / ISP_.
+
+4. **Equalizer Spectrum Bars Visualizer**:
+   - Pilihan visualisasi live throughput & jitter: Mode Kurva Halus (_Smooth Curve_) atau Mode Bar Spektrum Equalizer (_Aesthetic Audio Spectrum Bars_) dengan warna glow dinamis sesuai beban bandwidth.
+
+5. **Smart Hardware Auto-Detection (Anti-Phantom USB)**:
+   - Filter ketat untuk menyingkirkan virtual adapter (Wi-Fi Direct \*Local Area Connection\*\*, Bluetooth Personal Area Network, Loopback, dan vEthernet).
+   - Prioritas mutlak port fisik Ethernet (docking / PCIe GbE) pada **Priority 1** dan **Priority 2**, sehingga USB tethering HP tidak akan merebut status koneksi utama jika port docking terpasang.
+
+6. **Dual Mode (Dark & Light)**:
+   - Dukungan tema Gelap (_Dark_) dan Terang (_Light_) yang elegan dan responsif.
 
 ---
 

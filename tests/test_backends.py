@@ -27,7 +27,17 @@ class TestCrossPlatformBackends(unittest.TestCase):
         self.assertTrue(hasattr(backend, "set_network_priority_order"))
         self.assertTrue(callable(getattr(backend, "set_network_priority_order")))
 
+    def test_adapter_filtering(self):
+        if IS_WINDOWS:
+            backend = WindowsBackend()
+            adapters = backend.get_all_adapters()
+            # Ensure no loopback, Bluetooth, or Local Area Connection* virtual adapters leak into result
+            for a in adapters:
+                self.assertNotIn("loopback", a.alias.lower())
+                self.assertFalse(a.alias.lower().startswith("local area connection*"))
+                self.assertNotIn("bluetooth", a.alias.lower())
+                self.assertNotIn("bluetooth", (a.description or "").lower())
+
 
 if __name__ == "__main__":
     unittest.main()
-

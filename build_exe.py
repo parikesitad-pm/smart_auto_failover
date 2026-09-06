@@ -9,7 +9,7 @@ def build_standalone():
     with Windows Administrator manifest embedded.
     """
     print("=" * 70)
-    print(" Building Smart Auto-Failover Network Monitor Standalone (.exe)")
+    print(" Building MODULA - Smart Auto Failover Standalone (.exe)")
     print("=" * 70)
 
     # Check if pyinstaller is installed
@@ -22,6 +22,8 @@ def build_standalone():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     main_py = os.path.join(script_dir, "main.py")
+    ico_file = os.path.join(script_dir, "assets", "modula.ico")
+    assets_src = os.path.join(script_dir, "assets")
 
     dist_dir = os.path.join(script_dir, "dist_app")
     cmd = [
@@ -33,19 +35,22 @@ def build_standalone():
         "--windowed",
         "--uac-admin",
         "--distpath", dist_dir,
-        "--name", "SmartAutoFailover",
+        "--name", "MODULA",
+        "--icon", ico_file,
+        "--add-data", f"{assets_src};assets",
         "--collect-all", "customtkinter",
         "--collect-all", "darkdetect",
+        "--collect-all", "PIL",
         main_py,
     ]
 
     print(f"\nRunning command:\n{' '.join(cmd)}\n")
     ret = subprocess.call(cmd, cwd=script_dir)
     if ret == 0:
-        dist_path = os.path.join(dist_dir, "SmartAutoFailover", "SmartAutoFailover.exe")
+        dist_path = os.path.join(dist_dir, "MODULA", "MODULA.exe")
         print("\n" + "=" * 70)
         print("BUILD SUCCESSFUL!")
-        print(f"Executable created at:\n  {dist_path}")
+        print(f"MODULA Executable created at:\n  {dist_path}")
         print("=" * 70)
     else:
         print(f"\nBuild failed with exit code: {ret}")

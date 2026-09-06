@@ -44,9 +44,9 @@ class InterfaceCard(ctk.CTkFrame):
         header_frame.grid_columnconfigure(0, weight=1)
 
         p_colors = {
-            PriorityLevel.P1: (("#D1FAE5", "#064E3B"), ("#065F46", "#34D399"), "PRIORITY 1 • PRIMARY"),
-            PriorityLevel.P2: (("#DBEAFE", "#1E3A8A"), ("#1E40AF", "#60A5FA"), "PRIORITY 2 • BACKUP"),
-            PriorityLevel.P3: (("#F3E8FF", "#581C87"), ("#6B21A8", "#C084FC"), "PRIORITY 3 • FALLBACK"),
+            PriorityLevel.P1: (("#FEF3C7", "#78350F"), ("#92400E", "#FDE68A"), "PRIORITY 1 • PRIMARY"),
+            PriorityLevel.P2: (("#FFE4E6", "#881337"), ("#BE123C", "#FDA4AF"), "PRIORITY 2 • BACKUP"),
+            PriorityLevel.P3: (("#CFFAFE", "#164E63"), ("#0E7490", "#67E8F9"), "PRIORITY 3 • FALLBACK"),
         }
         bg_col, text_col, tag_text = p_colors.get(
             self.priority, (("#F1F5F9", "#1F2937"), ("#334155", "#9CA3AF"), "INTERFACE")
@@ -85,9 +85,9 @@ class InterfaceCard(ctk.CTkFrame):
             values=["Select Adapter..."],
             command=self._on_dropdown_change,
             font=("Segoe UI", 12),
-            fg_color=("#E2E8F0", "#2D3139"),
-            button_color=("#3B82F6", "#2563EB"),
-            button_hover_color=("#2563EB", "#1D4ED8"),
+            fg_color=("#E2E8F0", "#242938"),
+            button_color=("#D97706", "#F59E0B"),
+            button_hover_color=("#B45309", "#D97706"),
             text_color=("#0F172A", "#F8FAFC"),
             dropdown_font=("Segoe UI", 11),
             height=30,

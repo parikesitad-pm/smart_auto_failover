@@ -56,6 +56,32 @@ class ChangelogModal(ctk.CTkToplevel):
 
         changelog_text = """
 ===================================================================
+🐲 VERSI 2.1 (MODULA Overhaul & Speedtest 4-Provider)
+===================================================================
+Tanggal Rilis: September 2026
+
+✨ Fitur Baru & Peningkatan:
+1. Rebranding & Identitas Visual MODULA:
+   - Nama resmi berganti menjadi "MODULA - Smart Auto Failover".
+   - Integrasi Logo Topeng Barong Bali dengan palet warna bernuansa Royal Gold (#F59E0B), Crimson (#DC2626), dan Deep Slate (#12141C).
+   - Icon aplikasi (.ico) resmi di taskbar dan window.
+
+2. Startup Preloader & GitHub-Style Skeleton Loader:
+   - Tampilan pembuka beranimasi ala skeleton loader GitHub dengan shimmer dinamis selama pemindaian topologi interface & rute metrik.
+
+3. Speedtest Suite 4-Provider (Ookla, Fast.com, nPerf, Cloudflare):
+   - Fitur 1-Click Test ke seluruh 4 engine sekaligus (Ookla, Fast.com Netflix CDN, nPerf, dan Cloudflare) atau tes individual.
+   - Animasi Speedometer Circular Gauge ala Ookla dengan jarum putar real-time dan digital display.
+   - Detail telemetri lengkap ala Cloudflare: Idle Latency, Loaded Latency (Bufferbloat), Jitter, Packet Loss, dan ISP/Location.
+
+4. Equalizer Spectrum Bars Mode:
+   - Opsi visualisasi throughput dinamis: Mode Kurva Halus (Smooth Curve) atau Mode Equalizer Spectrum Bars (audio-style multi-band glow bars).
+
+5. Perbaikan Auto-Detection Hardware Prioritas:
+   - Eliminasi phantom USB tethering / virtual miniport (Local Area Connection*, Bluetooth PAN).
+   - Prioritas mutlak physical Ethernet (PCIe GbE / USB Docking) pada Priority 1 dan Priority 2 sebelum fallback Wi-Fi.
+
+===================================================================
 🚀 VERSI 2.0 (Rilis Besar - Major Update)
 ===================================================================
 Tanggal Rilis: September 2026

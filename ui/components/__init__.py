@@ -4,6 +4,7 @@ from .log_panel import LogPanel
 from .settings_dialog import SettingsDialog
 from .adapter_summary_bar import AdapterSummaryBar
 from .traffic_chart import TrafficChartWidget
+from .skeleton_loader import SkeletonLoader
 
 __all__ = [
     "InterfaceCard",
@@ -12,4 +13,5 @@ __all__ = [
     "SettingsDialog",
     "AdapterSummaryBar",
     "TrafficChartWidget",
+    "SkeletonLoader",
 ]
