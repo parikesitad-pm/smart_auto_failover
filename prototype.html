@@ -1,0 +1,2585 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoFailover 3.0 by Modula — Digital Network Cockpit</title>
+    <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+    <style>
+      @keyframes pulse-emerald {
+        0%,
+        100% {
+          opacity: 1;
+          filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));
+        }
+        50% {
+          opacity: 0.7;
+          filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.2));
+        }
+      }
+      @keyframes pulse-amber {
+        0%,
+        100% {
+          opacity: 1;
+          filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.8));
+        }
+        50% {
+          opacity: 0.6;
+          filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.2));
+        }
+      }
+      @keyframes heartbeat {
+        0% {
+          transform: scale(1);
+        }
+        14% {
+          transform: scale(1.08);
+        }
+        28% {
+          transform: scale(1);
+        }
+        42% {
+          transform: scale(1.05);
+        }
+        70% {
+          transform: scale(1);
+        }
+      }
+      @keyframes slideToast {
+        0% {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        100% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      @keyframes popBubble {
+        0% {
+          transform: scale(0.94) translateY(8px);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1) translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .pulse-glow-emerald {
+        animation: pulse-emerald 2s infinite ease-in-out;
+      }
+      .pulse-glow-amber {
+        animation: pulse-amber 1.2s infinite ease-in-out;
+      }
+      .heartbeat-icon {
+        animation: heartbeat 1.6s infinite ease-in-out;
+      }
+      .toast-anim {
+        animation: slideToast 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      .bubble-anim {
+        animation: popBubble 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      /* AutoFailover 3.0 Vertical Accent */
+      .af3-rail-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        width: 28px;
+        background: #070a10;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px 0;
+        user-select: none;
+        flex-shrink: 0;
+      }
+      .af3-rail-segment {
+        flex: 1 1 0%;
+        width: 3.5px;
+        display: flex;
+        flex-direction: row;
+        border-radius: 2px;
+        overflow: hidden;
+        opacity: 0.85;
+        min-height: 24px;
+      }
+      .af3-rail-top {
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          black 70%,
+          transparent 100%
+        );
+        mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+      }
+      .af3-rail-bottom {
+        -webkit-mask-image: linear-gradient(
+          to top,
+          black 70%,
+          transparent 100%
+        );
+        mask-image: linear-gradient(to top, black 70%, transparent 100%);
+      }
+      .af3-stripe-cyan {
+        background: #5bc0eb;
+        width: 1.15px;
+        height: 100%;
+      }
+      .af3-stripe-navy {
+        background: #002b7f;
+        width: 1.2px;
+        height: 100%;
+      }
+      .af3-stripe-red {
+        background: #e31b23;
+        width: 1.15px;
+        height: 100%;
+      }
+      .af3-rail-label-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 0;
+        flex-shrink: 0;
+        background: #070a10;
+        z-index: 10;
+      }
+      .af3-rail-text {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 8px;
+        letter-spacing: 0.28em;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+        white-space: nowrap;
+        line-height: 1;
+      }
+
+      /* Cockpit Bezel & Mesh */
+      .cockpit-panel {
+        background: radial-gradient(
+          circle at 50% 30%,
+          #111726 0%,
+          #080b11 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.1),
+          0 20px 40px -10px rgba(0, 0, 0, 0.8);
+      }
+      .carbon-mesh {
+        background-image: radial-gradient(
+          rgba(255, 255, 255, 0.03) 1px,
+          transparent 0
+        );
+        background-size: 16px 16px;
+      }
+      .gauge-needle {
+        transform-origin: 100px 100px;
+      }
+
+      /* Tuyul Mascot & Sport Car Animation */
+      @keyframes tuyulSuspensionIdle {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-3px) rotate(-0.5deg);
+        }
+      }
+      @keyframes tuyulWheelsSpin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes headlightIgnite {
+        0% {
+          opacity: 0.2;
+          filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.2));
+        }
+        100% {
+          opacity: 1;
+          filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.95))
+            drop-shadow(0 0 35px rgba(6, 182, 212, 0.6));
+        }
+      }
+      @keyframes exhaustJetFire {
+        0%,
+        100% {
+          transform: scaleX(1);
+          opacity: 0.95;
+        }
+        50% {
+          transform: scaleX(0.7) scaleY(0.9);
+          opacity: 0.6;
+        }
+      }
+      @keyframes carAccelerateAway {
+        0% {
+          transform: translateX(0) scaleX(1);
+          opacity: 1;
+        }
+        18% {
+          transform: translateX(-16px) scaleY(0.95);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(950px) scaleX(1.18) scaleY(0.92);
+          opacity: 0;
+        }
+      }
+      @keyframes motionStreak {
+        0% {
+          width: 0;
+          opacity: 0;
+        }
+        35% {
+          width: 220px;
+          opacity: 0.85;
+        }
+        100% {
+          width: 550px;
+          opacity: 0;
+          transform: translateX(-160px);
+        }
+      }
+      @keyframes splashFadeOut {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+          filter: blur(0px);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(1.02);
+          filter: blur(4px);
+          visibility: hidden;
+        }
+      }
+      .tuyul-idle {
+        animation: tuyulSuspensionIdle 1.8s ease-in-out infinite;
+      }
+      .headlight-on {
+        animation: headlightIgnite 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      .car-departing {
+        animation: carAccelerateAway 0.85s cubic-bezier(0.35, 0, 0.15, 1)
+          forwards;
+      }
+      .streak-active {
+        animation: motionStreak 0.85s cubic-bezier(0.35, 0, 0.15, 1) forwards;
+      }
+      .exhaust-active {
+        animation: exhaustJetFire 0.15s ease-in-out infinite;
+      }
+      .splash-dissolving {
+        animation: splashFadeOut 0.45s ease-out forwards;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-[#05070a] text-slate-100 antialiased p-3 font-sans selection:bg-cyan-500 selection:text-black"
+  >
+    <!-- ================================================================= -->
+    <!-- AUTOFAILOVER 3.0 INTENTIONAL SPLASH SCREEN (DECOUPLED ENGINE)    -->
+    <!-- ================================================================= -->
+    <div
+      id="splash-overlay"
+      class="fixed inset-0 z-50 bg-[#05070a] flex flex-col items-center justify-center p-4 select-none"
+    >
+      <!-- Subtle Carbon Mesh Background -->
+      <div
+        class="absolute inset-0 carbon-mesh opacity-40 pointer-events-none"
+      ></div>
+
+      <!-- Center Stage Card -->
+      <div
+        class="relative z-10 max-w-xl w-full flex flex-col items-center text-center"
+      >
+        <!-- Header Branding & Tagline -->
+        <div class="flex items-center space-x-2 mb-2">
+          <div
+            class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-md"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+          </div>
+          <span class="font-mono text-xl font-bold tracking-tight text-white"
+            >AutoFailover 3.0
+            <span class="text-xs font-normal text-slate-400"
+              >by Modula</span
+            ></span
+          >
+        </div>
+        <p
+          class="text-[12px] font-mono text-cyan-400 tracking-wider mb-6 uppercase"
+        >
+          "light seamless and usefull"
+        </p>
+
+        <!-- TUYUL SPORT CAR STAGE (Vector SVG) -->
+        <div
+          class="relative w-full h-36 flex items-center justify-center overflow-hidden mb-6 border border-slate-800/80 rounded-2xl bg-gradient-to-b from-[#0a0e17] to-[#06090e] shadow-2xl"
+        >
+          <!-- Speed lines in background -->
+          <div
+            class="absolute inset-0 flex items-center justify-between px-6 opacity-15 pointer-events-none"
+          >
+            <div class="h-[1px] w-12 bg-cyan-400"></div>
+            <div class="h-[1px] w-24 bg-cyan-400"></div>
+            <div class="h-[1px] w-8 bg-cyan-400"></div>
+            <div class="h-[1px] w-20 bg-cyan-400"></div>
+          </div>
+
+          <!-- Motion Streak Light-Trail (Activates on Launch) -->
+          <div
+            id="car-streak"
+            class="absolute h-1.5 bg-gradient-to-l from-cyan-400 via-cyan-500/80 to-transparent rounded-full pointer-events-none"
+            style="right: 50%; bottom: 42px"
+          ></div>
+
+          <!-- The Tuyul & Sport Car Unit -->
+          <div
+            id="tuyul-car-unit"
+            class="relative tuyul-idle flex items-center justify-center transition-all duration-300"
+          >
+            <svg
+              class="w-64 h-28"
+              viewBox="0 0 260 110"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <!-- Shadow below car -->
+              <ellipse
+                cx="130"
+                cy="98"
+                rx="100"
+                ry="7"
+                fill="black"
+                fill-opacity="0.65"
+              />
+
+              <!-- Exhaust Flame Pulse (Rear - Hidden until 100% Ready) -->
+              <g
+                id="exhaust-flame"
+                class="opacity-0 transition-opacity duration-300"
+              >
+                <polygon
+                  points="26,78 6,80 26,82"
+                  fill="#38bdf8"
+                  class="exhaust-active"
+                />
+                <polygon
+                  points="26,79 12,80 26,81"
+                  fill="#ffffff"
+                  class="exhaust-active"
+                />
+              </g>
+
+              <!-- Mini Sleek Sport Car Body (Dark Cockpit Aesthetic) -->
+              <path
+                d="M 28 85 L 235 85 L 244 80 L 225 78 L 35 78 Z"
+                fill="#0b0f19"
+                stroke="#1e293b"
+                stroke-width="1.5"
+              />
+              <path
+                d="M 32 78 Q 45 68 85 66 L 115 54 Q 145 42 178 54 L 210 68 Q 235 72 245 80 L 220 80 Q 210 74 195 74 Q 180 74 172 80 L 98 80 Q 90 74 75 74 Q 60 74 52 80 Z"
+                fill="#0f172a"
+                stroke="#334155"
+                stroke-width="1.5"
+              />
+
+              <!-- Performance Aerodynamic Side Skirt with AutoFailover 3.0 Color Accent -->
+              <path
+                d="M 98 79 L 172 79"
+                stroke="#002b7f"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+              <path
+                d="M 98 79 L 125 79"
+                stroke="#5bc0eb"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+              <path
+                d="M 152 79 L 172 79"
+                stroke="#e31b23"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+
+              <!-- Cockpit Glass Canopy (Cyan Tinted) -->
+              <path
+                d="M 118 53 Q 145 43 172 53 L 182 66 L 108 66 Z"
+                fill="#0369a1"
+                fill-opacity="0.25"
+                stroke="#38bdf8"
+                stroke-width="1.2"
+              />
+
+              <!-- Rear Wing / Spoiler -->
+              <path
+                d="M 28 66 L 46 66 L 40 76 L 30 76 Z"
+                fill="#0f172a"
+                stroke="#475569"
+                stroke-width="1.2"
+              />
+              <line
+                x1="28"
+                y1="68"
+                x2="44"
+                y2="68"
+                stroke="#ef4444"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+
+              <!-- TUYUL MASCOT IN COCKPIT -->
+              <g id="tuyul-mascot">
+                <polygon points="135,46 128,42 134,50" fill="#cbd5e1" />
+                <polygon points="155,46 162,42 156,50" fill="#cbd5e1" />
+                <circle cx="145" cy="46" r="10" fill="#e2e8f0" />
+                <rect
+                  x="139"
+                  y="44"
+                  width="13"
+                  height="5.5"
+                  rx="2.5"
+                  fill="#0c4a6e"
+                  stroke="#38bdf8"
+                  stroke-width="1"
+                />
+                <circle cx="143" cy="46.7" r="1.2" fill="#38bdf8" />
+                <circle cx="148" cy="46.7" r="1.2" fill="#38bdf8" />
+                <path
+                  d="M 143 51 Q 146 53 148 51"
+                  stroke="#475569"
+                  stroke-width="1"
+                  stroke-linecap="round"
+                />
+                <circle cx="152" cy="56" r="2.5" fill="#e2e8f0" />
+              </g>
+
+              <!-- Sport Car Headlight Units (Ignites on 100% Ready) -->
+              <g id="car-headlights" class="transition-all duration-300">
+                <path
+                  d="M 230 73 L 244 76"
+                  stroke="#38bdf8"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  id="headlight-bulb"
+                  opacity="0.3"
+                />
+                <polygon
+                  id="light-beam"
+                  points="244,76 290,65 290,88"
+                  fill="url(#lightBeamGrad)"
+                  opacity="0"
+                />
+              </g>
+
+              <!-- Exposed Performance Wheels & Rims -->
+              <g transform="translate(63, 80)">
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="14"
+                  fill="#090d16"
+                  stroke="#475569"
+                  stroke-width="2"
+                />
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="8"
+                  fill="#1e293b"
+                  stroke="#64748b"
+                  stroke-width="1.2"
+                />
+                <circle cx="0" cy="0" r="3" fill="#38bdf8" />
+                <line
+                  x1="-8"
+                  y1="0"
+                  x2="8"
+                  y2="0"
+                  stroke="#94a3b8"
+                  stroke-width="1"
+                />
+                <line
+                  x1="0"
+                  y1="-8"
+                  x2="0"
+                  y2="8"
+                  stroke="#94a3b8"
+                  stroke-width="1"
+                />
+              </g>
+              <g transform="translate(186, 80)">
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="14"
+                  fill="#090d16"
+                  stroke="#475569"
+                  stroke-width="2"
+                />
+                <circle
+                  cx="0"
+                  cy="0"
+                  r="8"
+                  fill="#1e293b"
+                  stroke="#64748b"
+                  stroke-width="1.2"
+                />
+                <circle cx="0" cy="0" r="3" fill="#38bdf8" />
+                <line
+                  x1="-8"
+                  y1="0"
+                  x2="8"
+                  y2="0"
+                  stroke="#94a3b8"
+                  stroke-width="1"
+                />
+                <line
+                  x1="0"
+                  y1="-8"
+                  x2="0"
+                  y2="8"
+                  stroke="#94a3b8"
+                  stroke-width="1"
+                />
+              </g>
+
+              <defs>
+                <linearGradient
+                  id="lightBeamGrad"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6" />
+                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+
+        <!-- HONEST COMPLETION & TELEMETRY PROGRESS -->
+        <div
+          class="w-full bg-[#080c14] border border-slate-800 rounded-xl p-4 shadow-xl mb-4 text-left font-mono"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <span
+                id="splash-status-dot"
+                class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"
+              ></span>
+              <span
+                id="splash-status-text"
+                class="text-xs font-bold text-slate-200"
+                >INITIALIZING ENGINE...</span
+              >
+            </div>
+            <span
+              id="splash-percent-text"
+              class="text-xs font-bold text-cyan-400"
+              >0%</span
+            >
+          </div>
+
+          <!-- Progress Bar Track -->
+          <div
+            class="w-full bg-slate-900 rounded-full h-2 overflow-hidden p-0.5 border border-slate-800"
+          >
+            <div
+              id="splash-progress-bar"
+              class="h-full bg-cyan-500 rounded-full transition-all duration-150 shadow-[0_0_12px_rgba(6,182,212,0.8)]"
+              style="width: 0%"
+            ></div>
+          </div>
+
+          <!-- Decoupled Telemetry Readout -->
+          <div
+            class="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400"
+          >
+            <div>
+              Actual Core Init:
+              <span id="actual-init-readout" class="text-white font-bold"
+                >Measuring...</span
+              >
+            </div>
+            <div>
+              Splash Min Duration:
+              <span id="min-duration-readout" class="text-cyan-300 font-bold"
+                >3000ms</span
+              >
+            </div>
+            <div>
+              Remaining Window:
+              <span id="remaining-readout" class="text-slate-300 font-bold"
+                >--</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Explanatory Note & Skip Tip -->
+        <div
+          class="flex flex-col items-center gap-1.5 text-[11px] text-slate-400 font-mono"
+        >
+          <p class="text-slate-400">
+            Controls minimum splash display time. Does not affect network
+            initialization.
+          </p>
+          <div
+            class="flex items-center gap-2 mt-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-[10px] text-slate-400"
+          >
+            <kbd
+              class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-200 font-semibold shadow"
+              >Shift</kbd
+            >
+            <span>Hold Shift to skip startup presentation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Cockpit Outer Container with AutoFailover 3.0 Vertical Accent -->
+    <div
+      class="relative max-w-5xl mx-auto rounded-2xl overflow-hidden border border-slate-800 bg-[#080b10] shadow-2xl flex flex-row"
+    >
+      <!-- AutoFailover 3.0 Decorative Signature Vertical Rail (Bezel Edge) -->
+      <div class="af3-rail-container" title="AutoFailover 3.0 Vertical Accent">
+        <div class="af3-rail-segment af3-rail-top">
+          <div class="af3-stripe-cyan"></div>
+          <div class="af3-stripe-navy"></div>
+          <div class="af3-stripe-red"></div>
+        </div>
+        <div class="af3-rail-label-box">
+          <span class="af3-rail-text">AUTOFAILOVER 3.0</span>
+        </div>
+        <div class="af3-rail-segment af3-rail-bottom">
+          <div class="af3-stripe-cyan"></div>
+          <div class="af3-stripe-navy"></div>
+          <div class="af3-stripe-red"></div>
+        </div>
+      </div>
+
+      <!-- Main Network Cockpit Content -->
+      <div class="flex-1 p-5 carbon-mesh">
+        <!-- Top Header: Modula Brand, Title, Tagline, and Status Pill -->
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800/60"
+        >
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-lg"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h1
+                  class="text-base font-bold tracking-tight text-white font-mono"
+                >
+                  AutoFailover 3.0
+                  <span class="text-xs font-normal text-slate-400"
+                    >by Modula</span
+                  >
+                </h1>
+                <span
+                  class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-400 border border-cyan-800/50"
+                  >React + TS • Rust Engine</span
+                >
+              </div>
+              <p
+                class="text-[11px] text-slate-400 font-sans tracking-wide italic"
+              >
+                "light seamless and usefull"
+              </p>
+            </div>
+          </div>
+
+          <!-- Master Status Badge & Active Route Pill (UI observes Rust Core event) -->
+          <div class="flex items-center space-x-2">
+            <button
+              onclick="forceManualCoreReinit()"
+              id="btn-force-reinit"
+              class="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm group"
+              title="Force manual Core re-initialization and hardware probe cycle (without startup presentation)"
+            >
+              <span
+                id="reinit-icon"
+                class="inline-block transition-transform duration-300"
+                >🔄</span
+              >
+              <span>Re-initialize Core</span>
+            </button>
+            <button
+              onclick="openSplashConfigModal()"
+              class="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm"
+              title="Configure minimum splash display delay and presentation settings"
+            >
+              <span>⏱️</span>
+              <span>Startup Presentation</span>
+            </button>
+            <div
+              id="master-status-badge"
+              class="flex items-center space-x-2 bg-emerald-950/60 border border-emerald-700/50 px-3 py-1.5 rounded-full transition-all duration-300"
+            >
+              <span
+                id="master-status-dot"
+                class="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-glow-emerald"
+              ></span>
+              <span
+                id="system-status-text"
+                class="text-xs font-semibold tracking-wider font-mono text-emerald-300"
+                >ONLINE • ETH 1 PRIMARY</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Administrative Confirmation Bubble (User Permission Request) -->
+        <div
+          id="smart-recommendation-bubble"
+          class="hidden my-2.5 p-3.5 rounded-xl border border-cyan-500/80 bg-gradient-to-r from-cyan-950/95 via-slate-900/95 to-blue-950/95 shadow-2xl shadow-cyan-950/60 flex flex-wrap items-center justify-between gap-3 text-xs font-mono bubble-anim"
+        >
+          <div class="flex items-start space-x-3">
+            <div
+              class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-base shrink-0 mt-0.5"
+            >
+              🛡️
+            </div>
+            <div>
+              <div class="font-bold text-cyan-200 flex items-center gap-2">
+                <span id="bubble-question"
+                  >Ethernet 1 is disabled but appears healthy. Enable it for
+                  automatic failover?</span
+                >
+              </div>
+              <div
+                class="text-[11px] text-slate-300 mt-1 leading-relaxed"
+                id="smart-bubble-text"
+              >
+                Background probe confirms healthy carrier:
+                <strong>8.2ms latency, 1.2ms jitter, score 98.4</strong>.
+                Enabling allows the Policy Engine to evaluate it as an eligible
+                standby candidate.
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <button
+              onclick="handleUserAdminAction(true)"
+              class="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/30 flex items-center gap-1.5 transition-all"
+            >
+              <span>Enable</span>
+            </button>
+            <button
+              onclick="handleUserAdminAction(false)"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition-colors"
+            >
+              Keep Disabled
+            </button>
+          </div>
+        </div>
+
+        <!-- Engine Event Toast (UI Observes Rust Failover Engine) -->
+        <div
+          id="failover-toast"
+          class="hidden my-2 px-3.5 py-2 rounded-xl border flex items-center justify-between text-xs font-mono toast-anim"
+        >
+          <div class="flex items-center space-x-2">
+            <span id="toast-icon">⚡</span>
+            <span id="toast-msg" class="font-bold"></span>
+          </div>
+          <span id="toast-time" class="text-[10px] text-slate-400"></span>
+        </div>
+
+        <!-- Cockpit Instrument Gauge Cluster (Center Stage) -->
+        <div class="my-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <!-- Left Gauge: Download Speed -->
+          <div
+            class="cockpit-panel rounded-xl p-4 border border-cyan-900/30 flex flex-col items-center relative group"
+          >
+            <div
+              class="w-full flex justify-between items-center text-[11px] font-mono text-cyan-400 uppercase tracking-wider mb-1"
+            >
+              <span class="flex items-center gap-1">
+                <svg
+                  class="w-3.5 h-3.5 text-cyan-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
+                Download
+              </span>
+              <span class="text-slate-400" id="dl-peak">Peak 212 Mbps</span>
+            </div>
+
+            <div class="relative w-44 h-44 flex items-center justify-center">
+              <svg class="w-full h-full" viewBox="0 0 200 200">
+                <!-- Background Scale Track Arc (-120 deg to +120 deg, sweep 240 deg) -->
+                <path
+                  d="M 37.65 136.00 A 72 72 0 1 1 162.35 136.00"
+                  stroke="#1e293b"
+                  stroke-width="10"
+                  stroke-linecap="round"
+                  fill="none"
+                />
+                <!-- Subtle Scale Reference Markers -->
+                <text
+                  x="32"
+                  y="154"
+                  fill="#475569"
+                  font-family="monospace"
+                  font-size="8"
+                  text-anchor="middle"
+                >
+                  0
+                </text>
+                <text
+                  x="100"
+                  y="18"
+                  fill="#475569"
+                  font-family="monospace"
+                  font-size="8"
+                  text-anchor="middle"
+                >
+                  150
+                </text>
+                <text
+                  x="168"
+                  y="154"
+                  fill="#475569"
+                  font-family="monospace"
+                  font-size="8"
+                  text-anchor="middle"
+                >
+                  300
+                </text>
+
+                <!-- Active Value Arc (strictly driven by shared angle) -->
+                <path
+                  id="dl-arc"
+                  stroke="#06b6d4"
+                  stroke-width="10"
+                  stroke-linecap="round"
+                  fill="none"
+                  style="filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.75))"
+                />
+                <!-- Needle (Pivot exactly at 100, 100, length 62, radius 72) -->
+                <line
+                  id="dl-needle"
+                  x1="100"
+                  y1="100"
+                  x2="100"
+                  y2="38"
+                  stroke="#38bdf8"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  transform="rotate(-120 100 100)"
+                />
+                <!-- Center Pivot Cap -->
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="6"
+                  fill="#080b11"
+                  stroke="#38bdf8"
+                  stroke-width="2"
+                />
+                <circle cx="100" cy="100" r="2" fill="#38bdf8" />
+              </svg>
+              <div class="absolute flex flex-col items-center">
+                <span
+                  id="dl-val"
+                  class="text-2xl font-black font-mono tracking-tight text-white"
+                  >187.6</span
+                >
+                <span class="text-[10px] font-mono text-cyan-400 uppercase"
+                  >Mbps</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Center Dial: Net Health & RFC 3550 Telemetry -->
+          <div
+            class="cockpit-panel rounded-2xl p-4 border border-slate-700/60 shadow-xl flex flex-col items-center justify-center relative"
+          >
+            <span
+              class="text-[10px] font-mono tracking-widest text-slate-400 uppercase mb-1"
+              >Network Health Index</span
+            >
+
+            <div
+              class="relative w-36 h-36 flex items-center justify-center my-1"
+            >
+              <svg class="w-full h-full" viewBox="0 0 160 160">
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="68"
+                  stroke="#1e293b"
+                  stroke-width="2"
+                  stroke-dasharray="4 6"
+                  fill="none"
+                />
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="60"
+                  stroke="#0f172a"
+                  stroke-width="8"
+                  fill="none"
+                />
+                <circle
+                  id="health-arc"
+                  cx="80"
+                  cy="80"
+                  r="60"
+                  stroke="#10b981"
+                  stroke-width="8"
+                  stroke-linecap="round"
+                  stroke-dasharray="377"
+                  stroke-dashoffset="30"
+                  fill="none"
+                  class="transition-all duration-300"
+                  style="filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))"
+                />
+              </svg>
+              <div class="absolute flex flex-col items-center">
+                <span
+                  id="health-score"
+                  class="text-3xl font-black font-mono text-white tracking-tighter heartbeat-icon"
+                  >99</span
+                >
+                <span
+                  id="health-label"
+                  class="text-[9px] font-mono text-emerald-400 tracking-wider font-bold"
+                  >/100 EXCELLENT</span
+                >
+              </div>
+            </div>
+
+            <!-- Dual Telemetry Pill: Latency & Jitter (RFC 3550) -->
+            <div
+              class="grid grid-cols-2 gap-2 w-full mt-2 pt-2 border-t border-slate-800"
+            >
+              <div
+                class="bg-slate-900/80 rounded-lg p-1.5 text-center border border-slate-800"
+              >
+                <div class="text-[9px] font-mono text-slate-400 uppercase">
+                  Latency
+                </div>
+                <div
+                  class="text-xs font-bold font-mono text-cyan-300"
+                  id="latency-val"
+                >
+                  8.2 ms
+                </div>
+              </div>
+              <div
+                class="bg-slate-900/80 rounded-lg p-1.5 text-center border border-slate-800"
+              >
+                <div class="text-[9px] font-mono text-slate-400 uppercase">
+                  Jitter (RFC 3550)
+                </div>
+                <div
+                  class="text-xs font-bold font-mono text-emerald-300"
+                  id="jitter-val"
+                >
+                  1.2 ms
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Gauge: Upload Speed -->
+          <div
+            class="cockpit-panel rounded-xl p-4 border border-fuchsia-900/30 flex flex-col items-center relative group"
+          >
+            <div
+              class="w-full flex justify-between items-center text-[11px] font-mono text-fuchsia-400 uppercase tracking-wider mb-1"
+            >
+              <span class="flex items-center gap-1">
+                <svg
+                  class="w-3.5 h-3.5 text-fuchsia-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M5 10l7-7m0 0l7 7m-7-7v18"
+                  />
+                </svg>
+                Upload
+              </span>
+              <span class="text-slate-400" id="ul-peak">Peak 58 Mbps</span>
+            </div>
+
+            <div class="relative w-44 h-44 flex items-center justify-center">
+              <svg class="w-full h-full" viewBox="0 0 200 200">
+                <!-- Background Scale Track Arc (-120 deg to +120 deg, sweep 240 deg) -->
+                <path
+                  d="M 37.65 136.00 A 72 72 0 1 1 162.35 136.00"
+                  stroke="#1e293b"
+                  stroke-width="10"
+                  stroke-linecap="round"
+                  fill="none"
+                />
+                <!-- Subtle Scale Reference Markers -->
+                <text
+                  x="32"
+                  y="154"
+                  fill="#475569"
+                  font-family="monospace"
+                  font-size="8"
+                  text-anchor="middle"
+                >
+                  0
+                </text>
+                <text
+                  x="100"
+                  y="18"
+                  fill="#475569"
+                  font-family="monospace"
+                  font-size="8"
+                  text-anchor="middle"
+                >
+                  50
+                </text>
+                <text
+                  x="168"
+                  y="154"
+                  fill="#475569"
+                  font-family="monospace"
+                  font-size="8"
+                  text-anchor="middle"
+                >
+                  100
+                </text>
+
+                <!-- Active Value Arc (strictly driven by shared angle) -->
+                <path
+                  id="ul-arc"
+                  stroke="#d946ef"
+                  stroke-width="10"
+                  stroke-linecap="round"
+                  fill="none"
+                  style="filter: drop-shadow(0 0 8px rgba(217, 70, 239, 0.75))"
+                />
+                <!-- Needle (Pivot exactly at 100, 100, length 62, radius 72) -->
+                <line
+                  id="ul-needle"
+                  x1="100"
+                  y1="100"
+                  x2="100"
+                  y2="38"
+                  stroke="#f472b6"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  transform="rotate(-120 100 100)"
+                />
+                <!-- Center Pivot Cap -->
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="6"
+                  fill="#080b11"
+                  stroke="#f472b6"
+                  stroke-width="2"
+                />
+                <circle cx="100" cy="100" r="2" fill="#f472b6" />
+              </svg>
+              <div class="absolute flex flex-col items-center">
+                <span
+                  id="ul-val"
+                  class="text-2xl font-black font-mono tracking-tight text-white"
+                  >43.2</span
+                >
+                <span class="text-[10px] font-mono text-fuchsia-400 uppercase"
+                  >Mbps</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Physical Network Interfaces with Administrative Toggles -->
+        <div
+          class="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-400"
+        >
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+            Detected Physical Interfaces (<span id="active-iface-count">4</span>
+            Detected)
+          </span>
+          <span class="text-[10px] text-slate-500"
+            >Atomic IPC: <code class="text-cyan-400">enable_interface()</code> /
+            <code class="text-cyan-400">disable_interface()</code></span
+          >
+        </div>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5"
+          id="interfaces-container"
+        >
+          <!-- Interface 1: Ethernet 1 -->
+          <div
+            id="card-eth1"
+            class="p-3 rounded-xl border bg-emerald-950/30 border-emerald-500/80 shadow-lg shadow-emerald-950/40 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span
+                  class="text-xs font-bold font-mono text-white flex items-center gap-1"
+                >
+                  <svg
+                    class="w-3.5 h-3.5 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"
+                    />
+                  </svg>
+                  ETH 1 (Primary)
+                </span>
+                <span
+                  id="badge-eth1"
+                  class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950"
+                  >ONLINE</span
+                >
+              </div>
+              <div
+                class="text-[11px] font-mono text-emerald-300 flex items-center justify-between mb-1"
+              >
+                <span id="lat-eth1">8.2 ms</span>
+                <span
+                  id="score-eth1"
+                  class="text-[10px] text-slate-400 font-mono"
+                  >Score 98.4</span
+                >
+              </div>
+              <div
+                id="subtext-eth1"
+                class="text-[9px] text-slate-500 font-mono"
+              >
+                Carrier: Active 1Gbps
+              </div>
+            </div>
+            <div
+              class="pt-2 border-t border-slate-800/80 flex items-center justify-between"
+            >
+              <span class="text-[10px] text-slate-400">Administrative:</span>
+              <button
+                onclick="requestToggleAdapter('eth1')"
+                id="btn-toggle-eth1"
+                class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60 transition-colors"
+              >
+                ENABLED
+              </button>
+            </div>
+          </div>
+
+          <!-- Interface 2: Ethernet 2 -->
+          <div
+            id="card-eth2"
+            class="p-3 rounded-xl border bg-slate-900/40 border-slate-800 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span
+                  class="text-xs font-bold font-mono text-slate-300 flex items-center gap-1"
+                >
+                  <svg
+                    class="w-3.5 h-3.5 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"
+                    />
+                  </svg>
+                  ETH 2 (Docking)
+                </span>
+                <span
+                  id="badge-eth2"
+                  class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800"
+                  >READY</span
+                >
+              </div>
+              <div
+                class="text-[11px] font-mono text-slate-400 flex items-center justify-between mb-1"
+              >
+                <span id="lat-eth2">14.1 ms</span>
+                <span
+                  id="score-eth2"
+                  class="text-[10px] text-slate-500 font-mono"
+                  >Score 89.2</span
+                >
+              </div>
+              <div
+                id="subtext-eth2"
+                class="text-[9px] text-slate-500 font-mono"
+              >
+                Carrier: Active 1Gbps
+              </div>
+            </div>
+            <div
+              class="pt-2 border-t border-slate-800/80 flex items-center justify-between"
+            >
+              <span class="text-[10px] text-slate-400">Administrative:</span>
+              <button
+                onclick="requestToggleAdapter('eth2')"
+                id="btn-toggle-eth2"
+                class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60 transition-colors"
+              >
+                ENABLED
+              </button>
+            </div>
+          </div>
+
+          <!-- Interface 3: Wi-Fi 6 -->
+          <div
+            id="card-wifi"
+            class="p-3 rounded-xl border bg-slate-900/40 border-slate-800 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span
+                  class="text-xs font-bold font-mono text-slate-300 flex items-center gap-1"
+                >
+                  <svg
+                    class="w-3.5 h-3.5 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"
+                    />
+                  </svg>
+                  Wi-Fi 6
+                </span>
+                <span
+                  id="badge-wifi"
+                  class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800"
+                  >READY</span
+                >
+              </div>
+              <div
+                class="text-[11px] font-mono text-slate-400 flex items-center justify-between mb-1"
+              >
+                <span id="lat-wifi">26.8 ms</span>
+                <span
+                  id="score-wifi"
+                  class="text-[10px] text-slate-500 font-mono"
+                  >Score 76.5</span
+                >
+              </div>
+              <div
+                id="subtext-wifi"
+                class="text-[9px] text-slate-500 font-mono"
+              >
+                SSID: Studio_5G
+              </div>
+            </div>
+            <div
+              class="pt-2 border-t border-slate-800/80 flex items-center justify-between"
+            >
+              <span class="text-[10px] text-slate-400">Administrative:</span>
+              <button
+                onclick="requestToggleAdapter('wifi')"
+                id="btn-toggle-wifi"
+                class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60 transition-colors"
+              >
+                ENABLED
+              </button>
+            </div>
+          </div>
+
+          <!-- Interface 4: USB Modem -->
+          <div
+            id="card-usb"
+            class="p-3 rounded-xl border bg-slate-900/40 border-slate-800 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span
+                  class="text-xs font-bold font-mono text-slate-300 flex items-center gap-1"
+                >
+                  <svg
+                    class="w-3.5 h-3.5 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                  </svg>
+                  USB 5G Modem
+                </span>
+                <span
+                  id="badge-usb"
+                  class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800"
+                  >READY</span
+                >
+              </div>
+              <div
+                class="text-[11px] font-mono text-slate-400 flex items-center justify-between mb-1"
+              >
+                <span id="lat-usb">61.4 ms</span>
+                <span
+                  id="score-usb"
+                  class="text-[10px] text-slate-500 font-mono"
+                  >Score 54.0</span
+                >
+              </div>
+              <div id="subtext-usb" class="text-[9px] text-slate-500 font-mono">
+                Modem: LTE/5G High
+              </div>
+            </div>
+            <div
+              class="pt-2 border-t border-slate-800/80 flex items-center justify-between"
+            >
+              <span class="text-[10px] text-slate-400">Administrative:</span>
+              <button
+                onclick="requestToggleAdapter('usb')"
+                id="btn-toggle-usb"
+                class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60 transition-colors"
+              >
+                ENABLED
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cockpit Policy Engine Live Scenarios -->
+        <div class="mt-4 pt-3 border-t border-slate-800">
+          <div
+            class="text-[11px] font-mono text-slate-400 mb-2 flex items-center justify-between"
+          >
+            <span class="font-bold text-slate-300"
+              >🎮 Policy Engine Simulation & Evaluation:</span
+            >
+            <span class="text-[10px] text-slate-500"
+              >Decoupled UI & Native Core IPC Execution</span
+            >
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+            <!-- 1. Nominal State -->
+            <button
+              onclick="simulateOptimal()"
+              class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-left transition-all"
+            >
+              <div class="font-bold text-emerald-400 text-[11px]">
+                🟢 1. Nominal State
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">
+                Primary Active (ETH 1)
+              </div>
+            </button>
+
+            <!-- 2. Admin Probe Prompt -->
+            <button
+              onclick="simulateAdminDisabledETH1()"
+              class="p-2 rounded-lg bg-cyan-950/40 hover:bg-cyan-950/70 text-cyan-200 border border-cyan-700/70 text-left transition-all"
+            >
+              <div class="font-bold text-cyan-300 text-[11px]">
+                🛡️ 2. Admin Evaluation
+              </div>
+              <div class="text-[10px] text-cyan-300/70 mt-0.5">
+                Request Candidate Admission
+              </div>
+            </button>
+
+            <!-- 3. Jitter Degradation -->
+            <button
+              onclick="simulateAlert()"
+              class="p-2 rounded-lg bg-amber-950/40 hover:bg-amber-950/70 text-amber-200 border border-amber-700/70 text-left transition-all"
+            >
+              <div class="font-bold text-amber-400 text-[11px]">
+                ⚠️ 3. Jitter Degradation
+              </div>
+              <div class="text-[10px] text-amber-300/70 mt-0.5">
+                Anti-Flap Takeover Handover
+              </div>
+            </button>
+
+            <!-- 4. Hard Interface Disconnect -->
+            <button
+              onclick="simulateRTO()"
+              class="p-2 rounded-lg bg-rose-950/40 hover:bg-rose-950/70 text-rose-200 border border-rose-700/70 text-left transition-all"
+            >
+              <div class="font-bold text-rose-400 text-[11px]">
+                ⚡ 4. Interface Disconnect
+              </div>
+              <div class="text-[10px] text-rose-300/70 mt-0.5">
+                Sub-Second Failover (RTO)
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // State Model representing Core Engine State
+      const adapters = {
+        eth1: {
+          name: 'Ethernet 1',
+          enabled: true,
+          latency: 8.2,
+          jitter: 1.2,
+          score: 98.4,
+          state: 'ONLINE',
+          bgProbingScore: 98.4,
+        },
+        eth2: {
+          name: 'Ethernet 2',
+          enabled: true,
+          latency: 14.1,
+          jitter: 1.5,
+          score: 89.2,
+          state: 'READY',
+          bgProbingScore: 89.2,
+        },
+        wifi: {
+          name: 'Wi-Fi 6',
+          enabled: true,
+          latency: 26.8,
+          jitter: 3.2,
+          score: 76.5,
+          state: 'READY',
+          bgProbingScore: 76.5,
+        },
+        usb: {
+          name: 'USB 5G',
+          enabled: true,
+          latency: 61.4,
+          jitter: 5.8,
+          score: 54.0,
+          state: 'READY',
+          bgProbingScore: 54.0,
+        },
+      };
+
+      let activePath = 'eth1';
+      let downloadSpeed = 187.6;
+      let uploadSpeed = 43.2;
+      let targetDownload = 187.6;
+      let targetUpload = 43.2;
+      let currentScenario = 'optimal';
+      let smartBubbleTarget = null;
+      let userExplicitlyDismissed = false;
+
+      function lerp(start, end, amt) {
+        return (1 - amt) * start + amt * end;
+      }
+
+      // =========================================================================
+      // PURE MATHEMATICAL GAUGE ALIGNMENT MODEL
+      // Requirements: Arc and Needle share exact same min, max, angles, and normalization
+      // angle = startAngle + clamp((val - min)/(max - min)) * sweepAngle
+      // =========================================================================
+      const GAUGE_CONFIG = {
+        cx: 100,
+        cy: 100,
+        radius: 72,
+        startAngle: -120, // 0% at -120 deg (8 o'clock position)
+        sweepAngle: 240, // 100% at +120 deg (4 o'clock position)
+        download: { min: 0, max: 300 },
+        upload: { min: 0, max: 100 },
+      };
+
+      function polarToCartesian(cx, cy, r, angleDeg) {
+        // 0 deg is strictly 12 o'clock, clockwise rotation
+        const rad = (angleDeg * Math.PI) / 180;
+        return {
+          x: cx + r * Math.sin(rad),
+          y: cy - r * Math.cos(rad),
+        };
+      }
+
+      function computeArcD(cx, cy, r, startAngle, endAngle) {
+        const start = polarToCartesian(cx, cy, r, startAngle);
+        const end = polarToCartesian(cx, cy, r, endAngle);
+        const diff = endAngle - startAngle;
+        const largeArc = diff > 180 ? 1 : 0;
+        return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+      }
+
+      function syncGaugeMathematics(type, val) {
+        const cfg = GAUGE_CONFIG[type];
+        // 1. Normalized value strictly clamped [0, 1]
+        const normalized = Math.max(
+          0,
+          Math.min(1, (val - cfg.min) / (cfg.max - cfg.min))
+        );
+
+        // 2. Shared angle calculation (drives arc endpoint AND needle rotation identically)
+        const angle =
+          GAUGE_CONFIG.startAngle + normalized * GAUGE_CONFIG.sweepAngle;
+
+        // 3. Update Progress Arc strictly to the exact same angle
+        const arcEl = document.getElementById(
+          type === 'download' ? 'dl-arc' : 'ul-arc'
+        );
+        if (arcEl) {
+          if (normalized <= 0.002) {
+            arcEl.setAttribute('d', '');
+          } else {
+            arcEl.setAttribute(
+              'd',
+              computeArcD(
+                GAUGE_CONFIG.cx,
+                GAUGE_CONFIG.cy,
+                GAUGE_CONFIG.radius,
+                GAUGE_CONFIG.startAngle,
+                angle
+              )
+            );
+          }
+        }
+
+        // 4. Update Needle Rotation strictly with exact angle and center pivot (100, 100)
+        const needleEl = document.getElementById(
+          type === 'download' ? 'dl-needle' : 'ul-needle'
+        );
+        if (needleEl) {
+          needleEl.setAttribute(
+            'transform',
+            `rotate(${angle.toFixed(2)} ${GAUGE_CONFIG.cx} ${GAUGE_CONFIG.cy})`
+          );
+          needleEl.style.transform = ''; // Eliminate any CSS transform conflict
+        }
+
+        return { normalized, angle };
+      }
+
+      // 60 FPS Client-Side UI Interpolation
+      function renderLoop() {
+        downloadSpeed = lerp(downloadSpeed, targetDownload, 0.08);
+        uploadSpeed = lerp(uploadSpeed, targetUpload, 0.08);
+
+        document.getElementById('dl-val').textContent =
+          downloadSpeed.toFixed(1);
+        document.getElementById('ul-val').textContent = uploadSpeed.toFixed(1);
+
+        // Synchronize both gauges mathematically on every frame
+        syncGaugeMathematics('download', downloadSpeed);
+        syncGaugeMathematics('upload', uploadSpeed);
+
+        requestAnimationFrame(renderLoop);
+      }
+      requestAnimationFrame(renderLoop);
+
+      // Manual Force Re-initialization (Hardware Re-probe & Telemetry Sync)
+      function forceManualCoreReinit() {
+        const btn = document.getElementById('btn-force-reinit');
+        const icon = document.getElementById('reinit-icon');
+
+        if (icon) icon.classList.add('animate-spin');
+        if (btn) btn.disabled = true;
+
+        setTimeout(() => {
+          if (icon) icon.classList.remove('animate-spin');
+          if (btn) btn.disabled = false;
+
+          // Re-probe active interfaces & refresh telemetry
+          const current = adapters[activePath];
+          if (current && current.enabled) {
+            targetDownload = 182 + Math.random() * 22;
+            targetUpload = 41 + Math.random() * 6;
+            document.getElementById('latency-val').textContent =
+              `${(current.latency || 8.2).toFixed(1)} ms`;
+            document.getElementById('jitter-val').textContent =
+              `${(current.jitter || 1.2).toFixed(1)} ms`;
+          }
+
+          updateInterfaceCards();
+
+          showToast(
+            '🔄',
+            `CORE RE-INITIALIZED: Hardware rescanned (4 adapters). Sockets probed in 12.8ms. Routing verified.`,
+            false,
+            true
+          );
+        }, 320);
+      }
+
+      // Dynamic Network Probing Cadence (Core Engine simulation @ 5-10 Hz)
+      setInterval(() => {
+        if (currentScenario === 'optimal') {
+          targetDownload = 175 + Math.random() * 25;
+          targetUpload = 40 + Math.random() * 8;
+          const lat = (7.8 + Math.random() * 0.8).toFixed(1);
+          const jit = (1.0 + Math.random() * 0.4).toFixed(1);
+          document.getElementById('latency-val').textContent = `${lat} ms`;
+          document.getElementById('jitter-val').textContent = `${jit} ms`;
+        }
+      }, 800);
+
+      // Engine Event Toast (Emitted by Rust Core)
+      function showToast(icon, msg, isAlert = false, isSuccess = true) {
+        const toast = document.getElementById('failover-toast');
+        toast.classList.remove('hidden');
+        document.getElementById('toast-icon').textContent = icon;
+        document.getElementById('toast-msg').textContent = msg;
+        document.getElementById('toast-time').textContent =
+          new Date().toLocaleTimeString();
+
+        if (isAlert) {
+          toast.className =
+            'my-2 px-3.5 py-2 rounded-xl border border-amber-600 bg-amber-950/80 text-amber-200 flex items-center justify-between text-xs font-mono toast-anim';
+        } else if (isSuccess) {
+          toast.className =
+            'my-2 px-3.5 py-2 rounded-xl border border-cyan-500 bg-cyan-950/80 text-cyan-200 flex items-center justify-between text-xs font-mono toast-anim';
+        } else {
+          toast.className =
+            'my-2 px-3.5 py-2 rounded-xl border border-rose-600 bg-rose-950/80 text-rose-200 flex items-center justify-between text-xs font-mono toast-anim';
+        }
+      }
+
+      // Administrative Confirmation Handler
+      function handleUserAdminAction(approve) {
+        if (!smartBubbleTarget) return;
+        const id = smartBubbleTarget;
+
+        if (approve) {
+          // Step 1: UI sends atomic IPC command -> Rust Core
+          showToast(
+            '⚙️',
+            `IPC: enable_interface('${id}') sent to Rust Core. Backend enabling adapter...`,
+            false,
+            true
+          );
+          adapters[id].enabled = true;
+          adapters[id].state = 'READY'; // "Enable" MUST NOT mean "force ONLINE"
+
+          document
+            .getElementById('smart-recommendation-bubble')
+            .classList.add('hidden');
+          updateInterfaceCards();
+
+          // Step 2: Policy Engine independently evaluates candidate scoring
+          setTimeout(() => {
+            showToast(
+              '🔍',
+              `Policy Engine evaluating eligible candidate ${adapters[id].name} (Score 98.4 vs Active ${adapters[activePath]?.score || 0})...`,
+              false,
+              true
+            );
+
+            setTimeout(() => {
+              const activeScore = adapters[activePath]?.score || 0;
+              const takeoverMargin = 5.0;
+
+              if (adapters[id].score >= activeScore + takeoverMargin) {
+                adapters[activePath].state = 'READY';
+                adapters[id].state = 'ONLINE';
+                activePath = id;
+
+                document.getElementById('master-status-badge').className =
+                  'flex items-center space-x-2 bg-emerald-950/60 border border-emerald-700/50 px-3 py-1.5 rounded-full';
+                document.getElementById('master-status-dot').className =
+                  'w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-glow-emerald';
+                document.getElementById('system-status-text').textContent =
+                  `ONLINE • ${adapters[id].name.toUpperCase()} PRIMARY`;
+                document.getElementById('system-status-text').className =
+                  'text-xs font-semibold tracking-wider font-mono text-emerald-300';
+
+                targetDownload = 187.6;
+                targetUpload = 43.2;
+                document.getElementById('health-score').textContent = '99';
+                document.getElementById('health-label').textContent =
+                  '/100 EXCELLENT';
+                document
+                  .getElementById('health-arc')
+                  .setAttribute('stroke', '#10b981');
+                document.getElementById('latency-val').textContent = '8.2 ms';
+                document.getElementById('jitter-val').textContent = '1.2 ms';
+
+                showToast(
+                  '🚀',
+                  `Failover Engine Promoted ${adapters[id].name}: Margin satisfied (98.4 >= ${activeScore} + ${takeoverMargin}). Zero drop.`,
+                  false,
+                  true
+                );
+                updateInterfaceCards();
+              }
+            }, 1000);
+          }, 800);
+        } else {
+          // User chose "Keep Disabled"
+          userExplicitlyDismissed = true;
+          document
+            .getElementById('smart-recommendation-bubble')
+            .classList.add('hidden');
+          showToast(
+            '🛡️',
+            `Adapter ${adapters[id].name} remains strictly DISABLED. Excluded from failover candidate pool. MODULA will not silently re-enable.`,
+            false,
+            false
+          );
+        }
+      }
+
+      function checkBackgroundQuality() {
+        if (currentScenario === 'rto' || userExplicitlyDismissed) return;
+        const currentActiveScore = adapters[activePath]?.score || 0;
+
+        for (const [id, a] of Object.entries(adapters)) {
+          if (!a.enabled && a.bgProbingScore > currentActiveScore + 5.0) {
+            smartBubbleTarget = id;
+            document.getElementById('bubble-question').textContent =
+              `${a.name} is disabled but appears healthy. Enable it for automatic failover?`;
+            document.getElementById('smart-bubble-text').innerHTML = `
+            Background carrier probe confirms link is <strong>healthy (${a.latency.toFixed(1)}ms, RFC 3550 jitter 1.2ms, score ${a.bgProbingScore.toFixed(1)})</strong>. Enabling gives the Policy Engine permission to evaluate it.
+          `;
+            document
+              .getElementById('smart-recommendation-bubble')
+              .classList.remove('hidden');
+            return;
+          }
+        }
+        document
+          .getElementById('smart-recommendation-bubble')
+          .classList.add('hidden');
+      }
+
+      function updateInterfaceCards() {
+        let count = 0;
+        for (const [id, a] of Object.entries(adapters)) {
+          if (a.enabled) count++;
+          const card = document.getElementById(`card-${id}`);
+          const badge = document.getElementById(`badge-${id}`);
+          const lat = document.getElementById(`lat-${id}`);
+          const score = document.getElementById(`score-${id}`);
+          const subtext = document.getElementById(`subtext-${id}`);
+          const btnToggle = document.getElementById(`btn-toggle-${id}`);
+
+          if (!a.enabled) {
+            card.className =
+              'p-3 rounded-xl border bg-slate-950/40 border-slate-900 opacity-60 transition-all flex flex-col justify-between';
+            badge.className =
+              'text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400';
+            badge.textContent = 'DISABLED';
+            lat.textContent = `${a.latency.toFixed(1)} ms`;
+            lat.className = 'text-[11px] font-mono text-cyan-400/80';
+            score.textContent = `Bg Score ${a.bgProbingScore.toFixed(1)}`;
+            subtext.textContent = 'Passive Link: Carrier Healthy';
+            subtext.className = 'text-[9px] text-cyan-400/70 font-mono';
+            btnToggle.textContent = 'DISABLED';
+            btnToggle.className =
+              'px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 transition-colors';
+          } else {
+            btnToggle.textContent = 'ENABLED';
+            btnToggle.className =
+              'px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60 transition-colors';
+            lat.textContent = `${a.latency.toFixed(1)} ms`;
+            score.textContent = `Score ${a.score.toFixed(1)}`;
+
+            if (a.state === 'ONLINE') {
+              card.className =
+                'p-3 rounded-xl border bg-emerald-950/30 border-emerald-500/80 shadow-lg shadow-emerald-950/40 transition-all flex flex-col justify-between';
+              badge.className =
+                'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950';
+              badge.textContent = 'ONLINE';
+              lat.className =
+                'text-[11px] font-mono text-emerald-300 font-bold';
+              subtext.textContent = 'Active Layer-3 Default Route';
+              subtext.className = 'text-[9px] text-emerald-400/80 font-mono';
+            } else if (a.state === 'ALERT') {
+              card.className =
+                'p-3 rounded-xl border bg-amber-950/40 border-amber-500/90 shadow-lg shadow-amber-950/40 transition-all flex flex-col justify-between pulse-glow-amber';
+              badge.className =
+                'text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-black';
+              badge.textContent = 'ALERT (DEGRADED)';
+              lat.className = 'text-[11px] font-mono text-amber-300 font-bold';
+              subtext.textContent = 'High Jitter / Bufferbloat';
+              subtext.className = 'text-[9px] text-amber-400/80 font-mono';
+            } else if (a.state === 'OFFLINE') {
+              card.className =
+                'p-3 rounded-xl border bg-rose-950/30 border-rose-600/80 shadow-lg transition-all flex flex-col justify-between';
+              badge.className =
+                'text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-900 text-rose-200';
+              badge.textContent = 'OFFLINE (RTO)';
+              lat.className = 'text-[11px] font-mono text-rose-400';
+              subtext.textContent = 'No Physical Carrier / RTO';
+              subtext.className = 'text-[9px] text-rose-400/80 font-mono';
+            } else {
+              // READY
+              card.className =
+                'p-3 rounded-xl border bg-slate-900/40 border-slate-800 transition-all flex flex-col justify-between';
+              badge.className =
+                'text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800';
+              badge.textContent = 'READY';
+              lat.className = 'text-[11px] font-mono text-slate-400';
+              subtext.textContent = 'Hot Standby (Probing OK)';
+              subtext.className = 'text-[9px] text-slate-500 font-mono';
+            }
+          }
+        }
+        document.getElementById('active-iface-count').textContent = count;
+        checkBackgroundQuality();
+      }
+
+      function requestToggleAdapter(id) {
+        if (adapters[id].enabled) {
+          adapters[id].enabled = false;
+          adapters[id].state = 'OFFLINE';
+          userExplicitlyDismissed = false;
+          showToast(
+            '🔌',
+            `IPC: disable_interface('${id}'). Adapter administratively disabled.`,
+            false,
+            false
+          );
+          if (activePath === id) {
+            executeEngineFailover();
+          }
+        } else {
+          adapters[id].enabled = true;
+          adapters[id].state = 'READY';
+          showToast(
+            '🔌',
+            `IPC: enable_interface('${id}'). Verified operational state. Re-entered as READY.`,
+            false,
+            true
+          );
+        }
+        updateInterfaceCards();
+      }
+
+      function executeEngineFailover() {
+        let bestCandidate = null;
+        let highestScore = -1;
+        for (const [id, a] of Object.entries(adapters)) {
+          if (a.enabled && a.state !== 'OFFLINE' && a.state !== 'ALERT') {
+            if (a.score > highestScore) {
+              highestScore = a.score;
+              bestCandidate = id;
+            }
+          }
+        }
+
+        if (bestCandidate && bestCandidate !== activePath) {
+          const prevName = adapters[activePath]?.name || 'Previous';
+          if (
+            adapters[activePath]?.enabled &&
+            adapters[activePath].state !== 'OFFLINE'
+          ) {
+            adapters[activePath].state = 'READY';
+          }
+          activePath = bestCandidate;
+          adapters[bestCandidate].state = 'ONLINE';
+
+          document.getElementById('master-status-badge').className =
+            'flex items-center space-x-2 bg-cyan-950/70 border border-cyan-500/70 px-3 py-1.5 rounded-full';
+          document.getElementById('master-status-dot').className =
+            'w-2.5 h-2.5 rounded-full bg-cyan-400 pulse-glow-emerald';
+          document.getElementById('system-status-text').textContent =
+            `ONLINE • ${adapters[bestCandidate].name.toUpperCase()} ACTIVE`;
+          document.getElementById('system-status-text').className =
+            'text-xs font-semibold tracking-wider font-mono text-cyan-300';
+
+          showToast(
+            '🚀',
+            `Failover Engine executed path switch: ${prevName} &rarr; ${adapters[bestCandidate].name} in 1.2s (Zero Socket Drop)`,
+            false,
+            true
+          );
+        }
+        updateInterfaceCards();
+      }
+
+      function simulateOptimal() {
+        currentScenario = 'optimal';
+        userExplicitlyDismissed = false;
+        activePath = 'eth1';
+        adapters.eth1 = {
+          name: 'Ethernet 1',
+          enabled: true,
+          latency: 8.2,
+          jitter: 1.2,
+          score: 98.4,
+          state: 'ONLINE',
+          bgProbingScore: 98.4,
+        };
+        adapters.eth2 = {
+          name: 'Ethernet 2',
+          enabled: true,
+          latency: 14.1,
+          jitter: 1.5,
+          score: 89.2,
+          state: 'READY',
+          bgProbingScore: 89.2,
+        };
+        adapters.wifi = {
+          name: 'Wi-Fi 6',
+          enabled: true,
+          latency: 26.8,
+          jitter: 3.2,
+          score: 76.5,
+          state: 'READY',
+          bgProbingScore: 76.5,
+        };
+        adapters.usb = {
+          name: 'USB 5G',
+          enabled: true,
+          latency: 61.4,
+          jitter: 5.8,
+          score: 54.0,
+          state: 'READY',
+          bgProbingScore: 54.0,
+        };
+
+        targetDownload = 187.6;
+        targetUpload = 43.2;
+
+        document.getElementById('health-score').textContent = '99';
+        document.getElementById('health-label').textContent = '/100 EXCELLENT';
+        document.getElementById('health-arc').setAttribute('stroke', '#10b981');
+        document.getElementById('latency-val').textContent = '8.2 ms';
+        document.getElementById('jitter-val').textContent = '1.2 ms';
+
+        document.getElementById('master-status-badge').className =
+          'flex items-center space-x-2 bg-emerald-950/60 border border-emerald-700/50 px-3 py-1.5 rounded-full';
+        document.getElementById('master-status-dot').className =
+          'w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-glow-emerald';
+        document.getElementById('system-status-text').textContent =
+          'ONLINE • ETH 1 PRIMARY';
+        document.getElementById('system-status-text').className =
+          'text-xs font-semibold tracking-wider font-mono text-emerald-300';
+
+        document
+          .getElementById('smart-recommendation-bubble')
+          .classList.add('hidden');
+        showToast(
+          '🟢',
+          'Core state stream: Optimal telemetry received. Ethernet 1 active route.',
+          false,
+          true
+        );
+        updateInterfaceCards();
+      }
+
+      function simulateAdminDisabledETH1() {
+        currentScenario = 'admin_prompt';
+        userExplicitlyDismissed = false;
+        adapters.eth1.enabled = false;
+        adapters.eth1.state = 'OFFLINE';
+        adapters.eth1.latency = 8.2;
+        adapters.eth1.jitter = 1.2;
+        adapters.eth1.bgProbingScore = 98.4;
+
+        executeEngineFailover();
+        targetDownload = 142.0;
+        targetUpload = 34.0;
+        document.getElementById('latency-val').textContent = '14.1 ms';
+        document.getElementById('jitter-val').textContent = '1.5 ms';
+
+        showToast(
+          '⚠️',
+          'ETH 1 disabled. Failover Engine switched to ETH 2. Background probe continues.',
+          false,
+          false
+        );
+        updateInterfaceCards();
+      }
+
+      function simulateAlert() {
+        currentScenario = 'alert';
+        userExplicitlyDismissed = false;
+        adapters.eth1.enabled = true;
+        adapters.eth1.state = 'ALERT';
+        adapters.eth1.latency = 94.5;
+        adapters.eth1.jitter = 19.8;
+        adapters.eth1.score = 42.0;
+        adapters.eth1.bgProbingScore = 42.0;
+
+        targetDownload = 78.0;
+        targetUpload = 18.0;
+
+        document.getElementById('health-score').textContent = '64';
+        document.getElementById('health-label').textContent =
+          '/100 ALERT (DEGRADED)';
+        document.getElementById('health-arc').setAttribute('stroke', '#f59e0b');
+        document.getElementById('latency-val').textContent = '94.5 ms';
+        document.getElementById('jitter-val').textContent =
+          '19.8 ms (RFC 3550 BAD)';
+
+        document.getElementById('master-status-badge').className =
+          'flex items-center space-x-2 bg-amber-950/80 border border-amber-500 px-3 py-1.5 rounded-full';
+        document.getElementById('master-status-dot').className =
+          'w-2.5 h-2.5 rounded-full bg-amber-400 pulse-glow-amber';
+        document.getElementById('system-status-text').textContent =
+          'ALERT • DEGRADATION DETECTED';
+        document.getElementById('system-status-text').className =
+          'text-xs font-semibold tracking-wider font-mono text-amber-300';
+
+        document
+          .getElementById('smart-recommendation-bubble')
+          .classList.add('hidden');
+        showToast(
+          '⚠️',
+          'ALERT: Jitter spike on ETH 1 (19.8ms). Policy Engine evaluating candidates...',
+          true,
+          false
+        );
+        updateInterfaceCards();
+
+        setTimeout(() => {
+          if (currentScenario === 'alert') {
+            executeEngineFailover();
+            targetDownload = 152.0;
+            targetUpload = 36.0;
+            document.getElementById('health-score').textContent = '92';
+            document.getElementById('health-label').textContent =
+              '/100 HEALTHY (FAILOVER)';
+            document
+              .getElementById('health-arc')
+              .setAttribute('stroke', '#06b6d4');
+            document.getElementById('latency-val').textContent = '14.1 ms';
+            document.getElementById('jitter-val').textContent = '1.5 ms';
+          }
+        }, 1200);
+      }
+
+      function simulateRTO() {
+        currentScenario = 'rto';
+        userExplicitlyDismissed = false;
+        adapters.eth1.enabled = true;
+        adapters.eth1.state = 'OFFLINE';
+        adapters.eth1.latency = 0;
+        adapters.eth1.jitter = 0;
+        adapters.eth1.score = 0.0;
+        adapters.eth1.bgProbingScore = 0.0;
+
+        executeEngineFailover();
+        targetDownload = 145.0;
+        targetUpload = 34.0;
+        document.getElementById('health-score').textContent = '89';
+        document.getElementById('health-label').textContent = '/100 HEALTHY';
+        document.getElementById('health-arc').setAttribute('stroke', '#06b6d4');
+        document.getElementById('latency-val').textContent = '14.1 ms';
+        document.getElementById('jitter-val').textContent = '1.5 ms';
+
+        document
+          .getElementById('smart-recommendation-bubble')
+          .classList.add('hidden');
+        showToast(
+          '⚡',
+          'HARD CUT: Ethernet 1 cable disconnect detected. Promoted Ethernet 2 in 0.8s.',
+          false,
+          false
+        );
+        updateInterfaceCards();
+      }
+
+      updateInterfaceCards();
+
+      // =========================================================================
+      // SPLASH MINIMUM DISPLAY DELAY & TUYUL SPORT CAR DEPARTURE ENGINE
+      // Core Principle: "Engine boleh ngebut. Cockpit masuk dengan gaya."
+      // =========================================================================
+      const startupConfig = {
+        splashMinDurationMs: 3000,
+        preset: 'normal',
+        simulatedEngineInitMs: 450,
+        skipEnabled: false,
+        isStartupActive: false,
+      };
+
+      let startupTimer = null;
+      let startupRaf = null;
+
+      function runIntentionalStartupSequence() {
+        if (startupConfig.skipEnabled) {
+          document.getElementById('splash-overlay').classList.add('hidden');
+          showToast(
+            '⚡',
+            'Skip startup active: Engine initialized in ' +
+              startupConfig.simulatedEngineInitMs +
+              'ms.',
+            false,
+            false
+          );
+          return;
+        }
+
+        startupConfig.isStartupActive = true;
+        const overlay = document.getElementById('splash-overlay');
+        overlay.classList.remove('hidden', 'splash-dissolving');
+
+        // Reset Car & Tuyul Stage
+        const carUnit = document.getElementById('tuyul-car-unit');
+        const carStreak = document.getElementById('car-streak');
+        const exhaust = document.getElementById('exhaust-flame');
+        const beam = document.getElementById('light-beam');
+        const bulb = document.getElementById('headlight-bulb');
+
+        carUnit.classList.remove('car-departing');
+        carUnit.classList.add('tuyul-idle');
+        carStreak.classList.remove('streak-active');
+        exhaust.classList.remove('exhaust-active');
+        exhaust.classList.add('opacity-0');
+        beam.setAttribute('opacity', '0');
+        bulb.setAttribute('opacity', '0.3');
+
+        // Reset Telemetry & Honest Progress
+        const dot = document.getElementById('splash-status-dot');
+        const statusText = document.getElementById('splash-status-text');
+        const percentText = document.getElementById('splash-percent-text');
+        const progressBar = document.getElementById('splash-progress-bar');
+        const actualReadout = document.getElementById('actual-init-readout');
+        const minReadout = document.getElementById('min-duration-readout');
+        const remainingReadout = document.getElementById('remaining-readout');
+
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+        statusText.textContent = 'INITIALIZING ENGINE...';
+        statusText.className = 'text-xs font-bold text-slate-200';
+        percentText.textContent = '0%';
+        progressBar.style.width = '0%';
+        progressBar.className =
+          'h-full bg-cyan-500 rounded-full transition-all duration-150 shadow-[0_0_12px_rgba(6,182,212,0.8)]';
+
+        minReadout.textContent = startupConfig.splashMinDurationMs + 'ms';
+        actualReadout.textContent = 'Measuring...';
+        remainingReadout.textContent = startupConfig.splashMinDurationMs + 'ms';
+
+        const startTime = performance.now();
+        const initTargetMs = startupConfig.simulatedEngineInitMs;
+
+        // Natural Progress & Telemetry Loop (1% -> 100% matching engine progress)
+        function updateTelemetry() {
+          if (!startupConfig.isStartupActive) return;
+          const now = performance.now();
+          const elapsed = now - startTime;
+          const remaining = Math.max(
+            0,
+            startupConfig.splashMinDurationMs - elapsed
+          );
+
+          if (elapsed < initTargetMs) {
+            // Natural 1 to 100% progress matching hardware initialization speed
+            const ratio = Math.min(1, elapsed / initTargetMs);
+            const currentPct = Math.min(
+              99,
+              Math.max(1, Math.floor(ratio * 100))
+            );
+
+            progressBar.style.width = currentPct + '%';
+            percentText.textContent = currentPct + '%';
+            actualReadout.textContent =
+              Math.round(elapsed) + 'ms (Initializing...)';
+            remainingReadout.textContent = Math.round(remaining) + 'ms';
+
+            // Natural contextual stage text
+            if (currentPct < 25) {
+              statusText.textContent = 'DISCOVERING ADAPTERS (ETH / WLAN)...';
+            } else if (currentPct < 55) {
+              statusText.textContent = 'PROBING CARRIER & RFC 3550 JITTER...';
+            } else if (currentPct < 80) {
+              statusText.textContent = 'EVALUATING ROUTE METRICS & SCORES...';
+            } else {
+              statusText.textContent = 'ENGAGING WORKLOAD PROTECTION...';
+            }
+
+            startupRaf = requestAnimationFrame(updateTelemetry);
+          }
+        }
+        startupRaf = requestAnimationFrame(updateTelemetry);
+
+        // 1. Network Initialization: STARTS IMMEDIATELY (no pre-delay!)
+        clearTimeout(startupTimer);
+        startupTimer = setTimeout(() => {
+          const coreReadyAt = performance.now();
+          const actualInitDuration = Math.round(coreReadyAt - startTime);
+
+          // 2. 100% COMPLETION STATE (HONEST PROGRESS)
+          dot.className =
+            'w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-glow-emerald';
+          statusText.textContent = 'NETWORK READY';
+          statusText.className = 'text-xs font-bold text-emerald-400';
+          percentText.textContent = '100%';
+          progressBar.style.width = '100%';
+          progressBar.className =
+            'h-full bg-emerald-500 rounded-full transition-all duration-200 shadow-[0_0_16px_rgba(16,185,129,0.9)]';
+          actualReadout.textContent = actualInitDuration + 'ms ✓ Complete';
+
+          // 3. Calculate remaining presentation window
+          const remainingPresentationMs = Math.max(
+            0,
+            startupConfig.splashMinDurationMs - actualInitDuration
+          );
+          remainingReadout.textContent =
+            Math.round(remainingPresentationMs) + 'ms (Playing Departure)';
+
+          // 4. TUYUL SPORT CAR DEPARTURE ANIMATION
+          // Headlights ignite with subtle glow
+          bulb.setAttribute('opacity', '1');
+          beam.setAttribute('opacity', '0.75');
+          beam.classList.add('headlight-on');
+
+          // Exhaust fire ignites
+          exhaust.classList.remove('opacity-0');
+          exhaust.classList.add('exhaust-active');
+
+          // Departure sequence starts within remaining delay window
+          const departureDelay = Math.min(400, remainingPresentationMs * 0.25);
+          setTimeout(() => {
+            if (!startupConfig.isStartupActive) return;
+            carUnit.classList.remove('tuyul-idle');
+            carUnit.classList.add('car-departing');
+            carStreak.classList.add('streak-active');
+          }, departureDelay);
+
+          // 5. Transition to Cockpit at max(actual_init, splash_min_duration)
+          setTimeout(() => {
+            if (!startupConfig.isStartupActive) return;
+            overlay.classList.add('splash-dissolving');
+            setTimeout(() => {
+              overlay.classList.add('hidden');
+              startupConfig.isStartupActive = false;
+              showToast(
+                '⚡',
+                `ENGINE READY in ${actualInitDuration}ms (Max Speed). Presentation: ${Math.round(Math.max(actualInitDuration, startupConfig.splashMinDurationMs))}ms.`,
+                false,
+                false
+              );
+            }, 400);
+          }, remainingPresentationMs);
+        }, initTargetMs);
+      }
+
+      function skipSplashImmediate() {
+        if (!startupConfig.isStartupActive) return;
+        startupConfig.isStartupActive = false;
+        clearTimeout(startupTimer);
+        cancelAnimationFrame(startupRaf);
+        const overlay = document.getElementById('splash-overlay');
+        overlay.classList.add('splash-dissolving');
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+          showToast(
+            '⚡',
+            'Startup presentation skipped (Shift pressed). Cockpit active.',
+            false,
+            false
+          );
+        }, 150);
+      }
+
+      // Keyboard Listener for Hold Shift to skip
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Shift' && startupConfig.isStartupActive) {
+          skipSplashImmediate();
+        }
+      });
+
+      // Startup Settings Modal Functions
+      function openSplashConfigModal() {
+        document
+          .getElementById('splash-settings-modal')
+          .classList.remove('hidden');
+      }
+      function closeSplashConfigModal() {
+        document
+          .getElementById('splash-settings-modal')
+          .classList.add('hidden');
+      }
+      function setSplashPreset(preset, ms) {
+        startupConfig.preset = preset;
+        startupConfig.splashMinDurationMs = ms;
+        document.getElementById('custom-slider').value = ms;
+        document.getElementById('slider-val-readout').textContent = ms + ' ms';
+
+        ['btn-fast', 'btn-normal', 'btn-cinematic'].forEach((id) => {
+          document.getElementById(id).className =
+            'px-3 py-1.5 rounded-lg border text-xs font-mono transition-all bg-slate-900 border-slate-700 text-slate-300';
+        });
+        const activeBtn = document.getElementById('btn-' + preset);
+        if (activeBtn) {
+          activeBtn.className =
+            'px-3 py-1.5 rounded-lg border text-xs font-mono transition-all bg-cyan-950 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-950/50 font-bold';
+        }
+      }
+      function handleSliderChange(val) {
+        startupConfig.preset = 'custom';
+        startupConfig.splashMinDurationMs = parseInt(val, 10);
+        document.getElementById('slider-val-readout').textContent = val + ' ms';
+        ['btn-fast', 'btn-normal', 'btn-cinematic'].forEach((id) => {
+          document.getElementById(id).className =
+            'px-3 py-1.5 rounded-lg border text-xs font-mono transition-all bg-slate-900 border-slate-700 text-slate-300';
+        });
+      }
+      function setSimulatedSpeed(ms) {
+        startupConfig.simulatedEngineInitMs = ms;
+        ['speed-100g', 'speed-fiber', 'speed-slow'].forEach((id) => {
+          document.getElementById(id).className =
+            'px-2.5 py-1 rounded border text-[11px] font-mono transition-all bg-slate-900 border-slate-700 text-slate-400';
+        });
+        const targetId =
+          ms === 280 ? 'speed-100g' : ms === 450 ? 'speed-fiber' : 'speed-slow';
+        document.getElementById(targetId).className =
+          'px-2.5 py-1 rounded border text-[11px] font-mono transition-all bg-cyan-950 border-cyan-500 text-cyan-300 font-bold';
+      }
+      function handleSkipToggle(checked) {
+        startupConfig.skipEnabled = checked;
+      }
+      function replayStartupFromModal() {
+        closeSplashConfigModal();
+        runIntentionalStartupSequence();
+      }
+
+      // Automatically run intentional startup presentation on initial page load
+      window.addEventListener('DOMContentLoaded', () => {
+        runIntentionalStartupSequence();
+      });
+    </script>
+
+    <!-- ========================================================================= -->
+    <!-- STARTUP PRESENTATION & TUYUL CONFIGURATION MODAL                          -->
+    <!-- ========================================================================= -->
+    <div
+      id="splash-settings-modal"
+      class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-[#080c14] border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl font-mono text-left relative"
+      >
+        <div
+          class="flex items-center justify-between pb-3 border-b border-slate-800"
+        >
+          <div class="flex items-center space-x-2">
+            <span class="text-base">⏱️</span>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">
+              Startup Presentation & Delay Engine
+            </h3>
+          </div>
+          <button
+            onclick="closeSplashConfigModal()"
+            class="text-slate-400 hover:text-white text-base"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="py-4 space-y-4 text-xs">
+          <!-- Presets -->
+          <div>
+            <label
+              class="text-slate-400 block mb-2 text-[11px] font-bold uppercase tracking-wider"
+              >Presentation Presets</label
+            >
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                id="btn-fast"
+                onclick="setSplashPreset('fast', 1500)"
+                class="px-3 py-1.5 rounded-lg border text-xs font-mono transition-all bg-slate-900 border-slate-700 text-slate-300"
+              >
+                Fast<br /><span class="text-[10px] text-slate-400"
+                  >1500 ms</span
+                >
+              </button>
+              <button
+                id="btn-normal"
+                onclick="setSplashPreset('normal', 3000)"
+                class="px-3 py-1.5 rounded-lg border text-xs font-mono transition-all bg-cyan-950 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-950/50 font-bold"
+              >
+                Normal<br /><span class="text-[10px] text-cyan-400"
+                  >3000 ms</span
+                >
+              </button>
+              <button
+                id="btn-cinematic"
+                onclick="setSplashPreset('cinematic', 5000)"
+                class="px-3 py-1.5 rounded-lg border text-xs font-mono transition-all bg-slate-900 border-slate-700 text-slate-300"
+              >
+                Cinematic<br /><span class="text-[10px] text-slate-400"
+                  >5000 ms</span
+                >
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Slider -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label
+                class="text-slate-400 text-[11px] font-bold uppercase tracking-wider"
+                >Custom Delay Window</label
+              >
+              <span id="slider-val-readout" class="text-cyan-300 font-bold"
+                >3000 ms</span
+              >
+            </div>
+            <input
+              id="custom-slider"
+              type="range"
+              min="1000"
+              max="10000"
+              step="250"
+              value="3000"
+              oninput="handleSliderChange(this.value)"
+              class="w-full accent-cyan-400 bg-slate-900 rounded-lg cursor-pointer"
+            />
+            <div class="flex justify-between text-[9px] text-slate-400 mt-1">
+              <span>1000 ms (1s)</span>
+              <span>10000 ms (10s)</span>
+            </div>
+          </div>
+
+          <!-- Simulated Engine Speed -->
+          <div>
+            <label
+              class="text-slate-400 block mb-2 text-[11px] font-bold uppercase tracking-wider"
+              >Simulated Network Engine Speed</label
+            >
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                id="speed-100g"
+                onclick="setSimulatedSpeed(280)"
+                class="px-2.5 py-1 rounded border text-[11px] font-mono transition-all bg-slate-900 border-slate-700 text-slate-400"
+              >
+                100 Gbps<br /><span class="text-[9px] text-slate-400"
+                  >280 ms init</span
+                >
+              </button>
+              <button
+                id="speed-fiber"
+                onclick="setSimulatedSpeed(450)"
+                class="px-2.5 py-1 rounded border text-[11px] font-mono transition-all bg-cyan-950 border-cyan-500 text-cyan-300 font-bold"
+              >
+                Fast Fiber<br /><span class="text-[9px] text-cyan-400"
+                  >450 ms init</span
+                >
+              </button>
+              <button
+                id="speed-slow"
+                onclick="setSimulatedSpeed(1400)"
+                class="px-2.5 py-1 rounded border text-[11px] font-mono transition-all bg-slate-900 border-slate-700 text-slate-400"
+              >
+                High Latency<br /><span class="text-[9px] text-slate-400"
+                  >1400 ms init</span
+                >
+              </button>
+            </div>
+          </div>
+
+          <!-- Skip Setting -->
+          <div
+            class="flex items-center space-x-2 pt-2 border-t border-slate-800"
+          >
+            <input
+              type="checkbox"
+              id="skip-checkbox"
+              onchange="handleSkipToggle(this.checked)"
+              class="accent-cyan-400 rounded"
+            />
+            <label
+              for="skip-checkbox"
+              class="text-slate-300 cursor-pointer select-none"
+              >Skip startup presentation (Default: OFF)</label
+            >
+          </div>
+
+          <!-- Clarification Note -->
+          <div
+            class="p-2.5 rounded-lg bg-cyan-950/30 border border-cyan-800/40 text-[10px] text-cyan-200/80 leading-relaxed"
+          >
+            💡 <strong>Note:</strong> Controls minimum presentation display
+            time. Does not affect network initialization. Engine always
+            initializes at maximum hardware speed.
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div
+          class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800"
+        >
+          <button
+            onclick="closeSplashConfigModal()"
+            class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition-colors"
+          >
+            Close
+          </button>
+          <button
+            onclick="replayStartupFromModal()"
+            class="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/30 flex items-center gap-1.5 font-mono transition-all"
+          >
+            <span>🚀</span>
+            <span>Launch Presentation</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

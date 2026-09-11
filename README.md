@@ -1,4 +1,4 @@
-# MODULA - Smart Auto Failover v2.6
+# AutoFailover 3.0 by Modula
 
 <div align="center">
 
@@ -11,346 +11,160 @@
   ╚═╝     ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝
 ```
 
-### _Ultra-Lightweight Multi-Platform Zero-Drop Network Failover & QoS Orchestrator_
+### _"light seamless and usefull"_
 
-**Windows • macOS Apple Silicon (M1/M2/M3) • Linux**
+**Digital Network Cockpit • Multi-Path Failover & Active Session Protector**  
+**Windows • macOS Apple Silicon • Linux**
 
-\*Dibuat dengan dedikasi oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
+*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
-[![Release](https://img.shields.io/badge/Release-v2.6-amber?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-emerald?style=for-the-badge)](https://github.com/parikesitad-pm)
-[![GUI](https://img.shields.io/badge/GUI-CustomTkinter-indigo?style=for-the-badge)](https://github.com/TomSchimansky/CustomTkinter)
-[![Tests](https://img.shields.io/badge/Tests-67%2F67%20PASS-brightgreen?style=for-the-badge)](tests/)
+[![Release](https://img.shields.io/badge/Release-v3.0.0--alpha-blue?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
+[![Core](https://img.shields.io/badge/Core-Rust-orange?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
+[![Shell](https://img.shields.io/badge/Shell-Tauri-24C8D8?style=for-the-badge&logo=tauri)](https://tauri.app/)
+[![UI](https://img.shields.io/badge/UI-React%20%2B%20TS-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 </div>
 
 ---
 
-## 💡 Keresahan Nyata & Mengapa MODULA Diciptakan
+## 🎯 Filosofi & Prinsip Desain
 
-### Skenario Lapangan:
+> **Core UX Principle:**  
+> *"Kelihatan kompleks di dalam. Terasa sederhana di luar."*  
+> *"Automation should be invisible until it matters."*
 
-Pernahkah Anda mengalami situasi krusial seperti ini?
+AutoFailover 3.0 dirancang sebagai sebuah **Digital Network Cockpit** yang terinspirasi dari visual instrumen kluster otomotif berpresisi tinggi—bukan panel administrasi router yang padat dan membingungkan.
 
-- Sedang memimpin **presentasi Zoom / Microsoft Teams** penting di hadapan klien eksekutif.
-- Sedang melakukan **live broadcast streaming event besar menggunakan OBS Studio / vMix**.
-- Sedang mengeksekusi **transaksi trading saham/crypto bernilai tinggi**, atau pertandingan esports kompetitif.
+### 6 Pertanyaan Kunci Layar Utama (< 2 Detik):
+1. **Jalur internet mana yang sedang dipakai?** (`ONLINE`)
+2. **Apakah koneksi dalam kondisi sehat?** (Status bar & health badge)
+3. **Berapa Latensi & Jitter saat ini?** (Readout standar IETF RFC 3550)
+4. **Bagaimana kondisi kecepatan Download / Upload?** (Dual precision gauges)
+5. **Jalur cadangan mana yang siap jika jalur aktif putus?** (`READY` / `ALERT` / `OFFLINE`)
+6. **Apakah MODULA baru saja melakukan pengalihan rute?** (Notifikasi transisi instan)
 
-Tiba-tiba, koneksi internet kabel fiber optic utama (Indihome / Biznet / FirstMedia) mengalami RTO (_Request Time Out_), putus sesaat, atau kabel docking station tidak sengaja tergeser.
-
-### Masalah Terbesar pada Sistem Operasi Standar:
-
-Ketika satu adapter internet mati:
-
-1. **OS Membutuhkan Waktu Terlalu Lama (15–45 Detik)**: Windows, macOS, maupun Linux tidak langsung mengalihkan rute default secara instan.
-2. **Socket TCP/UDP Hancur**: Jika koneksi diputus dengan men-_disable_ adapter, seluruh socket transport yang terikat ke kartu jaringan tersebut langsung dibunuh paksa oleh kernel. Hasilnya: **Zoom Meeting seketika freeze, audio terputus total, dan layar menampilkan pesan "Reconnecting..."** yang merusak jalannya acara penting.
-3. **Solusi Hardware Terlalu Mahal**: Router Dual-WAN enterprise (seperti Peplink, Cisco, atau Mikrotik PCC Bonding) membutuhkan biaya jutaan hingga belasan juta rupiah, instalasi kabel rumit, serta pengetahuan jaringan yang mendalam.
-
-### Solusi MODULA (The Software Zero-Drop Failover):
-
-**MODULA** memecahkan masalah ini langsung di level software laptop Anda secara **100% GRATIS dan Tanpa Biaya Hardware Tambahan**:
-
-- **Manipulasi Route Metric Layer-3**: MODULA tidak pernah men-_disable_ port fisik jaringan. Melalui manipulasi _Interface Routing Metric_ dinamis, Windows / macOS / Linux routing table dialihkan ke jalur cadangan (LAN 2 Docking, Wi-Fi, atau USB Tethering HP) dalam waktu **kurang dari 2 detik**.
-- **Zero-Drop Protection**: Karena adapter tidak di-disable, socket transport UDP Zoom / Teams tidak dihancurkan oleh OS. Server media video call mengenali roaming IP dalam 1-2 paket UDP tanpa menghentikan sesi meeting sama sekali!
+*Fitur sekunder (analisis beban hardware CPU/RAM/GPU, konfigurasi lanjutan, log diagnostik mendalam) ditempatkan rapi di secondary views agar dashboard utama tetap tenang dan fokus.*
 
 ---
 
-## 🎯 Transparansi Sumber Data & Probing Jaringan
+## 🛡️ Session Continuity & Perlindungan Workload Aktif
 
-Banyak pengguna bertanya: _"Ping-nya dikirim kemana saja? Dari mana asal angka Jitter dan kecepatan Download/Upload yang tampil di layar?"_ MODULA dibangun dengan transparansi teknis penuh:
+Tujuan utama diciptakannya MODULA adalah melindungi sesi kerja real-time yang sedang berlangsung (**Zoom, Microsoft Teams, Google Meet, OBS Studio, vMix, Wirecast, Streamlabs**) dari dampak degradasi jaringan dan putusnya koneksi.
 
-### 1. Kemana Saja Ping / Probing Dikirim?
+$$\text{DETECT EARLY} \longrightarrow \text{SELECT BETTER PATH} \longrightarrow \text{SWITCH FAST} \longrightarrow \text{MINIMIZE SESSION DISRUPTION}$$
 
-MODULA melakukan ICMP Echo Probing aktif secara simultan ke target Anycast BGP Tier-1 global dengan latensi terendah (ditampilkan jelas di status bar header utama):
+### Disiplin Teknis: Batasan Kontinuitas Koneksi
+- MODULA **TIDAK PERNAH mengklaim "garansi pasti zero socket drop untuk seluruh aplikasi"**. Pengalihan rute OS dapat mengubah IP sumber/antarmuka lokal, sehingga sebagian sesi TCP/UDP lama pada protokol tertentu mungkin memerlukan re-establishment.
+- **Tujuan Rekayasa Resmi**: *"Meminimalkan disrupsi dan memaksimalkan probabilitas kontinuitas sesi aktif"*, didukung pengujian empiris terukur per platform dan workload.
+- Pengalaman pengguna yang dihadirkan:  
+  **"MODULA menyelesaikan masalah jaringan saya."**  
+  *(Bukan: "MODULA mengubah-ubah konfigurasi jaringan saya tanpa alasan.")*
 
-- **🥇 Target Primer (P1)**: `1.1.1.1` (Cloudflare Global Anycast DNS) — Peering langsung ke gateway data center lokal.
-- **🥈 Target Sekunder (P2)**: `8.8.8.8` (Google Public Anycast DNS) — Verifikasi sekunder untuk mencegah _false-positive_.
-- **🥉 Target Tersier (P3)**: `9.9.9.9` (Quad9 Anycast) — Resolusi independen Swiss/Global untuk redundansi total.
-- **🛰️ Target Keempat (P4 - Opsional)**: Kustom melalui tombol `+ Tambah Target ke-4` (misal OpenDNS `208.67.222.222` atau gateway router lokal `192.168.1.1`).
-- **🔒 Source IP Binding**: Ping TIDAK dikirim via rute default semata, melainkan di-bind secara eksplisit ke Source IP lokal masing-masing kartu jaringan (`ping -S <source_ip>` pada Windows, atau bind socket pada macOS/Linux). Hal ini memungkinkan LAN 1, LAN 2, dan Wi-Fi dites jalurnya secara independen dan simultan!
+### Aturan Tanpa Perpindahan Rute yang Tak Perlu (*No Unnecessary Switching*)
+Kontinuitas sesi kerja memiliki prioritas jauh lebih tinggi daripada mengejar perbedaan performa minor:
+- **DILARANG berpindah jalur** hanya karena selisih latensi beberapa milidetik, derau pengukuran sesaat, lonjakan jitter tunggal yang insignifikan, atau karena jalur prioritas fisik baru pulih.
+- Rumus anti-flapping margin ($\text{candidate\_score} \ge \text{active\_score} + \text{takeover\_margin}$) wajib dipenuhi sebelum promosi terjadi.
 
-### 2. Dari Mana Angka Jitter Dihitung?
-
-MODULA menerapkan formula standar resmi industri telekomunikasi **IETF RFC 3550 (RTP Audio/Video Streaming Protocol)**:
-
-$$J_i = J_{i-1} + \frac{|D(i-1, i)| - J_{i-1}}{16}$$
-
-Di mana $D(i-1, i) = \text{Latency}_i - \text{Latency}_{i-1}$ adalah deviasi latensi absolut antar 2 paket berturut-turut. Formula ini persis sama dengan yang digunakan oleh Zoom, Cisco Webex, dan Discord VoIP untuk mengkalibrasi kestabilan audio/video buffer Anda:
-
-- 🟢 **Jitter < 5 ms**: Sempurna (Kualitas suara jernih tanpa patah-patah).
-- 🟡 **Jitter 5–15 ms**: Cukup baik (Variasi latensi wajar).
-- 🔴 **Jitter > 15 ms**: Buruk (Indikasi bufferbloat / audio video mulai _stutter_).
-
-### 3. Dari Mana Angka Download & Upload Berasal?
-
-- **Live Throughput Dashboard**: Dibaca langsung dari _OS Kernel Network Subsystem_ (`psutil.net_io_counters(pernic=True)`) dengan menghitung selisih bytes masuk/keluar dibagi interval waktu nyata ($\Delta t$). Ini mencerminkan pemakaian bandwidth seluruh aplikasi yang sedang berjalan di PC Anda.
-- **Speedtest Suite 4-Provider**: Mengalirkan chunk multi-stream paralel langsung ke server node CDN:
-  - **Cloudflare Anycast**: `speed.cloudflare.com`
-  - **Fast.com**: Netflix Open Connect Appliance (OCA CDN)
-  - **nPerf**: Multi-CDN Anycast bandwidth nodes
-  - **Ookla**: Jaringan server Ookla Speedtest Network
+### Prioritas Penanganan Gangguan (Failure Priority):
+1. Pertahankan jalur aktif yang masih sehat.
+2. Deteksi degradasi lebih awal sebelum terjadi pemutusan total.
+3. Hindari perpindahan jalur yang tidak perlu (*avoid flapping*).
+4. Jika jalur aktif benar-benar rusak/unusable, alihkan rute seketika (<2s).
+5. Pilih kandidat terbaik yang memenuhi syarat.
+6. Lanjutkan pemantauan pasif terhadap jalur yang sebelumnya bermasalah.
+7. Evaluasi pemulihan jalur (*recovery*) tanpa preemption agresif.
 
 ---
 
-## ⚡ Fitur Unggulan MODULA v2.5
+## 🏎️ Visual & AutoFailover 3.0 Vertical Accent
 
-| Fitur                                | Deskripsi                                                                                                                                                                                                |
-| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **🏎️ Supercar Tachometer Speedtest** | Gauge speedtest bergaya tachometer kokpit supercar (`SportsCarSpeedGauge`) dengan 250° arc, redline rev-meter zone (>80%), dynamic peak hold pip, HUD digital, dan dynamic scale tiers hingga 1000 Mbps. |
-| **⏳ Staged Refresh Tactile Delay**  | Animasi refresh modul (~2.2 detik) dengan feedback tahapan pemindaian visual dan eksekusi callback otomatis yang tactile dan memuaskan.                                                                  |
-| **🏎️ Sports Car Tachometer HUD**     | Speedometer instrumen tachometer supercar 60 FPS needle sweep analog, redline glow, HUD digital, dan bilah spectrum ganda per backbone target (6 bilah default, 8 bilah saat target ke-4 aktif).         |
-| **🎛️ Inline Bandwidth QoS Monitor**  | Alokasi bandwidth real-time tepat di dashboard utama di bawah speedometer dengan 1-klik tombol cepat **Boost Meeting** (Zoom/Teams/Meet) dan **Boost Streaming** (OBS/vMix).                             |
-| **🔌 Adaptif 1 s.d. 8 Port Card**    | Menyesuaikan otomatis dengan perangkat Anda: laptop 1 LAN tampil 1 kartu lebar; 2 LAN + 1 Wi-Fi tampil 3 kolom; PC server hingga 8 port tertata otomatis dalam 2 baris responsif.                        |
-| **🎯 Custom Target IP ke-4**         | Modal popup instan untuk menambah IP server ke-4 langsung dari dashboard dengan regex validator IPv4 dan preset kilat.                                                                                   |
-| **⚡ Zero-Delay Splash Startup**     | Eliminasi total kedipan jendela sebelum splash screen; jendela utama disembunyikan sempurna sampai transisi fadeout splash screen selesai.                                                               |
-| **🔍 Dialog Riwayat Log Lengkap**    | Panel log dashboard diperamping (~95px) dan dilengkapi tombol **Buka Log Lengkap** untuk membuka dialog pencarian, filter tingkat log, dan ekspor berkas.                                                |
-| **👶 Bahasa Formal & Sangat Ramah**  | Panduan pengaturan dirancang ulang dalam bahasa Indonesia formal yang mudah dipahami pemula, manula, hingga teknisi jaringan profesional (tersedia Mode Praktis & Mode Lanjutan).                        |
-| **🚀 Multi-Platform Releases**       | Paket bundle resmi berversi: Windows (`.zip` / `.exe`), macOS Apple Silicon M1/M2/M3 (`.dmg`), dan Linux (`.tar.gz`).                                                                                    |
-| **⌨️ Shortcut Keyboard Manager**     | Dukungan pintasan keyboard global (F11 Fullscreen, F5 Refresh, Ctrl+M Monitoring, Ctrl+T Speedtest, Ctrl+Q QoS, Ctrl+P Settings) yang dapat dikustomisasi di jendela Settings.                           |
-| **🎮 Live GPU Usage & Mini Meters**  | Pemantauan utilisasi GPU real-time via daemon thread non-blocking serta visual meter mini mulus (`██░░`) pada footer untuk CPU, RAM, dan GPU.                                                            |
-| **🔊 Smart Sound Alert Engine**      | Audio sintetis real-time untuk event port connect, disconnect, failover alarm, dan peringatan beban ekstrem CPU/RAM/GPU (>85%) dengan master mute switch.                                                |
-| **💬 Toast Bubble Notifications**    | Banner notifikasi melayang beranimasi di sudut kanan bawah layar untuk setiap aksi, toggle adapter, dan status failover.                                                                                 |
-| **💻 Fastfetch Hardware Info**       | Kartu spesifikasi hardware PC lengkap ala Fastfetch Linux, grafik rolling 60 detik CPU & RAM, serta pemantauan Top 5 resource-consuming processes.                                                       |
-| **⚡ 60 FPS Speedtest + Detail**     | Speedometer gauge beranimasi 60 FPS super smooth ala Ookla & Cloudflare. Klik setiap hasil benchmark untuk membuka **Deep Telemetry Modal** (Grade A+ - F, Bufferbloat delta).                           |
-| **🌓 Dual Theme (Dark & Light)**     | Tampilan modern berpalet **Topeng Barong Bali** (_Royal Gold, Crimson, Deep Slate_) dengan segment switcher Dark/Light mode instan.                                                                      |
+- **Dark Cockpit Aesthetic**: Latar gelap high-contrast (`#080b10`) dengan tipografi presisi teknis.
+- **Custom SVG Gauges**: Jarum instrumen analog responsif dengan interpolasi 60 FPS client-side tanpa membebani engine jaringan.
+- **AutoFailover 3.0 Vertical Accent**: Garis aksen vertikal tipis (*light blue → blue → red*) pada tepi bezel sebagai ciri khas visual dekoratif AutoFailover 3.0 by Modula (bukan indikator status).
+- **Dynamic Interface Cards**: Hanya menampilkan kartu jaringan fisik/logis yang benar-benar aktif terdeteksi (Ethernet 1, Ethernet 2, Wi-Fi, USB Modem) tanpa placeholder palsu.
 
 ---
 
-## 🛠️ Tech Stack & Arsitektur Sistem
+## 🏛️ UI / Core Ownership & Authority Model
+
+> **Prinsip Dasar:**  
+> *The UI reports what MODULA decided.*  
+> *The Policy Engine decides what should happen.*  
+> *The Failover Engine makes it happen.*  
+> *The Platform Backend talks to the operating system.*
 
 ```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                      MODULA DESKTOP GUI (v2.4)                         │
-│  [ CustomTkinter 6.0 ] • [ Pillow 12 ] • [ Barong Theming Engine ]     │
-│  • Sports Car Tachometer HUD • Inline QoS • Dynamic 1-8 Port Cards     │
-│  • Toast Manager • Full History Modal • 4th Target Probing Dialog      │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────▼─────────────────────────────────────┐
-│                      CORE ORCHESTRATION LAYER                          │
-│  • FailoverEngine (Dynamic P1-P8 State Machine & 5x Anti-Flapping)     │
-│  • TrafficMonitor (RFC 3550 Jitter & Kernel NetIO Delta Sampling)      │
-│  • SoundEngine (Synthesizer Chimes, High-Load Alert & Master Mute)     │
-│  • BandwidthQoSEngine (NetQoS DSCP & Windows Process Priority)         │
-│  • SystemTelemetry (WMI / CIM Hardware Specs & Top Processes Engine)   │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────▼─────────────────────────────────────┐
-│                   OS PLATFORM ABSTRACTION LAYER                        │
-│   [ WindowsBackend ]       [ MacOSBackend ]        [ LinuxBackend ]    │
-│   netsh / route.exe        networksetup            ip route / ip link  │
-│   New-NetQosPolicy         scselect                iptables / tc       │
-│   WMI Win32 Provider       sysctl hardware         sysfs telemetry     │
-└────────────────────────────────────────────────────────────────────────┘
+React / TypeScript UI
+        ↓ (Perintah Atomik: enable_interface, get_interface_state)
+     Tauri IPC
+        ↓ (State Streams & Events)
+      Rust Core
+        ↓
+┌───────────────────────────────┐
+│ DiscoveryEngine               │
+│ ProbeEngine (RFC 3550 Jitter) │
+│ Health Scoring                │
+│ PolicyEngine (Route Decision) │
+│ FailoverEngine (Orchestrator) │
+│ RouteManager (L3 Metric)      │
+│ Recovery & Anti-Flap Arbiter  │
+│ WorkloadEngine (Passive App)  │
+│ QoS Orchestrator              │
+└───────────────┬───────────────┘
+                ↓
+        Native OS APIs
 ```
 
----
-
-## 💻 Panduan Menjalankan & Cara Pakai
-
-### 🪟 1. Di Windows (10 / 11)
-
-#### Opsi A: Menggunakan Bundle Release ZIP (Paling Mudah)
-
-1. Unduh atau buka file bundle di:
-   ```
-   dist_app/MODULA-v2.4-windows-x64.zip
-   ```
-2. Ekstrak folder `MODULA`, lalu klik kanan file `run_admin.bat` -> pilih **"Run as administrator"** (atau klik ganda `MODULA.exe`).
-
-#### Opsi B: Menjalankan dari Source Code Python
-
-1. Buka PowerShell / Terminal di direktori project:
-   ```powershell
-   python -m pip install -r requirements.txt
-   ```
-2. Jalankan dengan hak administrator:
-   ```cmd
-   run_admin.bat
-   ```
+### Pemisahan Tanggung Jawab:
+- **UI (React + TypeScript)**: Bertanggung jawab merender status dashboard, interaksi pengguna, permintaan konfigurasi policy, konfirmasi administratif, dan menampilkan event engine. **UI TIDAK PERNAH memiliki wewenang jaringan** (tidak melakukan probing, scoring, atau switching rute sendiri).
+- **Rust Core**: Memiliki otoritas penuh atas pemantauan jaringan, evaluasi kesehatan, keputusan rute, manipulasi routing metric, dan penegakan QoS.
+- **Process Independence**: Siklus hidup engine jaringan independen dari UI. Engine tetap berjalan optimal saat UI diminimalkan, disembunyikan, atau tertutup.
 
 ---
 
-### 🍏 2. Di macOS (Apple Silicon M1 / M2 / M3 & Intel)
+## 🛡️ Administrative Actions vs Policy Decisions
 
-#### Opsi A: Menggunakan Installer Disk Image (.dmg)
+Aksi administratif berbeda secara mendasar dari keputusan policy rute:
 
-1. Build atau buka file disk image:
-   ```
-   dist_app/MODULA-v2.4-macos-arm64.dmg
-   ```
-2. Klik ganda file `.dmg`, lalu tarik icon **MODULA** (dengan icon resmi Barong `modula.icns`) ke folder **Applications**.
-3. **PENTING - Mengatasi macOS Gatekeeper Quarantine**:
-   Karena file didownload dari internet dan belum didaftarkan sertifikat Apple Developer berbayar ($99/thn), macOS Gatekeeper akan menampilkan pesan _"MODULA is damaged and can't be opened"_ atau memblokir aplikasi.
-   Solusi sangat mudah (cukup jalankan 1 kali di Terminal Mac):
-   ```bash
-   xattr -cr /Applications/MODULA.app
-   ```
-   Atau di dalam file DMG sudah disediakan script pembuka cepat: klik ganda **`Open_MODULA.command`**.
-
-#### Opsi B: Menjalankan dari Terminal Mac
-
-1. Buka Terminal:
-   ```bash
-   chmod +x run_mac.sh
-   ./run_mac.sh
-   ```
-   _(Script otomatis meminta password `sudo` sekali untuk mengizinkan manipulasi urutan Network Service Order)._
+1. **Passive Carrier Probing**: Adapter fisik yang di-disable secara administratif tetap dipantau status carrier & latensinya melalui background socket probe (`SO_BINDTODEVICE` / `IP_UNICAST_IF`).
+2. **Smart Prompt ("Please Enable")**: Jika adapter yang di-disable terbukti memiliki kualitas prima, UI memunculkan notifikasi persetujuan:
+   > *"Ethernet 1 is disabled but appears healthy. Enable it for automatic failover?"*  
+   > `[ Enable ]` `[ Keep Disabled ]`
+3. **Aturan Otoritas**:
+   - Jika pengguna memilih **Enable**: UI mengirim perintah atomik `enable_interface(id)` ke Rust Core. Platform backend mengaktifkan adapter → memvalidasi operational state → Policy Engine mengevaluasi skor → Failover Engine memutuskan apakah promosi layak. **"Enable" BUKAN berarti langsung "Force ONLINE"**.
+   - Jika pengguna memilih **Keep Disabled**: Adapter tetap dinonaktifkan dan dikeluarkan dari kandidat failover. **MODULA tidak akan pernah mengaktifkan adapter secara diam-diam (*never silently re-enable*) tanpa izin eksplisit pengguna.**
 
 ---
 
-### 🐧 3. Di Linux (Ubuntu / Debian / Fedora / Arch)
+## ⚡ Workload Awareness Profiles
 
-1. Pasang dependensi GUI Tkinter sistem:
-   ```bash
-   sudo apt-get update && sudo apt-get install python3 python3-pip python3-tk
-   python3 -m pip install -r requirements.txt
-   ```
-2. Jalankan launcher dengan privilege jaringan:
-   ```bash
-   chmod +x build_linux.sh
-   ./dist_app/MODULA/run_linux.sh
-   ```
+Workload Engine memberikan konteks spesifik ke Policy Engine tanpa memotong alur kendali:
+- **General**: Penyeimbangan metrik umum (latensi & bandwidth seimbang).
+- **Video Conference**: Memprioritaskan latensi rendah, variasi jitter (RFC 3550) serendah mungkin, toleransi kehilangan paket minimal, dan kestabilan buffer audio/video.
+- **Live Production**: Memprioritaskan throughput unggah (*upload stability*), packet loss 0%, dan kestabilan bit-rate video upstream (OBS/vMix).
 
 ---
 
-## 📦 Panduan Build & Packaging untuk Tim
+## 📜 Riwayat Milestone Ringkas
 
-Jika Anda ingin membuild ulang paket rilis mandiri (_standalone distribution_) untuk tim Anda:
+Detail riwayat lengkap setiap rilis tersedia di **[CHANGELOG.md](CHANGELOG.md)**.
 
-```bash
-# 1. Build Bundle Windows (Menghasilkan MODULA-v2.4-windows-x64.zip & MODULA.exe)
-python build_windows_bundle.py
-
-# 2. Build Bundle macOS (Menghasilkan MODULA-v2.4-macos-arm64.dmg di Mac)
-chmod +x build_macos_dmg.sh
-./build_macos_dmg.sh
-
-# 3. Build Bundle Linux (Menghasilkan MODULA-v2.4-linux-x86_64.tar.gz di Linux)
-chmod +x build_linux.sh
-./build_linux.sh
-```
+| Versi | Milestone Utama |
+| :--- | :--- |
+| **v3.0** | Arsitektur Rust + Tauri + React & TS, pemisahan UI/Core ownership mutlak, Digital Network Cockpit minimalis, Session Continuity & Active Session Protection, anti-flap margin, dynamic interface discovery, dan administrative approval protocol. |
+| **v2.6** | Dual tachometer Download/Upload, Center HUD readout RFC 3550 Jitter, circular backbone dial, dan throughput fallback. |
+| **v2.5** | Gauge speedtest SportsCarSpeedGauge 250°, staged tactile refresh delay, dan canvas idle sleep optimization. |
+| **v2.4** | Inline QoS monitor, layout adaptif 1-8 port, dialog custom probing target ke-4, dan log dialog viewer. |
+| **v2.3** | Splash screen frameless radial, keyboard shortcuts, dan sound synthesis alerts. |
+| **v2.2** | Paket rilis multi-platform Windows / macOS Apple Silicon / Linux, dan 4-engine speedtest benchmark. |
+| **v2.0 - v2.1** | Rebranding MODULA, multi-port failover hingga 3 adapter, implementasi formula Jitter RFC 3550. |
+| **v1.0** | Pondasi manipulasi Layer-3 Routing Metric untuk proteksi failover transport. |
 
 ---
 
-## 🔮 Roadmap Pengembangan: "Ini Bisa Jadi Apa Aja & Kemana Aja?"
+## 📄 Lisensi & Hak Cipta
 
-Bagi para pengembang, insinyur jaringan, dan kontributor open-source, arsitektur modular **MODULA** dirancang sangat fleksibel untuk dikembangkan lebih jauh ke berbagai ranah:
+Proyek ini dirilis di bawah lisensi **MIT License**.
 
-### 1. 🚀 True Multi-WAN Channel Bonding (Packet Aggregation)
-
-- **Visi**: Menggabungkan bandwidth 2 kabel LAN dan Wi-Fi secara serentak (misal: LAN 1 50Mbps + LAN 2 50Mbps = 100Mbps).
-- **Implementasi**: Mengintegrasikan protokol MPTCP (_Multi-Path TCP_) atau proxy WireGuard VPN multi-tunnel seperti Speedify, namun 100% open-source dan self-hosted tanpa langganan bulanan.
-
-### 2. 🧠 AI-Driven Predictive Network Failover
-
-- **Visi**: Melakukan failover _sebelum_ koneksi internet benar-benar putus.
-- **Implementasi**: Model Machine Learning / Neural Network ultra-ringan (menggunakan ONNX Runtime) yang mempelajari pola variansi Jitter, lonjakan Bufferbloat, dan RTT slope untuk memprediksi degradasi jaringan 1–2 detik lebih awal sebelum terjadinya drop paket.
-
-### 3. 🐳 Headless Docker Daemon & Router Box (Raspberry Pi / Mini PC)
-
-- **Visi**: Menjadikan MODULA sebagai sistem operasi router fisik mungil.
-- **Implementasi**: Memisahkan core engine menjadi CLI daemon / REST API tanpa GUI yang dapat di-flash ke Raspberry Pi 4 / 5 atau mini PC dengan 3–4 port Ethernet untuk dijadikan gateway failover kantor atau studio broadcast.
-
-### 4. 📱 Mobile Companion App (Android & iOS)
-
-- **Visi**: Memantau status failover laptop dan mengontrol alokasi bandwidth dari smartphone saat sedang live broadcast.
-- **Implementasi**: Local WebSocket server ringan di MODULA yang terhubung ke aplikasi mobile Flutter / React Native di jaringan Wi-Fi lokal yang sama.
-
-### 5. 🏢 Enterprise Fleet Monitoring Dashboard
-
-- **Visi**: Monitoring stabilitas koneksi ratusan laptop karyawan WFH dalam satu layar monitoring NOC perusahaan.
-- **Implementasi**: Ekspor metrik telemetri ke Prometheus & visualisasi real-time di Grafana Dashboard.
-
----
-
-## 🧪 Quality Assessment (QA) & Test Suite
-
-MODULA dilengkapi rangkaian pengujian otomatis (_Automated Testing Suite_) yang mencakup **67 unit test** dan simulasi skenario **20 persona tester**:
-
-```bash
-python -m unittest discover tests
-```
-
-### Hasil Eksekusi:
-
-```text
-Ran 67 tests in 10.271s
-
-OK (All 67 unit tests & 20-persona QA simulation passed 100%)
-```
-
-- `[PASS] TestV24Features`: Verifikasi Sports Car Tachometer HUD, Speedtest Tachometer Gauge, Inline QoS Widget, Dynamic 1-8 Cards, dan target IP ke-4.
-- `[PASS] TestV23Features`: Verifikasi Custom Ping Probing, Settings Modal, Keyboard Shortcuts, Telemetri GPU, QoS Presets, dan filter vMixService.
-- `[PASS] TestSoundEngine`: Verifikasi synthesizer audio, nada connect/disconnect, failover, high-load (>85%), dan master mute.
-- `[PASS] TestBandwidthQoS`: Pemindaian proses aktif Zoom/OBS/vMix, auto-balance slider 100%, dan registrasi NetQoS.
-- `[PASS] TestSystemTelemetry`: Deteksi akurat spesifikasi hardware PC, rolling history CPU/RAM/GPU 60s, dan pemantauan top active processes.
-- `[PASS] TestUIComponents`: Verifikasi TrafficChartWidget 60 FPS, Toast Bubble, modal SpeedtestDetail, Skeleton preloader, dan Interface Cards.
-- `[PASS] TestQA20Personas`: 20 skenario nyata pengguna (Zoom call zero-drop, docking unplugged, jitter RFC 3550, UAC elevation, anti-flapping 5x recovery).
-
----
-
-## 📜 Riwayat Versi & Changelog
-
-### 🏎️ Versi 2.6 (September 2026) — _Latest Stable_
-
-- **🏎️ Dual Supercar Cockpit Tachometers (RPM Download & MPH Upload)**: Kluster instrumen kemudi supercar 240° arc dengan jarum analog 60 FPS ultra-smooth. Dial kiri (RPM) memantau kecepatan unduh (download) real-time dengan redline glow zone, dial kanan (MPH) memantau kecepatan unggah (upload) real-time, lengkap dengan dynamic auto-scaling satuan (`Kbps / Mbps / Gbps`).
-- **🎯 Center HUD Cockpit Readout**: Layar HUD digital di tengah memantau Jitter real-time (formula standar IETF RFC 3550 dalam ms), badge stabilitas koneksi (`STABLE` / `FLUCTUATING`), dan indikator gear rute aktif (misal `🏎️ P1 LAN`).
-- **🌐 100% Dial-Based ICMP Backbone Indicators**: Seluruh bilah spektrum vertikal dihapus sepenuhnya dan digantikan instrumen dial sirkular murni untuk tiap backbone aktif (3 dial sirkular default untuk `1.1.1.1`, `8.8.8.8`, `9.9.9.9`, dan otomatis berkembang menjadi 4 dial saat target ke-4 diaktifkan).
-- **➕ Dedicated 1-Form Modal (+ Tambah Target ke-4)**: Menghapus tombol redundan `Custom Ping`, memusatkan seluruh konfigurasi penambahan target ke-4 pada tombol `+ Tambah Target ke-4` / `✏️ Edit Target 4` dengan preset cepat dan tombol hapus.
-- **⚡ Fallback Throughput Total Sistem (`resolve_traffic_stats`)**: Mengatasi jarum kecepatan yang diam di 0 Kbps dengan pemindaian cerdas adapter aktif, adapter kandidat yang terhubung, dan fallback ke total I/O throughput sistem.
-- **🚀 Ultra-Smooth 60 FPS Exponential Lerping & 0.0% CPU Idle**: Interpolasi eksponensial halus dengan canvas idle sleep otomatis saat kecepatan konstan.
-
-### 🏎️ Versi 2.5 (September 2026)
-
-- **🏎️ Supercar Tachometer Speedtest**: Menggantikan gauge speedtest lama dengan `SportsCarSpeedGauge` berdesain tachometer 250° kokpit supercar, Redline Rev-Meter Zone (>80%), Dynamic Scale Tiers (100, 250, 500, hingga 1000 Mbps), Dynamic Peak Hold Pip cyan `#38BDF8`, dan digital center HUD readout.
-- **⏳ Staged Refresh Tactile Delay**: Animasi refresh modul (~2.2 detik) dengan umpan balik bertahap yang nyata saat memindai adapter hardware PCIe/Docking, routing table, target ICMP, dan QoS sebelum mengeksekusi chimes audio sukses dan notifikasi toast.
-- **✨ Splash Screen Synchronized v2.5**: Splash screen frameless kini menampilkan label `v2.5 • Zero-Drop Zoom` secara presisi, didukung eliminasi total jeda/flicker jendela saat aplikasi pertama kali dibuka.
-- **⚡ Re-Optimasi 0.0% CPU Idle**: Canvas redraw dihentikan secara cerdas saat kecepatan diam/konstan, dilengkapi implementasi `destroy()` bersih pada seluruh komponen animasi untuk mencegah memory leaks.
-- **📜 Dynamic Version History Navigation**: Bilah navigasi tombol pintas versi pada jendela Changelog kini dibuat dinamis otomatis dari database riwayat rilis tanpa batasan hardcoded.
-
-### 🏎️ Versi 2.4 (September 2026)
-
-- **Cluster Tachometer Supercar & Spectrum Bar Ganda**: Instrumen monitor bergaya kluster supercar dengan jarum tachometer analog 60 FPS, redline glow dinamis, speedometer HUD digital, dan bilah spectrum ganda per backbone target (6 bilah default, 8 bilah saat target ke-4 aktif).
-- **Inline Bandwidth QoS Monitor**: Monitor alokasi bandwidth langsung di layar utama tepat di bawah speedometer dengan 1-klik tombol cepat `Boost Meeting` dan `Boost Streaming`.
-- **Kartu Antarmuka Adaptif (1 s.d. 8 Port)**: Menyesuaikan tata letak kartu secara cerdas dengan perangkat (1 LAN lebar, 2 LAN + 1 Wi-Fi 3 kolom, hingga 8 port workstation dalam 2 baris responsif).
-- **Target Server Ke-4**: Modal interaktif untuk menambahkan IP target ke-4 (OpenDNS, gateway router) langsung dari dashboard dengan validasi regex IPv4 otomatis.
-- **Zero-Delay Splash Startup**: Eliminasi kedipan jendela sebelum splash screen selesai memutar animasinya.
-- **Dialog Riwayat Log Lengkap**: Panel log diperamping (~95px) dilengkapi tombol _Buka Log Lengkap_ dengan fitur live search, filter kategori, dan ekspor berkas.
-
-### ⚡ Versi 2.3 (September 2026)
-
-- **Enterprise Frameless Splash Screen**: Window 560x340 frameless radial gradient gelap dengan 60 FPS gradient ring spinner.
-- **Custom Ping Target & Advanced Probing**: Kustomisasi IP target probing dengan Simple Mode dan Advanced Mode.
-- **Keyboard Shortcuts & Settings Modal**: Tombol pintas global (F11, F5, Ctrl+M, Ctrl+T, Ctrl+Q, Ctrl+P).
-- **Live GPU Usage & Sleek Mini Meters**: Pemantauan beban GPU real-time dan meter mini mulus pada footer.
-- **Bandwidth QoS Presets**: Pembersihan filter background service `vMixService.exe` dan preset 1-klik untuk konferensi & streaming.
-
-### 🚀 Versi 2.2 (September 2026)
-
-- **Multi-Platform Releases**: Paket rilis mandiri Windows (.zip/.exe), macOS Apple Silicon (.dmg) dengan icon resmi Barong `modula.icns`, dan Linux (.tar.gz).
-- **Audio Alert Engine**: Sintesis audio real-time untuk event port, failover, dan beban tinggi (>85%).
-- **Toast Bubble Manager & Fastfetch Hardware Info**: Notifikasi mengambang dan kartu spesifikasi hardware lengkap.
-- **Speedtest 4-Engine**: Integrasi benchmark Cloudflare, Fast.com, nPerf, dan Ookla dengan modal analisis telemetri mendalam.
-
-### 🐲 Versi 2.1 (September 2026)
-
-- **Rebranding MODULA**: Nama resmi berganti menjadi _MODULA - Smart Auto Failover_ dengan tema Topeng Barong Bali dan palet warna dual-theme.
-
-### 🛡️ Versi 2.0 (September 2026)
-
-- **Multi-Port Failover & Dark/Light Mode**: Dukungan routing metric hingga 3 adapter jaringan, visualisasi throughput live, dan penghitungan Jitter real-time sesuai formula IETF RFC 3550.
-
-### 📦 Versi 1.0 (September 2026)
-
-- **Fondasi Zero-Drop Failover**: Manipulasi Layer-3 Interface Routing Metric untuk failover tanpa memutus socket transport video call.
-
----
-
-## 📄 Lisensi & Kontribusi
-
-Proyek ini dirilis di bawah lisensi **MIT License**. Terbuka penuh untuk digunakan oleh individu, streamer, perusahaan, maupun institusi penyiaran.
-
-\*Dibuat dengan bangga oleh **[parikesitad-pm](https://github.com/parikesitad-pm)**. Jika project ini bermanfaat untuk kelancaran meeting, streaming, atau pekerjaan Anda, berikan bintang ⭐ di GitHub!
+Copyright (c) 2026 **[parikesitad-pm](https://github.com/parikesitad-pm)**.
