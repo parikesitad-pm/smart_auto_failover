@@ -1,0 +1,11 @@
+# AutoFailover 3.0 Desktop Dependencies
+# Python >= 3.10
+# Note: For Linux CustomTkinter GUI, system tk package is required (e.g. 'sudo pacman -S tk' or 'sudo apt install python3-tk').
+# The Core engine runs in headless mode out-of-the-box with zero GUI dependencies.
+
+pydantic>=2.0.0
+customtkinter>=5.2.0
+Pillow>=10.0.0
+darkdetect>=0.8.0
+psutil>=5.9.0
+requests>=2.28.0

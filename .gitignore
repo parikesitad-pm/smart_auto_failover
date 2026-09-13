@@ -33,5 +33,20 @@ src-tauri/gen/
 *.njsproj
 *.sln
 *.sw?
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Website
+website/node_modules
+website/dist
+
 .vercel
 .env*
+
