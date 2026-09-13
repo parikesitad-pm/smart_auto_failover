@@ -35,6 +35,8 @@ class CockpitDashboard:
         self.orchestrator = orchestrator
         self.logo_path = logo_path
         self.speedtest_runner = SpeedTestRunner()
+        self._interface_cards: Dict[str, Dict[str, Any]] = {}
+        self._placeholder_lbl: Optional[Any] = None
 
         if not HAS_CTK:
             return
@@ -47,11 +49,16 @@ class CockpitDashboard:
         self._build_main_split()
         self._build_bottom_status()
 
-        # Subscribe to orchestrator event bus
+        # Subscribe to orchestrator event bus and replay history
         bus = getattr(self.orchestrator, "event_bus", None) or getattr(self.orchestrator, "bus", None)
         if bus:
             bus.subscribe(self._on_bus_event)
-
+            if hasattr(bus, "get_history"):
+                for ev in bus.get_history(limit=30):
+                    self._render_event(ev)
+            elif hasattr(bus, "get_recent_events"):
+                for ev in reversed(bus.get_recent_events(limit=30)):
+                    self._render_event(ev)
 
         # Start periodic UI polling ticker (5 Hz)
         self._schedule_ui_tick()
@@ -175,7 +182,7 @@ class CockpitDashboard:
         v_lbl = ctk.CTkLabel(
             frame,
             text=val_text,
-            font=("Segoe UI", 16, "bold"),
+            font=("Segoe UI", 13, "bold"),
             text_color=COCKPIT_THEME["text_primary"],
         )
         v_lbl.pack(anchor="w", padx=14, pady=(0, 2))
@@ -412,6 +419,11 @@ class CockpitDashboard:
             self.parent.after(0, lambda: self._render_event(event))
 
     def _render_event(self, event: FailoverEvent):
+        # Prune older events if scroll frame exceeds 50 items
+        children = self.events_scroll.winfo_children()
+        if len(children) >= 50:
+            children[0].destroy()
+
         color = COCKPIT_THEME["text_secondary"]
         if event.severity == "WARNING":
             color = COCKPIT_THEME["amber"]
@@ -440,7 +452,7 @@ class CockpitDashboard:
         if not HAS_CTK:
             return
 
-        # 1. Update Active Path Pill
+        # 1. Update Active Path Pill & KPI Cards
         active_if = self.orchestrator.active_interface
         if active_if:
             self.active_pill.configure(
@@ -450,14 +462,23 @@ class CockpitDashboard:
             # Update KPI 1: RFC 3550 Latency / Jitter
             m = self.orchestrator.metrics.get(active_if.name)
             if m:
-                rtt_str = f"{m.smoothed_rtt_ms:.1f} ms"
+                rtt_str = f"{m.smoothed_rtt_ms:.1f} ms" if m.smoothed_rtt_ms > 0 else "-- ms"
                 jit_str = f"RFC 3550 Jitter: {m.rfc3550_jitter_ms:.2f} ms"
                 self.card_rtt["val"].configure(text=rtt_str)
                 self.card_rtt["sub"].configure(text=jit_str)
 
                 # Update KPI 2: Health Index
                 self.card_health["val"].configure(text=f"{m.health_index:.0f} / 100")
-                self.card_health["sub"].configure(text=f"Status: {m.state.name}")
+                self.card_health["sub"].configure(text=f"State: {m.state.name}")
+            else:
+                self.card_rtt["val"].configure(text="Probing...")
+                self.card_rtt["sub"].configure(text="Jitter: -- ms")
+                self.card_health["val"].configure(text="-- / 100")
+                self.card_health["sub"].configure(text=f"State: {active_if.state.name}")
+
+            # Update KPI 4: Engine Status
+            self.card_engine["val"].configure(text="ACTIVE PATH STABLE")
+            self.card_engine["sub"].configure(text=f"Takeover Margin: {self.orchestrator.config.takeover_margin:.1f} pts")
         else:
             self.active_pill.configure(
                 text="NO ACTIVE PATH",
@@ -468,13 +489,17 @@ class CockpitDashboard:
             self.card_health["val"].configure(text="0 / 100")
             self.card_health["sub"].configure(text="Status: OFFLINE")
 
+            # Eliminate contradictory state: when no active path, failover policy cannot be "ACTIVE PATH STABLE"
+            self.card_engine["val"].configure(text="NO ELIGIBLE PATH")
+            self.card_engine["sub"].configure(text="Waiting for usable interface")
+
         # 2. Update KPI 3: Workload
         active_apps = self.orchestrator.workload_watcher.scan_active_processes()
         if active_apps:
-            self.card_workload["val"].configure(text="ACTIVE SESSION PROTECTED")
+            self.card_workload["val"].configure(text="SESSION PROTECTED")
             self.card_workload["sub"].configure(text=f"Apps: {', '.join(active_apps)}")
         else:
-            self.card_workload["val"].configure(text="MONITORING PASSIVELY")
+            self.card_workload["val"].configure(text="PASSIVE MONITOR")
             self.card_workload["sub"].configure(text="Watching Zoom, OBS, Teams")
 
         # 3. Update Decoupled Host Telemetry
@@ -488,9 +513,21 @@ class CockpitDashboard:
         self._render_interfaces_deck()
 
     def _render_interfaces_deck(self):
-        # Clear existing items
-        for child in self.interfaces_scroll.winfo_children():
-            child.destroy()
+        interfaces = self.orchestrator.interfaces
+        if not interfaces:
+            if not self._placeholder_lbl:
+                self._placeholder_lbl = ctk.CTkLabel(
+                    self.interfaces_scroll,
+                    text="Scanning for network interfaces...",
+                    font=("Segoe UI", 11, "italic"),
+                    text_color=COCKPIT_THEME["text_muted"],
+                )
+                self._placeholder_lbl.pack(pady=20)
+            return
+
+        if self._placeholder_lbl:
+            self._placeholder_lbl.destroy()
+            self._placeholder_lbl = None
 
         state_color_map = {
             InterfaceState.ONLINE: COCKPIT_THEME["state_online"],
@@ -500,82 +537,117 @@ class CockpitDashboard:
             InterfaceState.DISABLED: COCKPIT_THEME["state_disabled"],
         }
 
-        for iface in self.orchestrator.interfaces:
-            row = ctk.CTkFrame(
-                self.interfaces_scroll,
-                fg_color=COCKPIT_THEME["bg_surface"],
-                corner_radius=6,
-                border_width=1,
-                border_color=COCKPIT_THEME["border"],
-                height=56,
-            )
-            row.pack(fill="x", pady=4)
-            row.pack_propagate(False)
+        current_ids = {iface.id for iface in interfaces}
 
-            # State Badge
-            color = state_color_map.get(iface.state, COCKPIT_THEME["text_muted"])
-            badge = ctk.CTkLabel(
-                row,
-                text=iface.state.name,
-                font=("Segoe UI", 10, "bold"),
-                text_color="#ffffff",
-                fg_color=color,
-                corner_radius=4,
-                padx=8,
-                pady=2,
-                width=64,
-            )
-            badge.pack(side="left", padx=(10, 8), pady=12)
+        # Remove cards for vanished interfaces
+        for iface_id in list(self._interface_cards.keys()):
+            if iface_id not in current_ids:
+                widgets = self._interface_cards.pop(iface_id)
+                widgets["frame"].destroy()
 
-            # Name & Media
-            name_lbl = ctk.CTkLabel(
-                row,
-                text=iface.friendly_name,
-                font=("Segoe UI", 11, "bold"),
-                text_color=COCKPIT_THEME["text_primary"],
-            )
-            name_lbl.pack(side="left", padx=4)
-
-            # IP / Link details
+        # Update existing cards or create new ones
+        for iface in interfaces:
             details_str = iface.ip_address if iface.ip_address else "No IP"
             if iface.ssid:
                 details_str += f" • {iface.ssid}"
             if iface.link_speed:
                 details_str += f" ({iface.link_speed})"
 
-            det_lbl = ctk.CTkLabel(
-                row,
-                text=details_str,
-                font=("Consolas", 10),
-                text_color=COCKPIT_THEME["text_muted"],
-            )
-            det_lbl.pack(side="left", padx=12)
+            color = state_color_map.get(iface.state, COCKPIT_THEME["text_muted"])
 
-            # Admin action toggle
-            if iface.state == InterfaceState.DISABLED:
-                action_btn = ctk.CTkButton(
-                    row,
-                    text="Enable",
-                    font=("Segoe UI", 10, "bold"),
-                    fg_color=COCKPIT_THEME["emerald"],
-                    hover_color=COCKPIT_THEME["emerald_glow"],
-                    width=68,
-                    height=24,
-                    command=lambda name=iface.name: self._confirm_enable_interface(name),
-                )
-                action_btn.pack(side="right", padx=10)
+            if iface.id in self._interface_cards:
+                widgets = self._interface_cards[iface.id]
+                widgets["badge"].configure(text=iface.state.name, fg_color=color)
+                widgets["name"].configure(text=iface.friendly_name)
+                widgets["details"].configure(text=details_str)
+                if iface.state == InterfaceState.DISABLED:
+                    widgets["btn"].configure(
+                        text="Enable",
+                        font=("Segoe UI", 10, "bold"),
+                        fg_color=COCKPIT_THEME["emerald"],
+                        hover_color=COCKPIT_THEME["emerald_glow"],
+                        command=lambda name=iface.name: self._confirm_enable_interface(name),
+                    )
+                else:
+                    widgets["btn"].configure(
+                        text="Disable",
+                        font=("Segoe UI", 10),
+                        fg_color=COCKPIT_THEME["bg_card"],
+                        hover_color=COCKPIT_THEME["red"],
+                        command=lambda name=iface.name: self._confirm_disable_interface(name),
+                    )
             else:
-                action_btn = ctk.CTkButton(
-                    row,
-                    text="Disable",
-                    font=("Segoe UI", 10),
-                    fg_color=COCKPIT_THEME["bg_card"],
-                    hover_color=COCKPIT_THEME["red"],
-                    width=68,
-                    height=24,
-                    command=lambda name=iface.name: self._confirm_disable_interface(name),
+                row = ctk.CTkFrame(
+                    self.interfaces_scroll,
+                    fg_color=COCKPIT_THEME["bg_surface"],
+                    corner_radius=6,
+                    border_width=1,
+                    border_color=COCKPIT_THEME["border"],
+                    height=56,
                 )
+                row.pack(fill="x", pady=4)
+                row.pack_propagate(False)
+
+                badge = ctk.CTkLabel(
+                    row,
+                    text=iface.state.name,
+                    font=("Segoe UI", 10, "bold"),
+                    text_color="#ffffff",
+                    fg_color=color,
+                    corner_radius=4,
+                    padx=8,
+                    pady=2,
+                    width=64,
+                )
+                badge.pack(side="left", padx=(10, 8), pady=12)
+
+                name_lbl = ctk.CTkLabel(
+                    row,
+                    text=iface.friendly_name,
+                    font=("Segoe UI", 11, "bold"),
+                    text_color=COCKPIT_THEME["text_primary"],
+                )
+                name_lbl.pack(side="left", padx=4)
+
+                det_lbl = ctk.CTkLabel(
+                    row,
+                    text=details_str,
+                    font=("Consolas", 10),
+                    text_color=COCKPIT_THEME["text_muted"],
+                )
+                det_lbl.pack(side="left", padx=12)
+
+                if iface.state == InterfaceState.DISABLED:
+                    action_btn = ctk.CTkButton(
+                        row,
+                        text="Enable",
+                        font=("Segoe UI", 10, "bold"),
+                        fg_color=COCKPIT_THEME["emerald"],
+                        hover_color=COCKPIT_THEME["emerald_glow"],
+                        width=68,
+                        height=24,
+                        command=lambda name=iface.name: self._confirm_enable_interface(name),
+                    )
+                else:
+                    action_btn = ctk.CTkButton(
+                        row,
+                        text="Disable",
+                        font=("Segoe UI", 10),
+                        fg_color=COCKPIT_THEME["bg_card"],
+                        hover_color=COCKPIT_THEME["red"],
+                        width=68,
+                        height=24,
+                        command=lambda name=iface.name: self._confirm_disable_interface(name),
+                    )
                 action_btn.pack(side="right", padx=10)
+
+                self._interface_cards[iface.id] = {
+                    "frame": row,
+                    "badge": badge,
+                    "name": name_lbl,
+                    "details": det_lbl,
+                    "btn": action_btn,
+                }
 
     def _confirm_enable_interface(self, iface_name: str):
         """

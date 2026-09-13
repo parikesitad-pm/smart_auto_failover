@@ -56,3 +56,8 @@ class EventBus:
     def get_recent_events(self, limit: int = 20) -> List[FailoverEvent]:
         with self._lock:
             return list(reversed(self._history[-limit:]))
+
+    def get_history(self, limit: int = 50) -> List[FailoverEvent]:
+        """Returns chronological event history (oldest to newest) for UI initialization."""
+        with self._lock:
+            return list(self._history[-limit:])

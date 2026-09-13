@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Core-to-GUI Runtime Integration**: Connected Python Failover Core directly to CustomTkinter GUI lifecycle by calling `orchestrator.initialize()` at startup and auto-initializing in `start_loop()`, populating discovered network interfaces (`enp44s0`, `wlp0s20f3`), IP configuration, and authoritative default route.
+- **UI Contradiction Elimination**: Resolved contradictory UI state where Failover Policy card displayed `ACTIVE PATH STABLE` while `NO ACTIVE PATH` was active; card now explicitly reflects `NO ELIGIBLE PATH` with `OFFLINE` status until a verified healthy path is promoted.
+- **Dynamic Interface Deck In-Place Updates**: Replaced periodic scrollable frame widget destruction with an interface card cache registry (`_interface_cards`) providing seamless in-place state badge, IP/SSID, and administrative button updates without visual tearing or lost click events.
+- **Event Stream Replay & Bounded Log**: Added `EventBus.get_history()` to replay early bootstrap and discovery events into the dashboard's `SYSTEM & FAILOVER EVENTS` scroll panel, bounded to 50 items.
+- **KPI Card Text Clipping Prevention**: Optimized KPI card typography (`font=("Segoe UI", 13, "bold")`) and string labeling (`SESSION PROTECTED`, `PASSIVE MONITOR`) to prevent horizontal clipping.
 - **Native GUI Startup Failure (Speedtest Import Contract)**: Fixed native GUI startup failure caused by stale/broken `SpeedTestRunner` import and casing mismatch (`SpeedtestRunner` vs `SpeedTestRunner`), establishing canonical public API and aliases.
 - **Windows Windowed GUI Application**: Fixed Windows package launching as console/headless application. Windows public application (`AutoFailover 3.0.exe`) now builds with `console=False` and official icon as a true native windowed CustomTkinter desktop application without spawning any terminal window.
 - **Dedicated Diagnostics Runner**: Included `AutoFailover Diagnostics` console-enabled executable alongside the windowed application for headless automation, self-tests, and CI validation.

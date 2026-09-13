@@ -67,6 +67,8 @@ class FailoverOrchestrator:
         self._active_interface_id: Optional[str] = None
         self._lock = threading.RLock()
         self._is_running = False
+        self._initialized = False
+        self._tick_count = 0
         self._loop_thread: Optional[threading.Thread] = None
 
     @property
@@ -109,18 +111,21 @@ class FailoverOrchestrator:
                 for iface in self._interfaces.values():
                     if iface.name == iface_id_or_name:
                         target_iface = iface
-                        break
             if not target_iface:
                 return False
-            success = self.backend.set_interface_state(target_iface.name, enabled)
+            if hasattr(self.backend, "set_interface_admin_state"):
+                success = self.backend.set_interface_admin_state(target_iface.name, enabled)
+            else:
+                success = self.backend.set_interface_state(target_iface.name, enabled)
             if success:
                 target_iface.admin_enabled = enabled
                 if not enabled:
                     target_iface.state = InterfaceState.DISABLED
+                    target_iface.clear_network_addressing()
                 else:
                     target_iface.state = InterfaceState.READY
                 self.bus.publish(
-                    EventType.INTERFACE_STATE_CHANGED,
+                    EventType.ADMIN_ENABLED if enabled else EventType.ADMIN_DISABLED,
                     f"Interface {target_iface.friendly_name} administratively {'enabled' if enabled else 'disabled'}",
                     interface_id=target_iface.id,
                     interface_name=target_iface.name,
@@ -134,7 +139,8 @@ class FailoverOrchestrator:
             discovered = self.backend.discover_interfaces()
             for iface in discovered:
                 self._interfaces[iface.id] = iface
-                self._jitter_trackers[iface.id] = RFC3550JitterTracker()
+                if iface.id not in self._jitter_trackers:
+                    self._jitter_trackers[iface.id] = RFC3550JitterTracker()
                 self.bus.publish(
                     EventType.INTERFACE_DISCOVERED,
                     f"Discovered interface {iface.friendly_name} [{iface.state.value}]",
@@ -146,11 +152,22 @@ class FailoverOrchestrator:
             default_route = self.backend.get_default_route()
             if default_route:
                 dev, gw = default_route
-                if dev in self._interfaces:
-                    iface = self._interfaces[dev]
-                    if iface.state == InterfaceState.READY:
-                        iface.state = InterfaceState.ONLINE
-                    self._active_interface_id = dev
+                target_iface = self._interfaces.get(dev)
+                if not target_iface:
+                    for iface in self._interfaces.values():
+                        if iface.name == dev:
+                            target_iface = iface
+                            break
+                if target_iface:
+                    if target_iface.state == InterfaceState.READY:
+                        target_iface.state = InterfaceState.ONLINE
+                    self._active_interface_id = target_iface.id
+            elif self._interfaces:
+                for iface in self._interfaces.values():
+                    if iface.state == InterfaceState.ONLINE:
+                        self._active_interface_id = iface.id
+                        break
+            self._initialized = True
 
     def tick(self) -> None:
         """
@@ -162,6 +179,21 @@ class FailoverOrchestrator:
         5. Failover execution if triggered
         """
         with self._lock:
+            self._tick_count += 1
+            # Dynamic rediscovery if empty or periodic
+            if not self._interfaces or (self._tick_count % 20 == 0):
+                current_discovered = self.backend.discover_interfaces()
+                for iface in current_discovered:
+                    if iface.id not in self._interfaces:
+                        self._interfaces[iface.id] = iface
+                        self._jitter_trackers[iface.id] = RFC3550JitterTracker()
+                        self.bus.publish(
+                            EventType.INTERFACE_DISCOVERED,
+                            f"Discovered interface {iface.friendly_name} [{iface.state.value}]",
+                            interface_id=iface.id,
+                            interface_name=iface.name,
+                        )
+
             # 1. Update dynamic interface states
             for iface_id, iface in list(self._interfaces.items()):
                 details = self.backend.query_interface_details(iface.name)
@@ -189,12 +221,18 @@ class FailoverOrchestrator:
                 elif prev_carrier and not iface.carrier:
                     self.recovery.notify_carrier_lost(iface_id)
                     iface.clear_network_addressing()
+                    iface.state = InterfaceState.OFFLINE
                     self.bus.publish(
                         EventType.CARRIER_DISCONNECTED,
                         f"Physical link disconnected on {iface.friendly_name}",
                         interface_id=iface_id,
                         interface_name=iface.name,
                     )
+
+                if not iface.carrier:
+                    if iface.state != InterfaceState.DISABLED:
+                        iface.state = InterfaceState.OFFLINE
+                    iface.clear_network_addressing()
 
                 # Admin State Transition Events
                 if prev_admin and not iface.admin_enabled:
@@ -341,6 +379,8 @@ class FailoverOrchestrator:
     def start_loop(self) -> None:
         """Starts background monitoring loop in dedicated thread."""
         with self._lock:
+            if not self._initialized:
+                self.initialize()
             if self._is_running:
                 return
             self._is_running = True

@@ -49,9 +49,11 @@ class AutoFailoverApp:
         self.bus = EventBus()
         self.orchestrator = FailoverOrchestrator(platform_backend=self.backend, event_bus=self.bus)
 
+        # Initial hardware discovery & registration gate
+        self.orchestrator.initialize()
+
         # Start orchestrator background engine thread
         self.orchestrator.start()
-
 
         # Launch Splash Screen
         self.splash = SplashScreen(
@@ -60,6 +62,20 @@ class AutoFailoverApp:
             on_complete=self._on_splash_done,
             min_duration_ms=3000,
         )
+
+        # Update initial technical disclosure on splash
+        try:
+            sys_id = self.backend.get_system_identity()
+            ifaces = self.orchestrator.interfaces
+            active = self.orchestrator.active_interface
+            active_name = active.friendly_name if active else "None"
+            summary_text = (
+                f"System: {sys_id.get('os_name', 'OS')} ({sys_id.get('architecture', 'arch')})\n"
+                f"Discovered: {len(ifaces)} interfaces | Designated Active Path: {active_name}"
+            )
+            self.splash.update_technical_info(summary_text)
+        except Exception:
+            pass
 
         # Handle window close
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
