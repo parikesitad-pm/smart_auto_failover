@@ -174,13 +174,16 @@ Buka terminal **PowerShell (Run as Administrator)**:
 git clone https://github.com/parikesitad-pm/smart_auto_failover.git
 cd smart_auto_failover
 
-# Instal dependensi frontend
-npm --prefix frontend install
+# Build aset frontend produksi (wajib sebelum compile binary desktop)
+cd frontend
+npm install
+npm run build
+cd ..
 
-# Build binary native release
-cargo build --release --bin autofailover-app
+# Build binary native release Windows
+cargo build --release --manifest-path src-tauri/Cargo.toml
 
-# Jalankan binary
+# Jalankan aplikasi native
 .\target\release\autofailover-app.exe
 ```
 
