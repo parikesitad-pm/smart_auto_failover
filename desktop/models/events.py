@@ -35,4 +35,5 @@ class FailoverEvent(BaseModel):
     interface_id: Optional[str] = None
     interface_name: Optional[str] = None
     message: str
+    severity: str = "INFO"
     details: Dict[str, Any] = Field(default_factory=dict)

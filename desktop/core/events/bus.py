@@ -29,13 +29,15 @@ class EventBus:
         message: str,
         interface_id: str = None,
         interface_name: str = None,
-        details: Dict[str, Any] = None
+        details: Dict[str, Any] = None,
+        severity: str = "INFO",
     ) -> FailoverEvent:
         event = FailoverEvent(
             event_type=event_type,
             message=message,
             interface_id=interface_id,
             interface_name=interface_name,
+            severity=severity,
             details=details or {}
         )
 

@@ -425,11 +425,12 @@ class CockpitDashboard:
             children[0].destroy()
 
         color = COCKPIT_THEME["text_secondary"]
-        if event.severity == "WARNING":
+        severity = getattr(event, "severity", "INFO")
+        if severity == "WARNING":
             color = COCKPIT_THEME["amber"]
-        elif event.severity == "CRITICAL":
+        elif severity == "CRITICAL":
             color = COCKPIT_THEME["red"]
-        elif event.severity == "INFO":
+        elif severity == "INFO":
             color = COCKPIT_THEME["cyan"]
 
         msg = f"[{event.event_type.name}] {event.message}"
