@@ -88,7 +88,7 @@ export const App: React.FC = () => {
             }`}
           >
             <MonitorPlay className="w-3.5 h-3.5" />
-            Live Cockpit
+            Live Preview
           </button>
         </div>
 

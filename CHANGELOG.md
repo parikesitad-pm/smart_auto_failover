@@ -11,11 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Interactive Deterministic Cockpit Scenario Controller (`website/src/components/Cockpit/DemoToolbar.tsx`)**: Embedded 7 core demo actions (`Disconnect Ethernet`, `Reconnect Ethernet`, `Disable Wi-Fi`, `Enable Wi-Fi`, `Degrade Connection`, `Recover Connection`, `Reset Demo`) directly in the Live Cockpit view with instant needle lerp animations and transition toasts.
+- **Interactive Deterministic Cockpit Scenario Controller (`website/src/components/Cockpit/DemoToolbar.tsx`)**: Embedded 7 core demo actions (`Disconnect Ethernet`, `Reconnect Ethernet`, `Disable Wi-Fi`, `Enable Wi-Fi`, `Degrade Connection`, `Recover Connection`, `Reset Demo`) directly in the Live Preview with instant needle lerp animations and transition toasts.
 - **Standalone Deterministic Demo Engine (`website/src/hooks/useNetworkCockpit.ts`)**: Browser-native simulation with 60 FPS client-side tachometer lerping, passive device health monitoring, and RFC 3550 degradation behavior.
+- **Cockpit Interactive Modals (`desktop/ui/dashboard/cockpit.py`)**: Added dedicated modal dialogs for Network Health Index scoring breakdown, Network Interface deep inspection, and Speed Benchmark telemetry details.
 
 ### Changed
 
+- **AutoFailover 3.0 Cockpit Dashboard Hardening**: Reorganized UI hierarchy with prominent Modula branding, distinct active connection status indicators, qualitative Network Health ratings (`EXCELLENT`, `HEALTHY`, `DEGRADED`, `POOR`, `CRITICAL`, `NO CONNECTION`), informative failover policy subtext, and clickable author attribution (`Crafted with ♥ by parikesitad-pm`).
+- **Website Live Preview Alignment**: Renamed all public website references from "Live Cockpit" to "Live Preview" across navigation, hero CTA buttons, and interactive simulator surfaces.
+- **Concise Documentation**: Streamlined `README.md` into an essential, clean reference highlighting system architecture, platform support, quick start commands, and verified physical status.
 - **Dual-Surface Repository Architecture**: Consolidated active codebase strictly into Surface A (`desktop/`) and Surface B (`website/`).
 - **Cockpit Header & Interface Deck Refinements**: Completely eliminated all legacy runtime warnings and "NATIVE CORE UNAVAILABLE" error copy in favor of a technical `INTERACTIVE DEMO` mode and seamless matrix cards.
 - **Dynamic Startup Sequence (`website/src/hooks/useStartupSequence.ts`)**: Refined 9-stage enterprise initialization sequence into a self-contained browser simulator.
@@ -24,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Windows Subprocess Console Window Storm**: Completely eliminated repeated visible PowerShell and netsh command popups during interface probing on Windows by configuring `STARTUPINFO(wShowWindow=SW_HIDE)`, `creationflags=CREATE_NO_WINDOW`, `-WindowStyle Hidden`, and in-process `psutil` resolution with TTL caching, preventing GUI stutter.
+- **Stale Disconnected Interface Telemetry Elimination**: Disconnected (`OFFLINE`) and disabled (`DISABLED`) interfaces immediately purge stale IPv4 addresses, gateways, SSIDs, and health statistics from the cockpit deck, displaying clear status labels ("Cable disconnected" / "Disabled by operating system").
 - **Core-to-GUI Runtime Integration**: Connected Python Failover Core directly to CustomTkinter GUI lifecycle by calling `orchestrator.initialize()` at startup and auto-initializing in `start_loop()`, populating discovered network interfaces (`enp44s0`, `wlp0s20f3`), IP configuration, and authoritative default route.
 - **UI Contradiction Elimination**: Resolved contradictory UI state where Failover Policy card displayed `ACTIVE PATH STABLE` while `NO ACTIVE PATH` was active; card now explicitly reflects `NO ELIGIBLE PATH` with `OFFLINE` status until a verified healthy path is promoted.
 - **Dynamic Interface Deck In-Place Updates**: Replaced periodic scrollable frame widget destruction with an interface card cache registry (`_interface_cards`) providing seamless in-place state badge, IP/SSID, and administrative button updates without visual tearing or lost click events.

@@ -36,7 +36,7 @@ class AutoFailoverApp:
             )
 
         self.root = ctk.CTk()
-        self.root.title("Auto Failover 3.0.0 by Modula")
+        self.root.title("AutoFailover 3.0 by Modula")
         self.root.geometry("1120x720")
         self.root.minsize(980, 640)
         self.root.configure(fg_color=COCKPIT_THEME["bg_dark"])

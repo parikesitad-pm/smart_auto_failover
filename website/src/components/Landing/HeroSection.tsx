@@ -114,7 +114,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg backdrop-blur-md group cursor-pointer"
           >
             <Activity className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
-            Launch Cockpit Simulator
+            Launch Live Preview
             <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
           </button>
 
