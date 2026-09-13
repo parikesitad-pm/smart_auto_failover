@@ -189,7 +189,13 @@ jobs:
           fi
           
           cd dist/packages
-          for f in *; do sha256sum "$f" > "${f}.sha256"; done
+          for f in *; do
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$f" > "${f}.sha256"
+            else
+              shasum -a 256 "$f" > "${f}.sha256"
+            fi
+          done
 
       - name: Upload macOS ARM64 Artifacts
         uses: actions/upload-artifact@v4
@@ -234,7 +240,13 @@ jobs:
           fi
           
           cd dist/packages
-          for f in *; do sha256sum "$f" > "${f}.sha256"; done
+          for f in *; do
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$f" > "${f}.sha256"
+            else
+              shasum -a 256 "$f" > "${f}.sha256"
+            fi
+          done
 
       - name: Upload macOS x64 Artifacts
         uses: actions/upload-artifact@v4
@@ -244,7 +256,8 @@ jobs:
 
   publish-release:
     name: Publish Release or Preview
-    needs: [build-linux, build-windows, build-macos-arm64, build-macos-x64]
+    needs: [test-and-lint, build-linux, build-windows, build-macos-arm64, build-macos-x64]
+    if: always() && !cancelled() && needs.test-and-lint.result == 'success'
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Source
