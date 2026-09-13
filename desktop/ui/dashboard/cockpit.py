@@ -24,8 +24,11 @@ from ..theme import COCKPIT_THEME
 from ...models.interface import NetworkInterface, InterfaceState, InterfaceMediaType
 from ...models.events import FailoverEvent
 from ...models.policy import WorkloadProfile
+from ...models.snapshot import RuntimeSnapshot
 from ...core.failover.orchestrator import FailoverOrchestrator
+from ...core.policy.engine import PolicyEngine
 from ...core.speedtest import SpeedTestRunner, SpeedTestResult
+
 
 
 def get_health_rating(score: int, is_connected: bool) -> Tuple[str, str]:
@@ -131,18 +134,48 @@ class CockpitDashboard:
         )
         ver_lbl.pack(anchor="w")
 
-        # Active Path Status Pill (Section 7: prominent active indicator)
-        self.active_pill = ctk.CTkLabel(
+        # Current Active Connection Header (Section 13: visually distinct active path container)
+        self.active_box = ctk.CTkFrame(
             self.top_bar,
-            text="ONLINE: Scanning...",
-            font=("Segoe UI", 12, "bold"),
-            text_color=COCKPIT_THEME["emerald"],
             fg_color=COCKPIT_THEME["bg_surface"],
-            corner_radius=16,
-            padx=16,
-            pady=6,
+            corner_radius=8,
+            border_width=1,
+            border_color=COCKPIT_THEME["border"],
         )
-        self.active_pill.pack(side="right", padx=20, pady=14)
+        self.active_box.pack(side="right", padx=20, pady=12)
+
+        self.active_tag = ctk.CTkLabel(
+            self.active_box,
+            text="ACTIVE",
+            font=("Segoe UI", 9, "bold"),
+            text_color=COCKPIT_THEME["cyan"],
+            fg_color=COCKPIT_THEME["bg_card"],
+            corner_radius=4,
+            padx=7,
+            pady=2,
+        )
+        self.active_tag.pack(side="left", padx=(8, 4), pady=6)
+
+        self.active_title_lbl = ctk.CTkLabel(
+            self.active_box,
+            text="Scanning...",
+            font=("Segoe UI", 12, "bold"),
+            text_color=COCKPIT_THEME["text_primary"],
+        )
+        self.active_title_lbl.pack(side="left", padx=6, pady=6)
+
+        self.active_status_badge = ctk.CTkLabel(
+            self.active_box,
+            text="ONLINE",
+            font=("Segoe UI", 9, "bold"),
+            text_color="#ffffff",
+            fg_color=COCKPIT_THEME["emerald"],
+            corner_radius=4,
+            padx=7,
+            pady=2,
+        )
+        self.active_status_badge.pack(side="left", padx=(4, 8), pady=6)
+
 
         # Workload Profile Selector
         self.workload_menu = ctk.CTkOptionMenu(
@@ -536,24 +569,30 @@ class CockpitDashboard:
         if not HAS_CTK:
             return
 
-        # 1. Update Active Path Pill & KPI Cards (Section 7 & 11)
-        active_if = self.orchestrator.active_interface
-        standby_if = None
-        for iface in self.orchestrator.interfaces:
-            if iface.state in (InterfaceState.READY, InterfaceState.ALERT):
-                standby_if = iface
-                break
+        t0 = time.monotonic()
+        snapshot = self.orchestrator.get_snapshot()
+        if not snapshot:
+            return
 
+        active_if = snapshot.active_interface
+        standby_if = snapshot.standby_interface
         standby_name = standby_if.friendly_name if standby_if else "None"
 
+        # 1. Update Active Connection Header (Section 13)
         if active_if:
-            media_icon = "📶" if active_if.media_type == InterfaceMediaType.WIFI else "⚡"
-            self.active_pill.configure(
-                text=f"{media_icon} ONLINE: {active_if.friendly_name}",
-                text_color=COCKPIT_THEME["emerald"],
-            )
+            media_icon = "📶" if active_if.media_type == InterfaceMediaType.WIFI else ("⚡" if active_if.media_type == InterfaceMediaType.ETHERNET else "🔌")
+            if active_if.media_type == InterfaceMediaType.WIFI and active_if.ssid:
+                title_str = f"{media_icon} {active_if.friendly_name} • {active_if.ssid}"
+            else:
+                title_str = f"{media_icon} {active_if.friendly_name} ({active_if.name})"
+
+            self.active_tag.pack(side="left", padx=(8, 4), pady=6)
+            self.active_title_lbl.configure(text=title_str, text_color=COCKPIT_THEME["text_primary"])
+            self.active_status_badge.configure(text="ONLINE", fg_color=COCKPIT_THEME["state_online"])
+            self.active_status_badge.pack(side="left", padx=(4, 8), pady=6)
+
             # Update KPI 1: RFC 3550 Latency / Jitter
-            m = self.orchestrator.metrics.get(active_if.name)
+            m = snapshot.metrics.get(active_if.name)
             if m:
                 rtt = getattr(m, "latency_ms", 0.0) or getattr(m, "smoothed_rtt_ms", 0.0)
                 jit = getattr(m, "jitter_ms", 0.0) or getattr(m, "rfc3550_jitter_ms", 0.0)
@@ -588,16 +627,17 @@ class CockpitDashboard:
                 self.card_health["sub"].configure(text=f"State: {active_if.state.name}")
 
             # Update KPI 4: Engine Status (Section 14: informative policy card)
-            margin = getattr(self.orchestrator.config, "takeover_margin", 15.0)
+            margin = snapshot.takeover_margin
             self.card_engine["val"].configure(text="ACTIVE PATH STABLE")
             self.card_engine["sub"].configure(
                 text=f"Active: {active_if.name} | Standby: {standby_name} | Margin: {margin:.1f} pts"
             )
         else:
-            self.active_pill.configure(
-                text="⚠️ NO ACTIVE PATH",
-                text_color=COCKPIT_THEME["red"],
-            )
+            self.active_tag.pack_forget()
+            self.active_title_lbl.configure(text="⚠️ NO ACTIVE CONNECTION", text_color=COCKPIT_THEME["red"])
+            self.active_status_badge.configure(text="OFFLINE", fg_color=COCKPIT_THEME["state_offline"])
+            self.active_status_badge.pack(side="left", padx=(4, 8), pady=6)
+
             self.card_rtt["val"].configure(text="-- ms")
             self.card_rtt["sub"].configure(text="Jitter: -- ms")
             self.card_health["val"].configure(text="0 / 100 • NO CONNECTION", text_color=COCKPIT_THEME["red"])
@@ -607,8 +647,8 @@ class CockpitDashboard:
             self.card_engine["val"].configure(text="NO ELIGIBLE PATH")
             self.card_engine["sub"].configure(text="Waiting for usable interface")
 
-        # 2. Update KPI 3: Workload
-        active_apps = self.orchestrator.workload_watcher.scan_active_processes()
+        # 2. Update KPI 3: Workload (From background snapshot — zero UI thread process scanning)
+        active_apps = snapshot.workload_apps
         if active_apps:
             self.card_workload["val"].configure(text="SESSION PROTECTED")
             self.card_workload["sub"].configure(text=f"Apps: {', '.join(active_apps)}")
@@ -616,18 +656,21 @@ class CockpitDashboard:
             self.card_workload["val"].configure(text="PASSIVE MONITOR")
             self.card_workload["sub"].configure(text="Watching Zoom, OBS, Teams")
 
-        # 3. Update Decoupled Host Telemetry
-        device_health = self.orchestrator.latest_device_health
+        # 3. Update Decoupled Host Telemetry & Subprocess Instrumentation
+        device_health = snapshot.device_health
+        ui_refresh_ms = (time.monotonic() - t0) * 1000.0
         if device_health:
+            sub_info = f" | Subprocesses: {snapshot.subprocess_count_per_min}/min | UI Tick: {ui_refresh_ms:.1f}ms"
             self.host_telemetry_lbl.configure(
-                text=f"Host Telemetry (Decoupled): CPU: {device_health.cpu_percent:.1f}% | RAM: {device_health.ram_percent:.1f}% | Pressure: {device_health.pressure.upper()}"
+                text=f"Host Telemetry (Decoupled): CPU: {device_health.cpu_percent:.1f}% | RAM: {device_health.ram_percent:.1f}% | Pressure: {device_health.pressure.upper()}{sub_info}"
             )
 
-        # 4. Render Interfaces Deck
-        self._render_interfaces_deck()
+        # 4. Render Interfaces Deck from snapshot
+        self._render_interfaces_deck(snapshot)
 
-    def _render_interfaces_deck(self):
-        interfaces = self.orchestrator.interfaces
+
+    def _render_interfaces_deck(self, snapshot: RuntimeSnapshot):
+        interfaces = snapshot.interfaces
         if not interfaces:
             if not self._placeholder_lbl:
                 self._placeholder_lbl = ctk.CTkLabel(
@@ -651,50 +694,77 @@ class CockpitDashboard:
             InterfaceState.DISABLED: COCKPIT_THEME["state_disabled"],
         }
 
+        role_info_map = {
+            InterfaceState.ONLINE: ("● ACTIVE CONNECTION", COCKPIT_THEME["emerald"], "Designated primary outbound route"),
+            InterfaceState.READY: ("○ FAILOVER STANDBY", COCKPIT_THEME["cyan"], "Healthy candidate ready for failover takeover"),
+            InterfaceState.ALERT: ("▲ DEGRADED", COCKPIT_THEME["amber"], "Experiencing elevated latency, jitter or packet loss"),
+            InterfaceState.OFFLINE: ("✕ DISCONNECTED", COCKPIT_THEME["text_muted"], "No physical link carrier detected"),
+            InterfaceState.DISABLED: ("⛔ DISABLED", COCKPIT_THEME["text_muted"], "Disabled at operating system level"),
+        }
+
         current_ids = {iface.id for iface in interfaces}
 
         # Remove cards for vanished interfaces
         for iface_id in list(self._interface_cards.keys()):
             if iface_id not in current_ids:
                 widgets = self._interface_cards.pop(iface_id)
-                widgets["frame"].destroy()
+                widgets["card"].destroy()
 
         # Update existing cards or create new ones
         for iface in interfaces:
-            # Section 8 & 9: Strictly avoid stale info on disconnected interfaces
             is_connected = iface.state in (InterfaceState.ONLINE, InterfaceState.READY, InterfaceState.ALERT)
-            media_icon = "📶" if iface.media_type == InterfaceMediaType.WIFI else "⚡"
-            if not is_connected:
-                media_icon = "🔌"
+            media_icon = "📶" if iface.media_type == InterfaceMediaType.WIFI else ("⚡" if iface.media_type == InterfaceMediaType.ETHERNET else "🔌")
+            badge_color = state_color_map.get(iface.state, COCKPIT_THEME["text_muted"])
+            role_title, role_color, role_subtext = role_info_map.get(
+                iface.state,
+                ("STANDBY", COCKPIT_THEME["text_muted"], "Auxiliary interface")
+            )
+            border_color = COCKPIT_THEME["border_highlight"] if iface.state == InterfaceState.ONLINE else COCKPIT_THEME["border"]
+
+            m = snapshot.metrics.get(iface.name)
+            lat_str = f"{m.latency_ms:.1f} ms" if (m and getattr(m, "latency_ms", 0.0) > 0) else "-- ms"
+            jit_str = f"{m.jitter_ms:.2f} ms" if (m and getattr(m, "jitter_ms", 0.0) > 0) else "-- ms"
+            health_score = m.health_index if m else 0
+            rating_str, _ = get_health_rating(health_score, is_connected)
+            health_display = f"{health_score} · {rating_str}" if (is_connected and health_score > 0) else "--"
 
             if iface.state == InterfaceState.DISABLED:
-                details_str = "Disabled by operating system"
+                offline_text = "Disabled by operating system"
             elif iface.state == InterfaceState.OFFLINE:
-                details_str = "Cable disconnected" if iface.media_type == InterfaceMediaType.ETHERNET else "No connection"
+                offline_text = "Cable disconnected" if iface.media_type == InterfaceMediaType.ETHERNET else "No connection"
             else:
-                details_parts = []
-                if iface.ip_address:
-                    details_parts.append(f"IPv4: {iface.ip_address}")
-                if iface.gateway:
-                    details_parts.append(f"GW: {iface.gateway}")
-                if iface.ssid:
-                    details_parts.append(f"SSID: {iface.ssid}")
-                if iface.link_speed:
-                    details_parts.append(f"({iface.link_speed})")
-                m = self.orchestrator.metrics.get(iface.name)
-                if m and getattr(m, "latency_ms", 0.0) > 0:
-                    details_parts.append(f"[{m.latency_ms:.0f}ms / {m.jitter_ms:.1f}ms / {m.health_index}%]")
-                details_str = " • ".join(details_parts) if details_parts else "Connected"
-
-            color = state_color_map.get(iface.state, COCKPIT_THEME["text_muted"])
+                offline_text = ""
 
             if iface.id in self._interface_cards:
-                widgets = self._interface_cards[iface.id]
-                widgets["badge"].configure(text=iface.state.name, fg_color=color)
-                widgets["name"].configure(text=f"{media_icon} {iface.friendly_name}")
-                widgets["details"].configure(text=details_str)
+                w = self._interface_cards[iface.id]
+                w["card"].configure(border_color=border_color)
+                w["badge"].configure(text=iface.state.name, fg_color=badge_color)
+                w["role"].configure(text=role_title, text_color=role_color)
+                w["name"].configure(text=f"{media_icon} {iface.friendly_name}")
+                w["sys_id"].configure(text=iface.name)
+                w["role_desc"].configure(text=role_subtext)
+
+                if is_connected:
+                    w["offline_lbl"].pack_forget()
+                    w["grid"].pack(fill="x", padx=14, pady=(4, 8), after=w["top_row"])
+                    w["kv_ipv4"].configure(text=iface.ip_address or "--")
+                    w["kv_gw"].configure(text=iface.gateway or "--")
+                    if iface.media_type == InterfaceMediaType.WIFI:
+                        w["kv_extra_k"].configure(text="SSID")
+                        w["kv_extra_v"].configure(text=iface.ssid or "--")
+                    else:
+                        w["kv_extra_k"].configure(text="Netmask")
+                        w["kv_extra_v"].configure(text=iface.netmask or "--")
+                    w["kv_link"].configure(text=iface.link_speed or "--")
+                    w["kv_lat"].configure(text=lat_str)
+                    w["kv_health"].configure(text=health_display)
+                else:
+                    w["grid"].pack_forget()
+                    w["offline_lbl"].configure(text=offline_text)
+                    w["offline_lbl"].pack(fill="x", padx=14, pady=10, after=w["top_row"])
+
                 if iface.state == InterfaceState.DISABLED:
-                    widgets["btn"].configure(
+                    w["btn"].configure(
                         text="Enable",
                         font=("Segoe UI", 10, "bold"),
                         fg_color=COCKPIT_THEME["emerald"],
@@ -702,7 +772,7 @@ class CockpitDashboard:
                         command=lambda name=iface.name: self._confirm_enable_interface(name),
                     )
                 else:
-                    widgets["btn"].configure(
+                    w["btn"].configure(
                         text="Disable",
                         font=("Segoe UI", 10),
                         fg_color=COCKPIT_THEME["bg_card"],
@@ -710,91 +780,198 @@ class CockpitDashboard:
                         command=lambda name=iface.name: self._confirm_disable_interface(name),
                     )
             else:
-                row = ctk.CTkFrame(
+                card = ctk.CTkFrame(
                     self.interfaces_scroll,
                     fg_color=COCKPIT_THEME["bg_surface"],
-                    corner_radius=6,
+                    corner_radius=8,
                     border_width=1,
-                    border_color=COCKPIT_THEME["border"],
-                    height=56,
+                    border_color=border_color,
                 )
-                row.pack(fill="x", pady=4)
-                row.pack_propagate(False)
+                card.pack(fill="x", pady=6, padx=4)
 
-                badge = ctk.CTkLabel(
-                    row,
+                top_row = ctk.CTkFrame(card, fg_color="transparent")
+                top_row.pack(fill="x", padx=14, pady=(12, 6))
+
+                left_box = ctk.CTkFrame(top_row, fg_color="transparent")
+                left_box.pack(side="left")
+
+                name_lbl = ctk.CTkLabel(
+                    left_box,
+                    text=f"{media_icon} {iface.friendly_name}",
+                    font=("Segoe UI", 13, "bold"),
+                    text_color=COCKPIT_THEME["text_primary"],
+                    anchor="w",
+                )
+                name_lbl.pack(anchor="w")
+
+                sys_id_lbl = ctk.CTkLabel(
+                    left_box,
+                    text=iface.name,
+                    font=("Consolas", 10),
+                    text_color=COCKPIT_THEME["text_muted"],
+                    anchor="w",
+                )
+                sys_id_lbl.pack(anchor="w")
+
+                right_box = ctk.CTkFrame(top_row, fg_color="transparent")
+                right_box.pack(side="right")
+
+                badge_lbl = ctk.CTkLabel(
+                    right_box,
                     text=iface.state.name,
                     font=("Segoe UI", 10, "bold"),
                     text_color="#ffffff",
-                    fg_color=color,
+                    fg_color=badge_color,
                     corner_radius=4,
                     padx=8,
                     pady=2,
-                    width=64,
                 )
-                badge.pack(side="left", padx=(10, 8), pady=12)
+                badge_lbl.pack(anchor="e")
 
-                name_lbl = ctk.CTkLabel(
-                    row,
-                    text=f"{media_icon} {iface.friendly_name}",
-                    font=("Segoe UI", 11, "bold"),
-                    text_color=COCKPIT_THEME["text_primary"],
+                role_lbl = ctk.CTkLabel(
+                    right_box,
+                    text=role_title,
+                    font=("Segoe UI", 9, "bold"),
+                    text_color=role_color,
+                    anchor="e",
                 )
-                name_lbl.pack(side="left", padx=4)
+                role_lbl.pack(anchor="e", pady=(3, 0))
 
-                det_lbl = ctk.CTkLabel(
-                    row,
-                    text=details_str,
-                    font=("Consolas", 10),
+                grid_frame = ctk.CTkFrame(card, fg_color=COCKPIT_THEME["bg_card"], corner_radius=6)
+                grid_frame.columnconfigure(0, weight=1)
+                grid_frame.columnconfigure(1, weight=1)
+
+                col0 = ctk.CTkFrame(grid_frame, fg_color="transparent")
+                col0.grid(row=0, column=0, sticky="nsew", padx=10, pady=6)
+
+                r0 = ctk.CTkFrame(col0, fg_color="transparent")
+                r0.pack(fill="x", pady=2)
+                ctk.CTkLabel(r0, text="IPv4", font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"], width=56, anchor="w").pack(side="left")
+                kv_ipv4 = ctk.CTkLabel(r0, text=iface.ip_address or "--", font=("Consolas", 10, "bold"), text_color=COCKPIT_THEME["text_primary"], anchor="w")
+                kv_ipv4.pack(side="left", padx=4)
+
+                r1 = ctk.CTkFrame(col0, fg_color="transparent")
+                r1.pack(fill="x", pady=2)
+                ctk.CTkLabel(r1, text="Gateway", font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"], width=56, anchor="w").pack(side="left")
+                kv_gw = ctk.CTkLabel(r1, text=iface.gateway or "--", font=("Consolas", 10), text_color=COCKPIT_THEME["text_primary"], anchor="w")
+                kv_gw.pack(side="left", padx=4)
+
+                r2 = ctk.CTkFrame(col0, fg_color="transparent")
+                r2.pack(fill="x", pady=2)
+                extra_k = "SSID" if iface.media_type == InterfaceMediaType.WIFI else "Netmask"
+                extra_v = iface.ssid if iface.media_type == InterfaceMediaType.WIFI else (iface.netmask or "--")
+                kv_extra_k = ctk.CTkLabel(r2, text=extra_k, font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"], width=56, anchor="w")
+                kv_extra_k.pack(side="left")
+                kv_extra_v = ctk.CTkLabel(r2, text=extra_v or "--", font=("Segoe UI", 10), text_color=COCKPIT_THEME["cyan"], anchor="w")
+                kv_extra_v.pack(side="left", padx=4)
+
+                col1 = ctk.CTkFrame(grid_frame, fg_color="transparent")
+                col1.grid(row=0, column=1, sticky="nsew", padx=10, pady=6)
+
+                r3 = ctk.CTkFrame(col1, fg_color="transparent")
+                r3.pack(fill="x", pady=2)
+                ctk.CTkLabel(r3, text="Link", font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"], width=56, anchor="w").pack(side="left")
+                kv_link = ctk.CTkLabel(r3, text=iface.link_speed or "--", font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_primary"], anchor="w")
+                kv_link.pack(side="left", padx=4)
+
+                r4 = ctk.CTkFrame(col1, fg_color="transparent")
+                r4.pack(fill="x", pady=2)
+                ctk.CTkLabel(r4, text="Latency", font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"], width=56, anchor="w").pack(side="left")
+                kv_lat = ctk.CTkLabel(r4, text=lat_str, font=("Segoe UI", 10, "bold"), text_color=COCKPIT_THEME["text_primary"], anchor="w")
+                kv_lat.pack(side="left", padx=4)
+
+                r5 = ctk.CTkFrame(col1, fg_color="transparent")
+                r5.pack(fill="x", pady=2)
+                ctk.CTkLabel(r5, text="Health", font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"], width=56, anchor="w").pack(side="left")
+                kv_health = ctk.CTkLabel(r5, text=health_display, font=("Segoe UI", 10, "bold"), text_color=COCKPIT_THEME["emerald"], anchor="w")
+                kv_health.pack(side="left", padx=4)
+
+                offline_lbl = ctk.CTkLabel(
+                    card,
+                    text=offline_text,
+                    font=("Segoe UI", 11, "italic"),
                     text_color=COCKPIT_THEME["text_muted"],
+                    fg_color=COCKPIT_THEME["bg_card"],
+                    corner_radius=6,
+                    pady=8,
                 )
-                det_lbl.pack(side="left", padx=12)
 
-                # Info / Details button opening interface modal
-                info_btn = ctk.CTkButton(
-                    row,
-                    text="Details",
+                if is_connected:
+                    grid_frame.pack(fill="x", padx=14, pady=(4, 8))
+                else:
+                    offline_lbl.pack(fill="x", padx=14, pady=(4, 8))
+
+                bottom_row = ctk.CTkFrame(card, fg_color="transparent")
+                bottom_row.pack(fill="x", padx=14, pady=(4, 12))
+
+                role_desc_lbl = ctk.CTkLabel(
+                    bottom_row,
+                    text=role_subtext,
                     font=("Segoe UI", 10),
+                    text_color=COCKPIT_THEME["text_muted"],
+                    anchor="w",
+                )
+                role_desc_lbl.pack(side="left")
+
+                details_btn = ctk.CTkButton(
+                    bottom_row,
+                    text="Details →",
+                    font=("Segoe UI", 10, "bold"),
                     fg_color=COCKPIT_THEME["bg_card"],
                     hover_color=COCKPIT_THEME["border_highlight"],
-                    width=54,
-                    height=24,
+                    width=78,
+                    height=26,
                     command=lambda i=iface: self._show_interface_detail_modal(i),
                 )
-                info_btn.pack(side="right", padx=(4, 10))
+                details_btn.pack(side="right", padx=(6, 0))
 
                 if iface.state == InterfaceState.DISABLED:
                     action_btn = ctk.CTkButton(
-                        row,
+                        bottom_row,
                         text="Enable",
                         font=("Segoe UI", 10, "bold"),
                         fg_color=COCKPIT_THEME["emerald"],
                         hover_color=COCKPIT_THEME["emerald_glow"],
-                        width=64,
-                        height=24,
+                        width=68,
+                        height=26,
                         command=lambda name=iface.name: self._confirm_enable_interface(name),
                     )
                 else:
                     action_btn = ctk.CTkButton(
-                        row,
+                        bottom_row,
                         text="Disable",
                         font=("Segoe UI", 10),
                         fg_color=COCKPIT_THEME["bg_card"],
                         hover_color=COCKPIT_THEME["red"],
-                        width=64,
-                        height=24,
+                        width=68,
+                        height=26,
                         command=lambda name=iface.name: self._confirm_disable_interface(name),
                     )
-                action_btn.pack(side="right", padx=4)
+                action_btn.pack(side="right")
+
+                card.bind("<Button-1>", lambda e, i=iface: self._show_interface_detail_modal(i))
 
                 self._interface_cards[iface.id] = {
-                    "frame": row,
-                    "badge": badge,
+                    "card": card,
+                    "top_row": top_row,
+                    "badge": badge_lbl,
+                    "role": role_lbl,
                     "name": name_lbl,
-                    "details": det_lbl,
+                    "sys_id": sys_id_lbl,
+                    "grid": grid_frame,
+                    "offline_lbl": offline_lbl,
+                    "kv_ipv4": kv_ipv4,
+                    "kv_gw": kv_gw,
+                    "kv_extra_k": kv_extra_k,
+                    "kv_extra_v": kv_extra_v,
+                    "kv_link": kv_link,
+                    "kv_lat": kv_lat,
+                    "kv_health": kv_health,
+                    "role_desc": role_desc_lbl,
                     "btn": action_btn,
-                    "info": info_btn,
+                    "details_btn": details_btn,
                 }
+
 
     def _show_health_detail_modal(self):
         """Opens interactive Network Health breakdown modal (Section 12)."""
@@ -931,46 +1108,108 @@ class CockpitDashboard:
         ).pack(pady=(0, 14))
 
     def _show_interface_detail_modal(self, iface: NetworkInterface):
-        """Opens interactive technical details modal for selected interface."""
+        """Opens comprehensive technical details modal (Section 10)."""
         if not HAS_CTK:
             return
         dialog = ctk.CTkToplevel(self.parent)
-        dialog.title(f"Interface Details - {iface.name}")
-        dialog.geometry("480x360")
+        dialog.title(f"Interface Details — {iface.friendly_name}")
+        dialog.geometry("540x530")
         dialog.configure(fg_color=COCKPIT_THEME["bg_dark"])
         dialog.transient(self.parent)
         dialog.grab_set()
 
-        title_lbl = ctk.CTkLabel(
-            dialog,
-            text=f"{iface.friendly_name} [{iface.state.value}]",
-            font=("Segoe UI", 14, "bold"),
+        # Top Header
+        title_box = ctk.CTkFrame(dialog, fg_color="transparent")
+        title_box.pack(fill="x", padx=20, pady=(16, 8))
+
+        media_icon = "📶" if iface.media_type == InterfaceMediaType.WIFI else ("⚡" if iface.media_type == InterfaceMediaType.ETHERNET else "🔌")
+        ctk.CTkLabel(
+            title_box,
+            text=f"{media_icon} {iface.friendly_name}",
+            font=("Segoe UI", 15, "bold"),
             text_color=COCKPIT_THEME["text_primary"],
-        )
-        title_lbl.pack(pady=(18, 10))
+            anchor="w",
+        ).pack(side="left")
 
-        content_frame = ctk.CTkFrame(dialog, fg_color=COCKPIT_THEME["bg_card"], corner_radius=6)
-        content_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        ctk.CTkLabel(
+            title_box,
+            text=iface.state.value,
+            font=("Segoe UI", 10, "bold"),
+            text_color="#ffffff",
+            fg_color=COCKPIT_THEME.get(f"state_{iface.state.value.lower()}", COCKPIT_THEME["cyan"]),
+            corner_radius=4,
+            padx=8,
+            pady=2,
+        ).pack(side="right")
 
-        m = self.orchestrator.metrics.get(iface.name)
-        items = [
+        scroll = ctk.CTkScrollableFrame(dialog, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=20, pady=(0, 10))
+
+        def _add_section(title: str, items: List[Tuple[str, str]]):
+            s_frame = ctk.CTkFrame(scroll, fg_color=COCKPIT_THEME["bg_card"], corner_radius=6)
+            s_frame.pack(fill="x", pady=6)
+
+            h_lbl = ctk.CTkLabel(
+                s_frame,
+                text=title,
+                font=("Segoe UI", 11, "bold"),
+                text_color=COCKPIT_THEME["cyan"],
+                anchor="w",
+            )
+            h_lbl.pack(anchor="w", padx=14, pady=(10, 6))
+
+            for label, val in items:
+                r = ctk.CTkFrame(s_frame, fg_color="transparent")
+                r.pack(fill="x", padx=14, pady=3)
+                ctk.CTkLabel(r, text=label, font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"]).pack(side="left")
+                ctk.CTkLabel(r, text=val, font=("Consolas", 10, "bold"), text_color=COCKPIT_THEME["text_primary"]).pack(side="right")
+            s_frame.pack_configure(pady=(4, 6))
+
+        # 1. GENERAL
+        role_label = "ACTIVE OUTBOUND CONNECTION" if iface.state == InterfaceState.ONLINE else ("FAILOVER STANDBY CANDIDATE" if iface.state == InterfaceState.READY else iface.state.value)
+        _add_section("GENERAL & IDENTITY", [
             ("Device Name:", iface.name),
+            ("Friendly Name:", iface.friendly_name),
             ("Media Type:", iface.media_type.value.upper()),
+            ("Assigned Role:", role_label),
             ("Physical Carrier:", "CONNECTED" if iface.carrier else "DISCONNECTED"),
             ("Admin State:", "ENABLED" if iface.admin_enabled else "DISABLED"),
-            ("Current State:", iface.state.value),
-            ("IPv4 Address:", iface.ip_address or "N/A"),
-            ("Default Gateway:", iface.gateway or "N/A"),
-            ("Wi-Fi SSID:", iface.ssid or "N/A"),
-            ("Link Speed:", iface.link_speed or "N/A"),
-            ("Latency / Jitter:", f"{m.latency_ms:.1f}ms / {m.jitter_ms:.1f}ms" if m else "N/A"),
-        ]
+        ])
 
-        for label, val in items:
-            r_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
-            r_frame.pack(fill="x", padx=14, pady=3)
-            ctk.CTkLabel(r_frame, text=label, font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"]).pack(side="left")
-            ctk.CTkLabel(r_frame, text=val, font=("Segoe UI", 10, "bold"), text_color=COCKPIT_THEME["text_primary"]).pack(side="right")
+        # 2. NETWORK
+        _add_section("NETWORK CONFIGURATION", [
+            ("IPv4 Address:", iface.ip_address or "None"),
+            ("Netmask / Prefix:", iface.netmask or "None"),
+            ("Default Gateway:", iface.gateway or "None"),
+            ("Wi-Fi SSID:", iface.ssid or ("N/A (Wired)" if iface.media_type == InterfaceMediaType.ETHERNET else "None")),
+            ("Link Speed:", iface.link_speed or "Unknown"),
+        ])
+
+        # 3. QUALITY (RFC 3550)
+        m = self.orchestrator.metrics.get(iface.name)
+        if m:
+            rtt = getattr(m, "latency_ms", 0.0)
+            jit = getattr(m, "jitter_ms", 0.0)
+            loss = getattr(m, "packet_loss_pct", 0.0)
+            health = getattr(m, "health_index", 0)
+            rating, _ = get_health_rating(health, iface.carrier)
+            score_val = PolicyEngine.compute_score(iface, self.orchestrator.config)
+            _add_section("QUALITY & PERFORMANCE (RFC 3550)", [
+                ("Latency (RTT):", f"{rtt:.1f} ms" if rtt > 0 else "-- ms"),
+                ("RFC 3550 Jitter:", f"{jit:.2f} ms" if jit > 0 else "-- ms"),
+                ("Packet Loss:", f"{loss:.1f}%"),
+                ("Network Health Index:", f"{health} / 100 ({rating})"),
+                ("Policy Candidate Score:", f"{score_val:.1f} pts"),
+            ])
+
+        # 4. POLICY & ARBITRATION
+        is_eligible = iface.is_eligible_candidate(self.orchestrator.config.min_health_threshold)
+        last_probe_str = time.strftime("%H:%M:%S", time.localtime(m.last_probe_timestamp)) if (m and m.last_probe_timestamp > 0) else "Never"
+        _add_section("POLICY & FAILOVER ARBITRATION", [
+            ("Failover Eligibility:", "ELIGIBLE FOR PROMOTION" if is_eligible else "INELIGIBLE"),
+            ("Takeover Margin Threshold:", f"{self.orchestrator.config.takeover_margin:.1f} pts"),
+            ("Last Health Probe:", last_probe_str),
+        ])
 
         ctk.CTkButton(
             dialog,
@@ -978,8 +1217,10 @@ class CockpitDashboard:
             command=dialog.destroy,
             fg_color=COCKPIT_THEME["bg_surface"],
             hover_color=COCKPIT_THEME["border_highlight"],
-            width=80,
-        ).pack(pady=(10, 14))
+            width=90,
+            height=28,
+        ).pack(pady=(6, 12))
+
 
     def _confirm_enable_interface(self, iface_name: str):
         dialog = ctk.CTkToplevel(self.parent)

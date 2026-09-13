@@ -11,6 +11,7 @@ from typing import List, Dict, Optional, Callable, Any
 from ...models.interface import NetworkInterface, InterfaceState
 from ...models.policy import PolicyConfig, WorkloadProfile, CandidateScore
 from ...models.events import EventType, FailoverEvent
+from ...models.snapshot import RuntimeSnapshot
 from ...platform.base import PlatformBackend
 from ..probe.rfc3550 import RFC3550JitterTracker, probe_socket_rtt
 from ..health.evaluator import HealthEngine
@@ -19,6 +20,7 @@ from ..recovery.arbiter import RecoveryArbiter
 from ..events.bus import EventBus
 from ..workload.watcher import WorkloadWatcher
 from ..telemetry.sampler import TelemetrySampler
+
 
 
 class PolicyEngineWrapper:
@@ -71,6 +73,15 @@ class FailoverOrchestrator:
         self._tick_count = 0
         self._loop_thread: Optional[threading.Thread] = None
 
+        # Decoupled thread-safe snapshot for UI rendering
+        self._snapshot_lock = threading.Lock()
+        self._latest_snapshot: Optional[RuntimeSnapshot] = None
+        self._last_telemetry_time: float = 0.0
+        self._last_workload_time: float = 0.0
+        self._cached_workload_apps: List[str] = []
+        self._cached_workload_profile: WorkloadProfile = WorkloadProfile.BALANCED
+        self._cached_device_health: Optional[Any] = None
+
     @property
     def interfaces(self) -> List[NetworkInterface]:
         with self._lock:
@@ -101,7 +112,91 @@ class FailoverOrchestrator:
     @property
     def latest_device_health(self) -> Any:
         """Returns the latest passively sampled device health."""
+        if self._cached_device_health is not None:
+            return self._cached_device_health
         return self.telemetry_sampler.sample()
+
+    def _update_snapshot(self) -> RuntimeSnapshot:
+        """Constructs an immutable thread-safe snapshot of the current state."""
+        now = time.monotonic()
+        with self._lock:
+            ifaces_copy = [iface.model_copy() for iface in self._interfaces.values()]
+            active_id = self._active_interface_id
+            metrics_copy = {k: v.model_copy() if hasattr(v, "model_copy") else v for k, v in self.metrics.items()}
+
+        active_if = None
+        standby_if = None
+        for iface in ifaces_copy:
+            if iface.id == active_id:
+                active_if = iface
+            elif iface.state in (InterfaceState.READY, InterfaceState.ALERT) and not standby_if:
+                standby_if = iface
+
+        # Background low-cadence workload update (~2.5s)
+        if now - self._last_workload_time >= 2.5 or not self._cached_workload_apps:
+            try:
+                prof, apps = self.workload_watcher.detect_active_profile()
+                self._cached_workload_profile = prof
+                self._cached_workload_apps = sorted(list(apps))
+                self._last_workload_time = now
+            except Exception:
+                pass
+
+        # Background low-cadence telemetry update (~1.0s)
+        if now - self._last_telemetry_time >= 1.0 or self._cached_device_health is None:
+            try:
+                self._cached_device_health = self.telemetry_sampler.sample()
+                self._last_telemetry_time = now
+            except Exception:
+                pass
+
+        # Subprocess instrumentation from platform backend if supported
+        sub_rate = 0
+        if hasattr(self.backend, "get_instrumentation"):
+            try:
+                sub_rate = self.backend.get_instrumentation().get("subprocess_count_per_min", 0)
+            except Exception:
+                pass
+
+        # Engine status & subtext
+        if active_if:
+            st_name = standby_if.friendly_name if standby_if else "None"
+            engine_status = "ACTIVE PATH STABLE"
+            engine_subtext = f"Active: {active_if.name} | Standby: {st_name} | Margin: {self.config.takeover_margin:.1f} pts"
+        else:
+            engine_status = "NO ELIGIBLE PATH"
+            engine_subtext = "Waiting for usable interface"
+
+        snap = RuntimeSnapshot(
+            interfaces=ifaces_copy,
+            active_interface_id=active_id,
+            active_interface=active_if,
+            standby_interface=standby_if,
+            metrics=metrics_copy,
+            device_health=self._cached_device_health,
+            workload_apps=self._cached_workload_apps,
+            workload_profile=self._cached_workload_profile.value if hasattr(self._cached_workload_profile, "value") else str(self._cached_workload_profile),
+            engine_status=engine_status,
+            engine_subtext=engine_subtext,
+            takeover_margin=self.config.takeover_margin,
+            subprocess_count_per_min=sub_rate,
+            timestamp=time.time(),
+        )
+
+        with self._snapshot_lock:
+            self._latest_snapshot = snap
+        return snap
+
+    def get_snapshot(self) -> RuntimeSnapshot:
+        """
+        Non-blocking read of the latest runtime snapshot.
+        Guarantees Tkinter UI thread never blocks on native I/O or background locks.
+        """
+        with self._snapshot_lock:
+            if self._latest_snapshot is not None:
+                return self._latest_snapshot
+        return self._update_snapshot()
+
 
     def set_interface_admin_state(self, iface_id_or_name: str, enabled: bool) -> bool:
         """Administratively enable or disable a network adapter."""
@@ -168,6 +263,7 @@ class FailoverOrchestrator:
                         self._active_interface_id = iface.id
                         break
             self._initialized = True
+            self._update_snapshot()
 
     def tick(self) -> None:
         """
@@ -321,6 +417,7 @@ class FailoverOrchestrator:
                     EventType.ZERO_CONNECTION,
                     "CRITICAL: Zero usable network connections available. Pipeline is OFFLINE.",
                 )
+            self._update_snapshot()
 
     def _execute_failover(self, target_id: str, reason: str) -> bool:
         """

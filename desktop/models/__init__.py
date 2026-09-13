@@ -3,6 +3,7 @@ from .metrics import PathMetrics
 from .policy import WorkloadProfile, PolicyConfig, CandidateScore
 from .telemetry import DeviceHealth
 from .events import EventType, FailoverEvent
+from .snapshot import RuntimeSnapshot
 
 __all__ = [
     "InterfaceState",
@@ -15,4 +16,6 @@ __all__ = [
     "DeviceHealth",
     "EventType",
     "FailoverEvent",
+    "RuntimeSnapshot",
 ]
+

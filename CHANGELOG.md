@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Rebuilt Network Interfaces Deck Using Responsive Interface Cards**: Replaced compressed single-line interface rows with modern card-based widgets displaying 2-column key-value metrics, clear state badges, active/standby roles, and dedicated Details modals.
+- **Added Active/Standby Roles, Interface Icons & Detailed View**: Enhanced interface cards and dashboard header with distinct technical icons (`⚡`, `📶`, `🔌`), visual role badges (`ACTIVE CONNECTION`, `FAILOVER STANDBY`, `DEGRADED`), and comprehensive 4-section inspector modal.
+- **Improved Cross-Platform Dashboard Readability**: Eliminated horizontal text clipping on Windows and Linux font scaling with responsive layout, prominent active path container, and decoupled telemetry.
 - **AutoFailover 3.0 Cockpit Dashboard Hardening**: Reorganized UI hierarchy with prominent Modula branding, distinct active connection status indicators, qualitative Network Health ratings (`EXCELLENT`, `HEALTHY`, `DEGRADED`, `POOR`, `CRITICAL`, `NO CONNECTION`), informative failover policy subtext, and clickable author attribution (`Crafted with ♥ by parikesitad-pm`).
 - **Website Live Preview Alignment**: Renamed all public website references from "Live Cockpit" to "Live Preview" across navigation, hero CTA buttons, and interactive simulator surfaces.
 - **Concise Documentation**: Streamlined `README.md` into an essential, clean reference highlighting system architecture, platform support, quick start commands, and verified physical status.
@@ -28,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Windows Native Runtime Responsiveness / Blocking Network Polling**: Fully decoupled the Tkinter UI main thread from native network I/O and subprocess execution via thread-safe `RuntimeSnapshot` distribution, eliminating "Not Responding" application freezes on Windows.
+- **Removed Repeated Visible/Hidden PowerShell Spawning**: Eliminated high-cadence PowerShell invocations by permanently caching static hardware adapter metadata, querying default route via native `route.exe` (10ms vs 1500ms), restricting Wi-Fi queries to active adapters with 10s TTL, and utilizing in-process `psutil` tables.
+- **Fixed Clipped Network-Interface Information**: Replaced crowded single-line text formatting with clean responsive 2-column key-value cards and dedicated modal inspection dialogs, ensuring IPv4, gateway, SSID, link speed, latency, jitter, and health scores are clearly readable.
 - **Windows Subprocess Console Window Storm**: Completely eliminated repeated visible PowerShell and netsh command popups during interface probing on Windows by configuring `STARTUPINFO(wShowWindow=SW_HIDE)`, `creationflags=CREATE_NO_WINDOW`, `-WindowStyle Hidden`, and in-process `psutil` resolution with TTL caching, preventing GUI stutter.
 - **Stale Disconnected Interface Telemetry Elimination**: Disconnected (`OFFLINE`) and disabled (`DISABLED`) interfaces immediately purge stale IPv4 addresses, gateways, SSIDs, and health statistics from the cockpit deck, displaying clear status labels ("Cable disconnected" / "Disabled by operating system").
 - **Core-to-GUI Runtime Integration**: Connected Python Failover Core directly to CustomTkinter GUI lifecycle by calling `orchestrator.initialize()` at startup and auto-initializing in `start_loop()`, populating discovered network interfaces (`enp44s0`, `wlp0s20f3`), IP configuration, and authoritative default route.

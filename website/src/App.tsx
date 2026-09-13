@@ -39,10 +39,14 @@ export const App: React.FC = () => {
     if (viewMode !== 'landing') {
       setViewMode('landing');
       setTimeout(() => {
-        document.getElementById('downloads')?.scrollIntoView({ behavior: 'smooth' });
+        document
+          .getElementById('downloads')
+          ?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } else {
-      document.getElementById('downloads')?.scrollIntoView({ behavior: 'smooth' });
+      document
+        .getElementById('downloads')
+        ?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -54,7 +58,11 @@ export const App: React.FC = () => {
           className="flex items-center gap-3 cursor-pointer select-none"
           onClick={() => setViewMode('landing')}
         >
-          <img src="/modula_3.0.png" alt="Modula 3.0" className="w-8 h-8 object-contain" />
+          <img
+            src="/modula_3.0.png"
+            alt="Modula 3.0"
+            className="w-8 h-8 object-contain"
+          />
           <div>
             <span className="font-extrabold tracking-tight text-white text-base">
               AUTO FAILOVER
@@ -122,7 +130,11 @@ export const App: React.FC = () => {
         ) : (
           <div className="p-3 sm:p-6 flex flex-col justify-center max-w-7xl mx-auto">
             {/* Startup Splash Gate */}
-            <SplashScreen state={state} onRetry={runStartup} onSkip={skipStartup} />
+            <SplashScreen
+              state={state}
+              onRetry={runStartup}
+              onSkip={skipStartup}
+            />
 
             {/* Digital Network Cockpit */}
             {!state.isActive && (
