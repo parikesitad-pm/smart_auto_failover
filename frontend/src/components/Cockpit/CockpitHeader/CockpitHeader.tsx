@@ -97,20 +97,22 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
 
       {/* Action Buttons & Master Status Pill */}
       <div className="flex items-center space-x-2">
-        {/* Manual Force Re-initialization Button */}
-        <button
-          type="button"
-          onClick={handleReinitClick}
-          className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm group"
-          title="Force manual Core re-initialization and hardware probe cycle (without startup presentation)"
-        >
-          <span
-            className={`inline-block transition-transform duration-300 ${isReinitSpinning ? 'animate-spin' : ''}`}
+        {/* Manual Force Re-initialization Button (Native desktop runtime only) */}
+        {!isBrowserPreview && (
+          <button
+            type="button"
+            onClick={handleReinitClick}
+            className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm group"
+            title="Force manual Core re-initialization and hardware probe cycle (without startup presentation)"
           >
-            🔄
-          </span>
-          <span>Re-initialize Core</span>
-        </button>
+            <span
+              className={`inline-block transition-transform duration-300 ${isReinitSpinning ? 'animate-spin' : ''}`}
+            >
+              🔄
+            </span>
+            <span>Re-initialize Core</span>
+          </button>
+        )}
 
         {/* Startup Presentation Modal Trigger */}
         <button

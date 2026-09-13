@@ -5,6 +5,20 @@ import { calculateGaugeGeometry } from '../../../lib/gaugeMath';
 export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
   telemetry,
 }) => {
+  const peakDlRef = React.useRef(0);
+  const peakUlRef = React.useRef(0);
+
+  if (telemetry.downloadSpeed > peakDlRef.current) {
+    peakDlRef.current = Math.round(telemetry.downloadSpeed);
+  }
+  if (telemetry.uploadSpeed > peakUlRef.current) {
+    peakUlRef.current = Math.round(telemetry.uploadSpeed);
+  }
+  if (!telemetry.activePath || telemetry.healthScore === 0) {
+    peakDlRef.current = 0;
+    peakUlRef.current = 0;
+  }
+
   const dlGeom = useMemo(
     () => calculateGaugeGeometry(telemetry.downloadSpeed, 'download'),
     [telemetry.downloadSpeed]
@@ -39,7 +53,9 @@ export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
             </svg>
             Download
           </span>
-          <span className="text-slate-400">Peak 212 Mbps</span>
+          <span className="text-slate-400">
+            Peak {peakDlRef.current > 0 ? `${peakDlRef.current} Mbps` : '0 Mbps'}
+          </span>
         </div>
 
         <div className="relative w-44 h-44 flex items-center justify-center">
@@ -267,7 +283,9 @@ export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
             </svg>
             Upload
           </span>
-          <span className="text-slate-400">Peak 58 Mbps</span>
+          <span className="text-slate-400">
+            Peak {peakUlRef.current > 0 ? `${peakUlRef.current} Mbps` : '0 Mbps'}
+          </span>
         </div>
 
         <div className="relative w-44 h-44 flex items-center justify-center">
