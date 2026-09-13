@@ -76,10 +76,10 @@ jobs:
           VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
           PACKAGE_DIR="AutoFailover 3.0"
           ARCHIVE_NAME="AutoFailover-${VERSION}-Linux-x86_64.tar.gz"
-          
+
           mkdir -p dist/packages
           tar -czvf "dist/packages/${ARCHIVE_NAME}" -C dist "${PACKAGE_DIR}"
-          
+
           cd dist/packages
           sha256sum "${ARCHIVE_NAME}" > "${ARCHIVE_NAME}.sha256"
 
@@ -128,7 +128,7 @@ jobs:
           $PACKAGE_NAME = "AutoFailover-$VERSION-Windows-x64.zip"
           New-Item -ItemType Directory -Force -Path dist/packages
           Compress-Archive -Path "dist/AutoFailover 3.0/*" -DestinationPath "dist/packages/$PACKAGE_NAME"
-          
+
           cd dist/packages
           $hash = (Get-FileHash -Path $PACKAGE_NAME -Algorithm SHA256).Hash
           "$hash *$PACKAGE_NAME" | Out-File -FilePath "$PACKAGE_NAME.sha256" -Encoding ascii
@@ -181,13 +181,13 @@ jobs:
           VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
           ARCHIVE_NAME="AutoFailover-${VERSION}-macOS-arm64.dmg"
           mkdir -p dist/packages
-          
+
           if command -v hdiutil >/dev/null 2>&1; then
             hdiutil create -volname "AutoFailover 3.0" -srcfolder "dist/AutoFailover 3.0.app" -ov -format UDZO "dist/packages/${ARCHIVE_NAME}"
           else
             tar -czvf "dist/packages/AutoFailover-${VERSION}-macOS-arm64.tar.gz" -C dist "AutoFailover 3.0.app"
           fi
-          
+
           cd dist/packages
           for f in *; do
             if command -v sha256sum >/dev/null 2>&1; then
@@ -203,60 +203,9 @@ jobs:
           name: artifact-macos-arm64
           path: dist/packages/*
 
-  build-macos-x64:
-    name: Build macOS (x64)
-    needs: test-and-lint
-    runs-on: macos-13
-    continue-on-error: true
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Build Tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
-          pip install -r desktop/requirements.txt
-
-      - name: Package with PyInstaller Spec
-        run: |
-          pyinstaller --noconfirm desktop/autofailover.spec
-
-      - name: Archive macOS x64 Package
-        run: |
-          VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
-          ARCHIVE_NAME="AutoFailover-${VERSION}-macOS-x64.dmg"
-          mkdir -p dist/packages
-          
-          if command -v hdiutil >/dev/null 2>&1; then
-            hdiutil create -volname "AutoFailover 3.0" -srcfolder "dist/AutoFailover 3.0.app" -ov -format UDZO "dist/packages/${ARCHIVE_NAME}"
-          else
-            tar -czvf "dist/packages/AutoFailover-${VERSION}-macOS-x64.tar.gz" -C dist "AutoFailover 3.0.app"
-          fi
-          
-          cd dist/packages
-          for f in *; do
-            if command -v sha256sum >/dev/null 2>&1; then
-              sha256sum "$f" > "${f}.sha256"
-            else
-              shasum -a 256 "$f" > "${f}.sha256"
-            fi
-          done
-
-      - name: Upload macOS x64 Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifact-macos-x64
-          path: dist/packages/*
-
   publish-release:
     name: Publish Release or Preview
-    needs: [test-and-lint, build-linux, build-windows, build-macos-arm64, build-macos-x64]
+    needs: [test-and-lint, build-linux, build-windows, build-macos-arm64]
     if: always() && !cancelled() && needs.test-and-lint.result == 'success'
     runs-on: ubuntu-22.04
     steps:
@@ -272,7 +221,7 @@ jobs:
         run: |
           mkdir -p release-assets
           find downloaded-artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.dmg" \) -exec cp {} release-assets/ \;
-          
+
           cd release-assets
           sha256sum * > SHA256SUMS.txt
           cat SHA256SUMS.txt
@@ -282,7 +231,7 @@ jobs:
         run: |
           VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          
+
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             TAG="${{ github.ref_name }}"
             TITLE="AutoFailover ${VERSION}"
@@ -296,22 +245,22 @@ jobs:
             NOTES_FILE="PREVIEW_NOTES.md"
             cat <<EOF > "$NOTES_FILE"
           # ${TITLE}
-          
-          **Channel**: Preview (Automated CI Build)  
-          **Version**: ${VERSION}  
-          **Commit**: ${SHORT_SHA}  
-          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
-          
+
+          **Channel**: Preview (Automated CI Build)
+          **Version**: ${VERSION}
+          **Commit**: ${SHORT_SHA}
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
           ### Available Native Packages
           See published assets below. All downloads include matching cryptographic hashes in \`SHA256SUMS.txt\`.
-          
+
           > ⚠️ **Validation Notice**: Preview artifacts are built on native runners. Real-host physical verification may still be in progress on specific platforms.
-          
+
           ### Changelog
           Refer to [CHANGELOG.md](https://github.com/parikesitad-pm/smart_auto_failover/blob/main/CHANGELOG.md) for full release history.
           EOF
           fi
-          
+
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
           echo "prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
