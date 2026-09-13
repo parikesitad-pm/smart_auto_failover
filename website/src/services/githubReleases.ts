@@ -342,14 +342,14 @@ export function resolveReleaseFromList(
 }
 
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
-  const latestTag = 'v3.0.0-preview.25';
-  const ver = '3.0.0 Beta (preview.25)';
+  const latestTag = 'v3.0.0-preview.26';
+  const ver = '3.0.0 Beta (preview.26)';
   const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${latestTag}`;
   const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestTag}`;
 
   return {
     tagName: latestTag,
-    releaseTitle: 'AutoFailover 3.0.0 Beta Release (v3.0.0-preview.25)',
+    releaseTitle: 'AutoFailover 3.0.0 Beta Release (v3.0.0-preview.26)',
     channel: 'BETA',
     publishedAt: new Date().toISOString(),
     htmlUrl: releaseUrl,

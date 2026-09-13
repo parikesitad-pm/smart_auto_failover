@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Designated Release 25 as Official Beta Release & Updated Full HD Cockpit Showcase (`README.md`, `website/src/`, `assets/modula_betarelease.png`)**: Established `v3.0.0-preview.25` as the authoritative multi-platform Beta Release with direct download links (`AutoFailover-3.0.0-Windows-x64.zip`, `AutoFailover-3.0.0-Linux-x86_64.tar.gz`, `AutoFailover-3.0.0-macOS-arm64.dmg`) in `README.md`. Updated landing page showcase with the Full HD 1672x941 native Windows screenshot (`/modula_betarelease.png`) running live alongside vMix session protection.
+- **Designated Release 26 as Official Beta Release & Updated Full HD Cockpit Showcase (`README.md`, `website/src/`, `assets/modula_betarelease.png`)**: Established `v3.0.0-preview.26` as the authoritative multi-platform Beta Release with direct download links (`AutoFailover-3.0.0-Windows-x64.zip`, `AutoFailover-3.0.0-Linux-x86_64.tar.gz`, `AutoFailover-3.0.0-macOS-arm64.dmg`) in `README.md`. Updated landing page showcase with the Full HD 1672x941 native Windows screenshot (`/modula_betarelease.png`) running live alongside vMix session protection.
 - **Cross-Platform App Logo & Window Icon (`desktop/ui/app.py`, `desktop/autofailover.spec`)**: Configured native window icons across all operating systems using `root.iconbitmap` for Windows (`.ico`), `root.iconphoto` with garbage-collection retention for Linux/macOS (`.png`), and `BUNDLE` icon resolution for macOS (`.icns`).
 
 ### Fixed
