@@ -41,37 +41,65 @@ export const DownloadHub: React.FC = () => {
         </p>
 
         {release && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs font-mono text-slate-400">
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-emerald-400 font-semibold flex items-center gap-1.5">
-              {release.tagName}
-            </span>
-            <button
-              onClick={refresh}
-              disabled={isRefreshing}
-              title="Check for latest releases"
-              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-emerald-400 transition-all cursor-pointer flex items-center gap-1"
+          <div className="mt-4 flex flex-col items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-mono text-slate-400">
+              <a
+                href={release.htmlUrl || `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release.tagName}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`View ${release.tagName} on GitHub Releases`}
+                className="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1.5 transition-all cursor-pointer group"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{release.tagName}</span>
+                <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+              </a>
+              <button
+                onClick={refresh}
+                disabled={isRefreshing}
+                title="Check for latest releases on GitHub"
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-emerald-400 transition-all cursor-pointer flex items-center gap-1"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`}
+                />
+                <span className="text-[10px] hidden sm:inline">Refresh</span>
+              </button>
+              <span>•</span>
+              <a
+                href={release.htmlUrl || `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release.tagName}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-300 hover:text-white underline hover:no-underline flex items-center gap-1 cursor-pointer"
+              >
+                {release.releaseTitle}
+                <ExternalLink className="w-3 h-3 text-slate-500" />
+              </a>
+              {release.checksumsUrl && (
+                <>
+                  <span>•</span>
+                  <a
+                    href={release.checksumsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 underline cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    SHA256SUMS.txt
+                  </a>
+                </>
+              )}
+            </div>
+
+            <a
+              href={release.htmlUrl || `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release.tagName}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-white text-xs font-medium transition-all shadow-sm group cursor-pointer"
             >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`}
-              />
-              <span className="text-[10px] hidden sm:inline">Refresh</span>
-            </button>
-            <span>•</span>
-            <span className="text-slate-400">{release.releaseTitle}</span>
-            {release.checksumsUrl && (
-              <>
-                <span>•</span>
-                <a
-                  href={release.checksumsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 underline"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  SHA256SUMS.txt
-                </a>
-              </>
-            )}
+              <span>GitHub Release: <strong>{release.tagName}</strong></span>
+              <ExternalLink className="w-3.5 h-3.5 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
+            </a>
           </div>
         )}
       </div>

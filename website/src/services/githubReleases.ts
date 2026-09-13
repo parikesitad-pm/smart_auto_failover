@@ -10,7 +10,7 @@ const REPO_OWNER = 'parikesitad-pm';
 const REPO_NAME = 'smart_auto_failover';
 const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases`;
 const FALLBACK_RELEASES_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases`;
-const CACHE_KEY = 'autofailover_release_cache_v4';
+const CACHE_KEY = 'autofailover_release_cache_v5';
 
 // Immediately purge stale legacy cache keys
 if (typeof window !== 'undefined') {
@@ -18,6 +18,7 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('autofailover_release_cache');
     localStorage.removeItem('autofailover_release_cache_v2');
     localStorage.removeItem('autofailover_release_cache_v3');
+    localStorage.removeItem('autofailover_release_cache_v4');
   } catch {
     // ignore
   }
@@ -328,19 +329,21 @@ export function resolveReleaseFromList(
 }
 
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
-  const defaultTag = 'v3.0.0-preview';
-  const ver = '3.0.0 (preview)';
-  const releasesBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases`;
+  const latestTag = 'v3.0.0-preview.23';
+  const ver = '3.0.0 (preview.23)';
+  const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${latestTag}`;
+  const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestTag}`;
 
   return {
-    tagName: defaultTag,
-    releaseTitle: 'AutoFailover 3.0 Preview Channel',
+    tagName: latestTag,
+    releaseTitle: 'AutoFailover 3.0 Preview 23',
     channel: 'PREVIEW',
     publishedAt: new Date().toISOString(),
-    htmlUrl: releasesBase,
+    htmlUrl: releaseUrl,
     releaseNotes:
-      'Real-time release discovery via GitHub API is currently loading or rate-limited. Download packages directly from the releases repository.',
+      'Native multi-platform desktop preview packages for AutoFailover 3.0 by Modula.',
     isFallback: true,
+    checksumsUrl: `${downloadBase}/SHA256SUMS.txt`,
     platforms: {
       windows: {
         platformId: 'windows',
@@ -350,7 +353,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-Windows-x64.zip',
-        downloadUrl: `${releasesBase}/latest/download/AutoFailover-3.0.0-Windows-x64.zip`,
+        downloadUrl: `${downloadBase}/AutoFailover-3.0.0-Windows-x64.zip`,
         validationStatus: 'Available for Testing',
         isRecommended: detected === 'windows',
         description: 'Native Windows executable package.',
@@ -363,7 +366,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
-        downloadUrl: `${releasesBase}/latest/download/AutoFailover-3.0.0-Linux-x86_64.tar.gz`,
+        downloadUrl: `${downloadBase}/AutoFailover-3.0.0-Linux-x86_64.tar.gz`,
         validationStatus: 'Real-Host Validated',
         isRecommended: detected === 'linux',
         description: 'Native Linux standalone archive.',
@@ -376,7 +379,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-macOS-arm64.dmg',
-        downloadUrl: `${releasesBase}/latest/download/AutoFailover-3.0.0-macOS-arm64.dmg`,
+        downloadUrl: `${downloadBase}/AutoFailover-3.0.0-macOS-arm64.dmg`,
         validationStatus: 'Available for Testing',
         isRecommended: detected === 'macos-arm64',
         description: 'Native Apple Silicon DMG package.',
@@ -389,7 +392,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-macOS-x64.dmg',
-        downloadUrl: releasesBase,
+        downloadUrl: releaseUrl,
         validationStatus: 'Available for Testing',
         isRecommended: false,
         description: 'Native Intel Mac DMG package.',

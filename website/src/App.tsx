@@ -72,12 +72,15 @@ export const App: React.FC = () => {
             Downloads
           </button>
           <a
-            href="https://github.com/parikesitad-pm/smart_auto_failover"
+            href={
+              release?.htmlUrl ||
+              'https://github.com/parikesitad-pm/smart_auto_failover/releases'
+            }
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+            className="hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
           >
-            GitHub
+            Releases ({release ? release.tagName : 'v3.0.0-preview.23'})
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </a>
         </nav>
