@@ -146,12 +146,16 @@ jobs:
           cd "$($TMP_DIR.FullName)"
           if ((Test-Path ".\AutoFailover 3.0.exe") -and (Test-Path ".\AutoFailover Diagnostics.exe")) {
             & ".\AutoFailover Diagnostics.exe" --version
+            if ($LASTEXITCODE -ne 0) { throw "Diagnostics --version failed with exit code $LASTEXITCODE" }
             & ".\AutoFailover Diagnostics.exe" --self-test
+            if ($LASTEXITCODE -ne 0) { throw "Diagnostics --self-test failed with exit code $LASTEXITCODE" }
             & ".\AutoFailover 3.0.exe" --gui-smoke
+            if ($LASTEXITCODE -ne 0) { throw "Windowed GUI --gui-smoke failed with exit code $LASTEXITCODE" }
             Write-Host "SMOKE TEST PASS: Windows windowed GUI and diagnostic runner verified."
           } else {
             throw "Smoke test failed: Required executables not found in archive."
           }
+
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
@@ -192,7 +196,6 @@ jobs:
           "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover Diagnostics" --self-test
           "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --gui-smoke
           echo "SMOKE TEST PASS: macOS Apple Silicon verified (Diagnostics + Windowed GUI)."
-
 
       - name: Archive macOS ARM64 Package
         run: |

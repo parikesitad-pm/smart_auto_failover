@@ -296,6 +296,15 @@ class FailoverOrchestrator:
         if self._loop_thread and self._loop_thread.is_alive():
             self._loop_thread.join(timeout=1.5)
 
+    def start(self) -> None:
+        """Alias for start_loop to provide standard lifecycle interface."""
+        self.start_loop()
+
+    def stop(self) -> None:
+        """Alias for stop_loop to provide standard lifecycle interface."""
+        self.stop_loop()
+
+
     def _run_loop(self) -> None:
         while self._is_running:
             try:

@@ -31,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Packaged GUI Smoke Validation**: Added packaged GUI smoke validation (`--gui-smoke`) to native CI across Linux, Windows, and macOS, verifying full CustomTkinter widget hierarchy and dashboard construction outside the source tree.
 - **Packaged Entrypoint Relative Import Failure**: Fixed packaged AutoFailover startup failure caused by invalid Python package context when running PyInstaller from top-level `desktop/main.py`.
 
-
 - **Dedicated Native Packaging Launcher**: Added dedicated external packaging entrypoint (`packaging/autofailover_entry.py`) executing `from desktop.main import main`, preserving `desktop` as a proper Python package.
 - **Centralized Resource Discovery**: Implemented `desktop/resources.py` providing robust asset resolution for `modula_3.0.png` and icons across development and PyInstaller frozen environments without depending on working directory.
 - **CLI Flags in Packaged Binary**: Implemented `--version` (returning `AutoFailover 3.0.0`) and `--self-test` (running 6-point autonomous runtime verification) for pre-release validation.

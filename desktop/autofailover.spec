@@ -153,4 +153,3 @@ if sys.platform == 'darwin':
         icon=ico_path,
         bundle_identifier='com.modula.autofailover',
     )
-
