@@ -20,7 +20,8 @@ from ...models.interface import NetworkInterface, InterfaceState, InterfaceMedia
 from ...models.events import FailoverEvent
 from ...models.policy import WorkloadProfile
 from ...core.failover.orchestrator import FailoverOrchestrator
-from ...core.speedtest.runner import SpeedTestRunner, SpeedTestResult
+from ...core.speedtest import SpeedtestRunner, SpeedtestResult, SpeedTestRunner, SpeedTestResult
+
 
 
 class CockpitDashboard:

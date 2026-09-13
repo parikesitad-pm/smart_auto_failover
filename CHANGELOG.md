@@ -24,7 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Packaged GUI Startup Failure (Speedtest Import Contract)**: Fixed packaged GUI startup failure caused by stale/broken `SpeedTestRunner` import and casing mismatch (`SpeedtestRunner` vs `SpeedTestRunner`), establishing canonical public API and aliases.
+- **GUI Bootstrap Error Handling**: Corrected GUI bootstrap error handling in `desktop/main.py` so internal `ImportError` exceptions are no longer misreported as missing Tkinter, surfacing real stack traces instead of silently falling back to headless mode.
+- **Full GUI Dependency Self-Test & Non-Interactive Smoke Test**: Expanded packaged `--self-test` (8/8 checks) and added `--gui-smoke` to cover the complete CustomTkinter startup dependency graph, window creation, and dashboard construction across all native CI runners.
 - **Packaged Entrypoint Relative Import Failure**: Fixed packaged AutoFailover startup failure caused by invalid Python package context when running PyInstaller from top-level `desktop/main.py`.
+
 - **Dedicated Native Packaging Launcher**: Added dedicated external packaging entrypoint (`packaging/autofailover_entry.py`) executing `from desktop.main import main`, preserving `desktop` as a proper Python package.
 - **Centralized Resource Discovery**: Implemented `desktop/resources.py` providing robust asset resolution for `modula_3.0.png` and icons across development and PyInstaller frozen environments without depending on working directory.
 - **CLI Flags in Packaged Binary**: Implemented `--version` (returning `AutoFailover 3.0.0`) and `--self-test` (running 6-point autonomous runtime verification) for pre-release validation.

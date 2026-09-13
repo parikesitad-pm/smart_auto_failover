@@ -47,8 +47,10 @@ hiddenimports = [
     'desktop.core.policy.engine',
     'desktop.core.probe.rfc3550',
     'desktop.core.recovery.arbiter',
+    'desktop.core.speedtest',
     'desktop.core.speedtest.runner',
     'desktop.core.telemetry.sampler',
+
     'desktop.core.workload.watcher',
     'desktop.platform',
     'desktop.platform.base',

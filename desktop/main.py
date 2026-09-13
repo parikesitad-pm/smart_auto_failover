@@ -129,20 +129,22 @@ def run_self_test() -> int:
     """
     Executes an autonomous runtime integrity self-test.
     Verifies:
-      1. Package imports resolve
-      2. Core modules load
-      3. Platform backend can initialize safely
-      4. Resources can be found
-      5. CustomTkinter runtime can be imported
-      6. Application bootstrap can initialize without immediate fatal error
+      1. Package metadata & version
+      2. Core failover & telemetry engine modules
+      3. Canonical Speedtest runner & providers
+      4. Native platform HAL backend & system identity
+      5. Resource discovery (assets, logo)
+      6. CustomTkinter GUI toolkit dependencies
+      7. Full GUI module graph (App, Splash, Dashboard, Cockpit)
+      8. Orchestrator bootstrap nominal
     Returns exit code 0 on success, non-zero on failure.
     """
     print("=" * 70)
-    print(f"  AutoFailover {__version__} — Runtime Self-Test")
+    print(f"  AutoFailover {__version__} — Runtime Integrity Self-Test")
     print("=" * 70)
 
     # 1. Package version & metadata
-    sys.stdout.write("[CHECK 1/6] Verifying package metadata... ")
+    sys.stdout.write("[CHECK 1/8] Verifying package metadata... ")
     sys.stdout.flush()
     try:
         from .__version__ import __version__ as v, __product__ as p
@@ -152,7 +154,7 @@ def run_self_test() -> int:
         return 1
 
     # 2. Core engine modules
-    sys.stdout.write("[CHECK 2/6] Verifying core engine modules... ")
+    sys.stdout.write("[CHECK 2/8] Verifying core engine modules... ")
     sys.stdout.flush()
     try:
         from .core.events.bus import EventBus
@@ -167,8 +169,27 @@ def run_self_test() -> int:
         print(f"FAIL ({e})")
         return 1
 
-    # 3. Platform backend initialization
-    sys.stdout.write("[CHECK 3/6] Verifying native platform HAL... ")
+    # 3. Canonical speedtest module
+    sys.stdout.write("[CHECK 3/8] Verifying speedtest runner & canonical exports... ")
+    sys.stdout.flush()
+    try:
+        from .core.speedtest import (
+            SpeedtestRunner,
+            SpeedtestResult,
+            SpeedtestProvider,
+            SpeedTestRunner,
+            SpeedTestResult,
+        )
+        st = SpeedtestRunner()
+        assert hasattr(st, "run_single_test"), "SpeedtestRunner missing run_single_test"
+        assert hasattr(st, "run_bulk_tests"), "SpeedtestRunner missing run_bulk_tests"
+        print("PASS")
+    except Exception as e:
+        print(f"FAIL ({e})")
+        return 1
+
+    # 4. Platform backend initialization
+    sys.stdout.write("[CHECK 4/8] Verifying native platform HAL... ")
     sys.stdout.flush()
     try:
         backend = get_platform_backend()
@@ -178,8 +199,8 @@ def run_self_test() -> int:
         print(f"FAIL ({e})")
         return 1
 
-    # 4. Resource resolution
-    sys.stdout.write("[CHECK 4/6] Verifying asset & resource discovery... ")
+    # 5. Resource resolution
+    sys.stdout.write("[CHECK 5/8] Verifying asset & resource discovery... ")
     sys.stdout.flush()
     try:
         import os
@@ -193,8 +214,8 @@ def run_self_test() -> int:
         print(f"FAIL ({e})")
         return 1
 
-    # 5. CustomTkinter GUI framework
-    sys.stdout.write("[CHECK 5/6] Verifying CustomTkinter GUI framework... ")
+    # 6. CustomTkinter GUI framework
+    sys.stdout.write("[CHECK 6/8] Verifying CustomTkinter GUI framework... ")
     sys.stdout.flush()
     try:
         import customtkinter as ctk
@@ -207,8 +228,21 @@ def run_self_test() -> int:
             return 1
         print(f"NOTICE (Unpackaged environment lacks CustomTkinter: {e})")
 
-    # 6. Bootstrap verification
-    sys.stdout.write("[CHECK 6/6] Verifying orchestrator initialization... ")
+    # 7. Full GUI module graph
+    sys.stdout.write("[CHECK 7/8] Verifying full GUI module graph... ")
+    sys.stdout.flush()
+    try:
+        from .ui.theme import COCKPIT_THEME
+        from .ui.splash.screen import SplashScreen
+        from .ui.dashboard.cockpit import CockpitDashboard
+        from .ui.app import AutoFailoverApp
+        print("PASS (App, Splash, Cockpit)")
+    except Exception as e:
+        print(f"FAIL ({e})")
+        return 1
+
+    # 8. Bootstrap verification
+    sys.stdout.write("[CHECK 8/8] Verifying orchestrator initialization... ")
     sys.stdout.flush()
     try:
         bus = EventBus()
@@ -220,15 +254,71 @@ def run_self_test() -> int:
         return 1
 
     print("-" * 70)
-    print("ALL SELF-TEST CHECKS PASSED SUCCESSFULLY.")
+    print("ALL SELF-TEST CHECKS PASSED SUCCESSFULLY (8/8).")
     print("=" * 70)
     return 0
+
+
+def run_gui_smoke_test() -> int:
+    """
+    Executes a non-interactive CustomTkinter GUI smoke test.
+    Verifies:
+      1. Complete UI module graph imports cleanly.
+      2. Tkinter and CustomTkinter display context can initialize.
+      3. Main window container, SplashScreen, and CockpitDashboard can construct.
+      4. Tears down and exits with code 0 without hanging or requiring user interaction.
+    """
+    print("=" * 70)
+    print(f"  AutoFailover {__version__} — GUI Startup Smoke Test")
+    print("=" * 70)
+
+    try:
+        import tkinter
+        import customtkinter as ctk
+    except Exception as e:
+        print(f"[FAIL] GUI toolkit dependency missing: {e}")
+        return 1
+
+    try:
+        from .ui.app import AutoFailoverApp
+        print("[INFO] Initializing AutoFailoverApp container...")
+        app = AutoFailoverApp()
+
+        print("[INFO] Constructing CockpitDashboard...")
+        app._on_splash_done()
+
+        print("[INFO] Validating UI component hierarchy...")
+        assert app.root is not None, "Root window is None"
+        assert app.dashboard is not None, "CockpitDashboard is None"
+        assert app.dashboard.root_frame is not None, "Dashboard root frame is None"
+
+        # Update geometry and draw once without mainloop blocking
+        app.root.update_idletasks()
+        app.root.update()
+
+        print("[INFO] Tearing down GUI smoke test cleanly...")
+        try:
+            app.orchestrator.stop()
+        except Exception:
+            pass
+        app.root.destroy()
+
+        print("-" * 70)
+        print("GUI SMOKE TEST PASSED: Full CustomTkinter UI stack initialized cleanly.")
+        print("=" * 70)
+        return 0
+    except Exception as e:
+        import traceback
+        print(f"\n[FAIL] GUI smoke test failed with exception: {e}")
+        traceback.print_exc()
+        return 1
 
 
 def main():
     parser = argparse.ArgumentParser(description="AutoFailover 3.0 by Modula")
     parser.add_argument("--version", action="store_true", help="Show application version and exit")
     parser.add_argument("--self-test", action="store_true", help="Run comprehensive runtime integrity self-test")
+    parser.add_argument("--gui-smoke", action="store_true", help="Run non-interactive GUI startup and component construction smoke test")
     parser.add_argument("--headless", action="store_true", help="Run in headless terminal monitor mode (no Tkinter required)")
     parser.add_argument("--acceptance", action="store_true", help="Run hardware acceptance inspection and verify 5-state model")
     parser.add_argument("--ticks", type=int, default=None, help="Number of ticks to run in headless mode (default: infinite)")
@@ -241,6 +331,9 @@ def main():
     if args.self_test:
         sys.exit(run_self_test())
 
+    if args.gui_smoke:
+        sys.exit(run_gui_smoke_test())
+
     if args.acceptance:
         run_acceptance_inspection()
         return
@@ -249,18 +342,41 @@ def main():
         run_headless_monitor(iterations=args.ticks)
         return
 
-    # Attempt to launch CustomTkinter GUI
+    # 1. Dependency validation: Verify Tkinter & CustomTkinter exist
     try:
         import tkinter
+        import customtkinter
+    except (ImportError, ModuleNotFoundError) as exc:
+        print("\n[ERROR] GUI Toolkit Dependency Missing.")
+        print(f"        Detail: {exc}")
+        print("        Tkinter / CustomTkinter is not installed in this environment.")
+        print("        To run without GUI, use: AutoFailover 3.0 --headless\n")
+        sys.exit(1)
+
+    # 2. Separate internal application import: Never mislabel internal error as missing Tkinter
+    try:
         from .ui.app import AutoFailoverApp
+    except Exception as exc:
+        import traceback
+        print("\n[FATAL] GUI STARTUP ERROR")
+        print(f"        Internal application module failed to load: {exc}")
+        print("-" * 60)
+        traceback.print_exc()
+        print("-" * 60)
+        print("        Do not run with broken internal modules. Please report this issue.\n")
+        sys.exit(1)
+
+    # 3. Instantiate and run application
+    try:
         app = AutoFailoverApp()
         app.run()
-    except (ImportError, ModuleNotFoundError) as e:
-        print("\n[NOTICE] Tkinter GUI toolkit is not currently installed in this Python environment.")
-        print(f"         Error detail: {e}")
-        print("         Falling back to Headless Engine Mode...\n")
-        run_headless_monitor()
+    except Exception as exc:
+        import traceback
+        print(f"\n[FATAL] Unhandled runtime exception in GUI: {exc}")
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
+

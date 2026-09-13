@@ -30,6 +30,7 @@ class SpeedtestResult(BaseModel):
     download_mbps: float = 0.0
     upload_mbps: float = 0.0
     ping_ms: float = 0.0
+    latency_ms: float = 0.0
     timestamp: float = Field(default_factory=time.time)
     success: bool = False
     error: Optional[str] = None
@@ -50,7 +51,7 @@ class SpeedtestRunner:
     def run_test(
         self,
         provider: SpeedtestProvider,
-        interface_id: str,
+        interface_id: str = "primary",
         source_ip: Optional[str] = None,
         callback: Optional[Callable[[SpeedtestResult], None]] = None
     ) -> SpeedtestResult:
@@ -79,6 +80,38 @@ class SpeedtestRunner:
 
         return result
 
+    def run_single_test(
+        self,
+        provider_name: str,
+        interface_id: str = "primary",
+        source_ip: Optional[str] = None
+    ) -> SpeedtestResult:
+        """
+        Execute a single on-demand test by provider name (string or Enum).
+        """
+        name_lower = str(provider_name).strip().lower()
+        provider = SpeedtestProvider.CLOUDFLARE
+        for p in SpeedtestProvider:
+            if p.value == name_lower:
+                provider = p
+                break
+
+        return self.run_test(provider=provider, interface_id=interface_id, source_ip=source_ip)
+
+    def run_bulk_tests(
+        self,
+        interface_id: str = "primary",
+        source_ip: Optional[str] = None
+    ) -> List[SpeedtestResult]:
+        """
+        Execute sequential benchmark across all 4 providers (never concurrently).
+        """
+        results: List[SpeedtestResult] = []
+        for p in [SpeedtestProvider.CLOUDFLARE, SpeedtestProvider.FAST, SpeedtestProvider.OOKLA, SpeedtestProvider.NPERF]:
+            res = self.run_test(provider=p, interface_id=interface_id, source_ip=source_ip)
+            results.append(res)
+        return results
+
     def _run_cloudflare_speedtest(self, result: SpeedtestResult, source_ip: Optional[str]) -> None:
         """Cloudflare Speedtest API endpoint implementation."""
         try:
@@ -94,6 +127,7 @@ class SpeedtestRunner:
                 mbps = (len(r.content) * 8.0) / (elapsed * 1000000.0)
                 result.download_mbps = round(mbps, 1)
                 result.ping_ms = round(elapsed * 100.0, 1)
+                result.latency_ms = result.ping_ms
                 result.success = True
         except Exception as e:
             result.success = False
@@ -113,3 +147,11 @@ class SpeedtestRunner:
         """nPerf network quality probe integration."""
         result.success = False
         result.error = "nPerf adapter initialized (Verification pending)"
+
+
+# Canonical stable aliases
+SpeedTestRunner = SpeedtestRunner
+SpeedTestResult = SpeedtestResult
+SpeedTestProvider = SpeedtestProvider
+SpeedTestMode = SpeedtestMode
+

@@ -59,7 +59,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk
+          sudo apt-get install -y python3-tk xvfb
 
       - name: Install Build Tools
         run: |
@@ -92,7 +92,9 @@ jobs:
           cd "$TMP_DIR/AutoFailover 3.0"
           "./AutoFailover 3.0" --version
           "./AutoFailover 3.0" --self-test
-          echo "SMOKE TEST PASS: Linux binary executed and self-test passed at $TMP_DIR"
+          xvfb-run -a "./AutoFailover 3.0" --gui-smoke
+          echo "SMOKE TEST PASS: Linux binary executed, self-test passed, and GUI smoke test passed at $TMP_DIR"
+
 
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
@@ -146,7 +148,8 @@ jobs:
           if (Test-Path ".\AutoFailover 3.0.exe") {
             & ".\AutoFailover 3.0.exe" --version
             & ".\AutoFailover 3.0.exe" --self-test
-            Write-Host "SMOKE TEST PASS: Windows executable executed and self-test passed."
+            & ".\AutoFailover 3.0.exe" --gui-smoke
+            Write-Host "SMOKE TEST PASS: Windows executable executed, self-test passed, and GUI smoke test passed."
           } else {
             throw "Smoke test failed: AutoFailover 3.0.exe not found in archive."
           }
@@ -188,7 +191,9 @@ jobs:
           cd "$TMP_DIR"
           "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --version
           "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --self-test
-          echo "SMOKE TEST PASS: macOS Apple Silicon binary executed and self-test passed."
+          "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --gui-smoke
+          echo "SMOKE TEST PASS: macOS Apple Silicon binary executed, self-test passed, and GUI smoke test passed."
+
 
       - name: Archive macOS ARM64 Package
         run: |
