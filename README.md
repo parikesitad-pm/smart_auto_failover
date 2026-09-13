@@ -1,4 +1,4 @@
-44# AutoFailover 3.0 by Modula
+# AutoFailover 3.0 by Modula
 
 <div align="center">
 
@@ -19,6 +19,7 @@ _Windows • macOS (Apple Silicon & Intel) • Linux_
 
 \*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Demo-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://dist-jade-seven-59.vercel.app)
 [![Release](https://img.shields.io/badge/Release-v3.0.0--alpha-blue?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
 [![Core](https://img.shields.io/badge/Core-Rust-orange?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
 [![Shell](https://img.shields.io/badge/Shell-Tauri-24C8D8?style=for-the-badge&logo=tauri)](https://tauri.app/)
@@ -56,19 +57,23 @@ Sistem memantau kondisi seluruh antarmuka jaringan fisik (Ethernet, Wi-Fi, USB C
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3 Cara Menjalankan & Mengakses Instrument Cluster
+### 4 Cara Menjalankan & Mengakses Instrument Cluster
 
-1. **Akses Langsung via Browser (Dev Server)**:
-   Saat aplikasi pengembangan dijalankan (`npm --prefix frontend run dev`), buka URL berikut di browser mana pun:
+1. **Akses Online Live Demo (Vercel)**:
+   Akses instan melalui browser tanpa setup apa pun:
+   - **Production Cockpit Web**: [https://dist-jade-seven-59.vercel.app](https://dist-jade-seven-59.vercel.app)
+   - **Standalone Instrument Cluster**: [https://dist-jade-seven-59.vercel.app/instrument_cluster_autofailover_3_0.html](https://dist-jade-seven-59.vercel.app/instrument_cluster_autofailover_3_0.html)
+2. **Akses Langsung via Browser (Dev Server Lokal)**:
+   Saat aplikasi pengembangan dijalankan (`npm --prefix frontend run dev`), buka URL berikut di browser:
    ```text
    http://localhost:3000/instrument_cluster_autofailover_3_0.html
    ```
-2. **Akses File HTML Mandiri (Zero Dependencies)**:
+3. **Akses File HTML Mandiri (Zero Dependencies)**:
    Buka file berikut langsung dengan klik dua kali di browser (Google Chrome, Firefox, Safari, Edge) tanpa perlu menyalakan server atau menginstal Node.js:
    ```text
    frontend/public/instrument_cluster_autofailover_3_0.html
    ```
-3. **Melalui Aplikasi Native Desktop (Tauri Shell)**:
+4. **Melalui Aplikasi Native Desktop (Tauri Shell)**:
    Jalankan binary desktop hasil kompilasi:
    ```bash
    ./target/debug/autofailover-app
