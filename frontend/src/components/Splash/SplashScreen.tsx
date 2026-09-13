@@ -578,9 +578,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
             <div className="flex items-center gap-2 text-slate-400">
               <span className="text-base">🌐</span>
               <span>
-                <strong className="text-slate-300">
-                  Browser Preview Mode
-                </strong>{' '}
+                <strong className="text-slate-300">Browser Preview Mode</strong>{' '}
                 · Native OS networking requires Tauri desktop runtime.
               </span>
             </div>
