@@ -13,10 +13,11 @@
 
 ### _"light seamless and usefull"_
 
-**Digital Network Cockpit • Multi-Path Failover & Active Session Protector**  
-**Windows • macOS Apple Silicon • Linux**
+**Navigate Your Internet Pipeline to Keep You Online**  
+**Through Video Conference & Livestreaming Production**  
+*Windows • macOS (Apple Silicon & Intel) • Linux*
 
-*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
+*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)***
 
 [![Release](https://img.shields.io/badge/Release-v3.0.0--alpha-blue?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
 [![Core](https://img.shields.io/badge/Core-Rust-orange?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
@@ -28,13 +29,187 @@
 
 ---
 
+## 🧭 Ikhtisar & Posisi Produk
+
+AutoFailover 3.0 dirancang untuk melindungi aktivitas kerja berorientasi real-time seperti panggilan video conference (**Zoom, Microsoft Teams, Google Meet**) dan live broadcast (**OBS Studio, vMix, Wirecast, Streamlabs**) dari gangguan latensi tinggi, lonjakan jitter, maupun putusnya jalur fisik internet secara tiba-tiba.
+
+Sistem memantau kondisi seluruh antarmuka jaringan fisik (Ethernet, Wi-Fi, USB Cellular Modem), mengevaluasi kualitas koneksi menggunakan metrik objektif (IETF RFC 3550 Jitter & Latensi), dan secara otomatis mengalihkan rute default level sistem operasi tanpa memerlukan intervensi manual yang rumit.
+
+---
+
+## 🏎️ Panduan Penggunaan: Instrument Cluster AutoFailover 3.0
+
+**Instrument Cluster AutoFailover 3.0** (sebelumnya dikenal sebagai *Cockpit Widget*) adalah antarmuka visual terpadu beresolusi tinggi yang terinspirasi dari kluster instrumen mobil performa tinggi (*automotive digital instrument cluster*). Kluster ini dirancang agar pengguna dapat memahami kondisi seluruh pipa jaringan dalam waktu **kurang dari 2 detik**.
+
+```text
+┌───────────────────────────────────────────────────────────────────────────┐
+│ [⚡] Instrument Cluster AutoFailover 3.0 by Modula           [● ONLINE]   │
+│      Navigate Your Internet Pipeline to Keep You Online                   │
+│      CPU: [██░░░░] 14%  •  RAM: [████░░] 38%  •  GPU: N/A                 │
+├─────────────────────────────────────┬─────────────────────────────────────┤
+│   DOWNLOAD GAUGE     UPLOAD GAUGE   │ ACTIVE ROUTE PATH: Ethernet 1       │
+│      187.6 Mbps        48.2 Mbps    │ Carrier: Connected • Gateway Valid  │
+│      [60 FPS Arc]     [60 FPS Arc]  │ Latency: 8.2ms • RFC 3550: 1.2ms    │
+├─────────────────────────────────────┴─────────────────────────────────────┤
+│ Standby NICs: Wi-Fi (wlp0s20f3 · READY)                                   │
+│ Pipeline Sim: [Nominal] [Jitter Spike] [Cable Unplug] [Cable Reconnect]   │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+### 3 Cara Menjalankan & Mengakses Instrument Cluster
+
+1. **Akses Langsung via Browser (Dev Server)**:
+   Saat aplikasi pengembangan dijalankan (`npm --prefix frontend run dev`), buka URL berikut di browser mana pun:
+   ```text
+   http://localhost:3000/instrument_cluster_autofailover_3_0.html
+   ```
+2. **Akses File HTML Mandiri (Zero Dependencies)**:
+   Buka file berikut langsung dengan klik dua kali di browser (Google Chrome, Firefox, Safari, Edge) tanpa perlu menyalakan server atau menginstal Node.js:
+   ```text
+   frontend/public/instrument_cluster_autofailover_3_0.html
+   ```
+3. **Melalui Aplikasi Native Desktop (Tauri Shell)**:
+   Jalankan binary desktop hasil kompilasi:
+   ```bash
+   ./target/debug/autofailover-app
+   # atau versi rilis
+   ./target/release/autofailover-app
+   ```
+
+### Anatomi & Elemen Pembacaan Kluster
+
+- **Dual Tachometers (Download & Upload)**: Mengukur kecepatan unduh dan unggah seketika dengan animasi jarum 60 FPS client-side tanpa membebani thread engine jaringan.
+- **Active Route Path Card**: Menampilkan adapter fisik yang sedang membawa trafik produksi, gateway aktif, latensi milidetik, jitter RFC 3550, dan nilai composite health score (0–100).
+- **Device Health Bar**: Indikator beban hardware pasif (CPU, RAM, GPU) dengan frekuensi rendah (~1 Hz) yang **terisolasi mutlak** dari keputusan failover jaringan.
+- **Standby Candidate Pool**: Memperlihatkan antarmuka cadangan yang siap siaga (`READY`), mengalami degradasi (`ALERT`), atau putus kabel (`OFFLINE`).
+- **Tombol Simulasi Pipeline Real-Time**:
+  - `[ Nominal ]`: Mengembalikan kondisi jaringan ke status Ethernet 1 normal dan prima (98.4 score).
+  - `[ Jitter Spike ]`: Mensimulasikan lonjakan variasi transmisi paket dan membuktikan proteksi policy anti-flapping.
+  - `[ Cable Unplug (OFFLINE) ]`: Mensimulasikan pelepasan kabel fisik LAN (`carrier == 0` / `operstate == down`), langsung mengalihkan rute default ke Wi-Fi (`ONLINE`), dan menandai kartu Ethernet dengan badge merah tegas `OFFLINE`.
+  - `[ Cable Reconnect (READY) ]`: Mensimulasikan pemasangan kembali kabel LAN. Antarmuka masuk ke cooldown stabilisasi `RecoveryArbiter` dan berstatus `READY` (tidak membajak jalur aktif tanpa pertimbangan policy).
+
+---
+
+## 🚀 Panduan Penggunaan Lintas Sistem Operasi (Windows, macOS, Linux)
+
+AutoFailover 3.0 dibangun di atas arsitektur **Rust Core** (berotoritas penuh atas manipulasi jaringan) dan **Tauri Desktop Shell** (UI ultra-ringan berbasis WebKit/WebView2).
+
+### Kebutuhan Dasar (Prerequisites):
+- **Rust Toolchain**: `rustc` dan `cargo` versi 1.77 atau lebih baru (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`).
+- **Node.js**: Node.js versi 18+ LTS dan `npm` (atau `pnpm`).
+
+---
+
+### 🐧 Panduan Linux (Ubuntu, Debian, Arch, Manjaro, Fedora)
+
+Pada Linux, backend berinteraksi langsung dengan `/sys/class/net`, `/proc/net/route`, dan utilitas `iproute2` (`ip route`, `ip link`).
+
+#### 1. Instalasi Dependensi Sistem:
+- **Debian / Ubuntu**:
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+      libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev iproute2
+  ```
+- **Arch Linux / Manjaro**:
+  ```bash
+  sudo pacman -S --needed base-devel webkit2gtk-4.1 openssl iproute2
+  ```
+- **Fedora**:
+  ```bash
+  sudo dnf install webkit2gtk4.1-devel openssl-devel iproute
+  ```
+
+#### 2. Kompilasi & Menjalankan:
+```bash
+# Clone repositori
+git clone https://github.com/parikesitad-pm/smart_auto_failover.git
+cd smart_auto_failover
+
+# Instal dependensi frontend
+npm --prefix frontend install
+
+# Jalankan dalam mode pengembangan (Desktop Shell + Vite Live Preview)
+npm --prefix frontend run dev &
+cargo run --bin autofailover-app
+```
+
+#### 3. Izin Manipulasi Rute Default (Root / Capabilities):
+Mengubah default gateway di tabel routing Linux memerlukan hak akses jaringan:
+```bash
+# Opsi A (Rekomendasi - Berikan Capability tanpa root penuh):
+sudo setcap cap_net_admin,cap_net_raw+ep ./target/debug/autofailover-app
+
+# Opsi B (Jalankan via sudo):
+sudo ./target/debug/autofailover-app
+```
+
+---
+
+### 🪟 Panduan Windows (Windows 10 & 11 x64 / ARM64)
+
+Pada Windows, backend menggunakan native Windows Network APIs (`IPHLPAPI.lib`, `SetIpForwardEntry2`, `GetIpForwardTable2`) dan socket option `IP_UNICAST_IF`.
+
+#### 1. Kebutuhan Sistem:
+- **Visual Studio Build Tools**: Paket *Desktop development with C++* (MSVC).
+- **WebView2 Runtime**: Bawaan Windows 10/11 (Evergreen Bootstrapper).
+
+#### 2. Kompilasi & Menjalankan:
+Buka terminal **PowerShell (Run as Administrator)**:
+```powershell
+# Clone repositori
+git clone https://github.com/parikesitad-pm/smart_auto_failover.git
+cd smart_auto_failover
+
+# Instal dependensi frontend
+npm --prefix frontend install
+
+# Build binary native release
+cargo build --release --bin autofailover-app
+
+# Jalankan binary
+.\target\release\autofailover-app.exe
+```
+
+> **Catatan Izin Administrator**: Penyesuaian metrik Layer-3 pada tabel routing Windows membutuhkan hak administrator. Jalankan terminal PowerShell sebagai Administrator sebelum meluncurkan aplikasi.
+
+---
+
+### 🍎 Panduan macOS (Apple Silicon M1/M2/M3/M4 & Intel x64)
+
+Pada macOS, backend memanfaatkan kerangka kerja bawaan `SystemConfiguration.framework` dan perintah manipulasi kernel routing BSD (`route replace default`).
+
+#### 1. Kebutuhan Sistem:
+- **Xcode Command Line Tools**:
+  ```bash
+  xcode-select --install
+  ```
+
+#### 2. Kompilasi & Menjalankan:
+```bash
+# Clone repositori
+git clone https://github.com/parikesitad-pm/smart_auto_failover.git
+cd smart_auto_failover
+
+# Instal dependensi frontend
+npm --prefix frontend install
+
+# Build binary native
+cargo build --release --bin autofailover-app
+
+# Menjalankan aplikasi
+sudo ./target/release/autofailover-app
+```
+
+> **Catatan Izin macOS**: Mengubah rute gateway default pada stack BSD kernel macOS memerlukan `sudo` atau hak administrasi sistem.
+
+---
+
 ## 🎯 Filosofi & Prinsip Desain
 
 > **Core UX Principle:**  
 > *"Kelihatan kompleks di dalam. Terasa sederhana di luar."*  
 > *"Automation should be invisible until it matters."*
-
-AutoFailover 3.0 dirancang sebagai sebuah **Digital Network Cockpit** yang terinspirasi dari visual instrumen kluster otomotif berpresisi tinggi—bukan panel administrasi router yang padat dan membingungkan.
 
 ### 6 Pertanyaan Kunci Layar Utama (< 2 Detik):
 1. **Jalur internet mana yang sedang dipakai?** (`ONLINE`)
@@ -43,8 +218,6 @@ AutoFailover 3.0 dirancang sebagai sebuah **Digital Network Cockpit** yang terin
 4. **Bagaimana kondisi kecepatan Download / Upload?** (Dual precision gauges)
 5. **Jalur cadangan mana yang siap jika jalur aktif putus?** (`READY` / `ALERT` / `OFFLINE`)
 6. **Apakah MODULA baru saja melakukan pengalihan rute?** (Notifikasi transisi instan)
-
-*Fitur sekunder (analisis beban hardware CPU/RAM/GPU, konfigurasi lanjutan, log diagnostik mendalam) ditempatkan rapi di secondary views agar dashboard utama tetap tenang dan fokus.*
 
 ---
 
@@ -73,22 +246,13 @@ Kontinuitas sesi kerja memiliki prioritas jauh lebih tinggi daripada mengejar pe
 4. Jika jalur aktif benar-benar rusak/unusable, alihkan rute seketika (<2s).
 5. Pilih kandidat terbaik yang memenuhi syarat.
 6. Lanjutkan pemantauan pasif terhadap jalur yang sebelumnya bermasalah.
-7. Evaluasi pemulihan jalur (*recovery*) tanpa preemption agresif.
-
----
-
-## 🏎️ Visual & AutoFailover 3.0 Vertical Accent
-
-- **Dark Cockpit Aesthetic**: Latar gelap high-contrast (`#080b10`) dengan tipografi presisi teknis.
-- **Custom SVG Gauges**: Jarum instrumen analog responsif dengan interpolasi 60 FPS client-side tanpa membebani engine jaringan.
-- **AutoFailover 3.0 Vertical Accent**: Garis aksen vertikal tipis (*light blue → blue → red*) pada tepi bezel sebagai ciri khas visual dekoratif AutoFailover 3.0 by Modula (bukan indikator status).
-- **Dynamic Interface Cards**: Hanya menampilkan kartu jaringan fisik/logis yang benar-benar aktif terdeteksi (Ethernet 1, Ethernet 2, Wi-Fi, USB Modem) tanpa placeholder palsu.
+7. Evaluasi pemulihan jalur (*recovery*) tanpa preemption agresif (`READY` terlebih dahulu).
 
 ---
 
 ## 🏛️ UI / Core Ownership & Authority Model
 
-> **Prinsip Dasar:**  
+> **Prinsip Otoritas:**  
 > *The UI reports what MODULA decided.*  
 > *The Policy Engine decides what should happen.*  
 > *The Failover Engine makes it happen.*  
@@ -115,51 +279,6 @@ React / TypeScript UI
                 ↓
         Native OS APIs
 ```
-
-### Pemisahan Tanggung Jawab:
-- **UI (React + TypeScript)**: Bertanggung jawab merender status dashboard, interaksi pengguna, permintaan konfigurasi policy, konfirmasi administratif, dan menampilkan event engine. **UI TIDAK PERNAH memiliki wewenang jaringan** (tidak melakukan probing, scoring, atau switching rute sendiri).
-- **Rust Core**: Memiliki otoritas penuh atas pemantauan jaringan, evaluasi kesehatan, keputusan rute, manipulasi routing metric, dan penegakan QoS.
-- **Process Independence**: Siklus hidup engine jaringan independen dari UI. Engine tetap berjalan optimal saat UI diminimalkan, disembunyikan, atau tertutup.
-
----
-
-## 🛡️ Administrative Actions vs Policy Decisions
-
-Aksi administratif berbeda secara mendasar dari keputusan policy rute:
-
-1. **Passive Carrier Probing**: Adapter fisik yang di-disable secara administratif tetap dipantau status carrier & latensinya melalui background socket probe (`SO_BINDTODEVICE` / `IP_UNICAST_IF`).
-2. **Smart Prompt ("Please Enable")**: Jika adapter yang di-disable terbukti memiliki kualitas prima, UI memunculkan notifikasi persetujuan:
-   > *"Ethernet 1 is disabled but appears healthy. Enable it for automatic failover?"*  
-   > `[ Enable ]` `[ Keep Disabled ]`
-3. **Aturan Otoritas**:
-   - Jika pengguna memilih **Enable**: UI mengirim perintah atomik `enable_interface(id)` ke Rust Core. Platform backend mengaktifkan adapter → memvalidasi operational state → Policy Engine mengevaluasi skor → Failover Engine memutuskan apakah promosi layak. **"Enable" BUKAN berarti langsung "Force ONLINE"**.
-   - Jika pengguna memilih **Keep Disabled**: Adapter tetap dinonaktifkan dan dikeluarkan dari kandidat failover. **MODULA tidak akan pernah mengaktifkan adapter secara diam-diam (*never silently re-enable*) tanpa izin eksplisit pengguna.**
-
----
-
-## ⚡ Workload Awareness Profiles
-
-Workload Engine memberikan konteks spesifik ke Policy Engine tanpa memotong alur kendali:
-- **General**: Penyeimbangan metrik umum (latensi & bandwidth seimbang).
-- **Video Conference**: Memprioritaskan latensi rendah, variasi jitter (RFC 3550) serendah mungkin, toleransi kehilangan paket minimal, dan kestabilan buffer audio/video.
-- **Live Production**: Memprioritaskan throughput unggah (*upload stability*), packet loss 0%, dan kestabilan bit-rate video upstream (OBS/vMix).
-
----
-
-## 📜 Riwayat Milestone Ringkas
-
-Detail riwayat lengkap setiap rilis tersedia di **[CHANGELOG.md](CHANGELOG.md)**.
-
-| Versi | Milestone Utama |
-| :--- | :--- |
-| **v3.0** | Arsitektur Rust + Tauri + React & TS, pemisahan UI/Core ownership mutlak, Digital Network Cockpit minimalis, Session Continuity & Active Session Protection, anti-flap margin, dynamic interface discovery, dan administrative approval protocol. |
-| **v2.6** | Dual tachometer Download/Upload, Center HUD readout RFC 3550 Jitter, circular backbone dial, dan throughput fallback. |
-| **v2.5** | Gauge speedtest SportsCarSpeedGauge 250°, staged tactile refresh delay, dan canvas idle sleep optimization. |
-| **v2.4** | Inline QoS monitor, layout adaptif 1-8 port, dialog custom probing target ke-4, dan log dialog viewer. |
-| **v2.3** | Splash screen frameless radial, keyboard shortcuts, dan sound synthesis alerts. |
-| **v2.2** | Paket rilis multi-platform Windows / macOS Apple Silicon / Linux, dan 4-engine speedtest benchmark. |
-| **v2.0 - v2.1** | Rebranding MODULA, multi-port failover hingga 3 adapter, implementasi formula Jitter RFC 3550. |
-| **v1.0** | Pondasi manipulasi Layer-3 Routing Metric untuk proteksi failover transport. |
 
 ---
 

@@ -11,10 +11,14 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+frontend/node_modules
+frontend/dist
 *.local
 
-# Tauri build artifacts
+# Tauri / Cargo build artifacts
+target/
 src-tauri/target
+src-tauri/gen/
 
 # TypeScript
 *.tsbuildinfo

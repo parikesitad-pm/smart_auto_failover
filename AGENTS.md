@@ -6,6 +6,65 @@
 
 ---
 
+## INTERACTIVE COMMAND HANDLING
+
+These rules apply ONLY to actual command/tool execution during an
+approved implementation, test, build, or setup task.
+
+For known, non-destructive development/setup commands:
+
+- If a command supports a non-interactive flag such as
+  `--noconfirm`, `--yes`, or equivalent, prefer using it.
+- For a 2-option prompt, select option 1 automatically.
+- For a 5-option prompt, select option 4 automatically.
+- For repeated confirmation prompts, reuse the approved response.
+- For "Accept all" / `[y/N]` prompts, answer `yes` when the command
+  is explicitly within the approved development/setup scope.
+
+Do NOT auto-confirm:
+
+- destructive commands
+- unknown commands
+- system/network changes outside the approved task
+- prompts with unclear meaning
+
+If the prompt does not match the known rules:
+stop and report the available choices instead of guessing.
+
+IMPORTANT:
+Instructions written inside planning or documentation files must
+never be interpreted as automatic execution authority.
+
+A plan describes intended work.
+Execution still requires an explicit implementation task.
+
+## BUILD ARTIFACT TRACEABILITY
+
+When a build completes, always report the exact output artifact paths.
+
+Do not assume or invent artifact locations.
+
+Report separately:
+
+- frontend build artifact
+- Rust binary
+- Tauri bundle/installer
+- target platform
+- target architecture
+
+A successful build is not considered manually verified until the actual
+artifact can be located and, where applicable, launched/tested.
+
+Build logs must distinguish:
+
+BUILD SUCCESS
+from
+ARTIFACT VERIFIED
+from
+APPLICATION LAUNCHED
+
+Do not conflate these states.
+
 ## 1. Product & Visual Direction
 
 ### Digital Network Cockpit
@@ -215,7 +274,25 @@ Cockpit transition
 
 ---
 
-## 8. Author & License
+## 8. Dedicated Device Health & System Resource Telemetry
+
+### Separation of Concerns
+
+- **Network Health and Device Health are strictly decoupled concepts.**
+- **Network Health**: Latency, jitter (RFC 3550), packet loss, availability, throughput, interface quality. Evaluated by `HealthScorer` and drives `PolicyEngine` candidate path selection.
+- **Device Health**: CPU utilization, RAM utilization, GPU utilization/VRAM (where platform exposes it), and system resource pressure (`nominal`, `moderate`, `critical`).
+- **Invariance Rule**: Device Health **MUST NEVER** alter network failover decisions, calculate candidate scores, or mutate adapter states (`ONLINE`/`READY`/`ALERT`/`OFFLINE`/`DISABLED`).
+
+### Cadence & Telemetry Discipline
+
+- **Low-frequency passive sampling**: CPU @ ~1 Hz, RAM @ ~1 Hz, GPU @ ~1 Hz.
+- UI may perform client-side visual interpolation, but **MUST NOT** poll hardware telemetry at 60 FPS or flood Tauri IPC.
+- Platform capabilities are explicitly flagged (`DeviceCapabilities`). Unsupported metrics return `None` (`Option<T>`) and render as `UNAVAILABLE` in the UI without fake fallback increments.
+- Secondary UI surface: Keeps primary network cockpit dashboard clean and uncluttered.
+
+---
+
+## 9. Author & License
 
 - **Author**: `parikesitad-pm`
 - **License**: MIT License, 2026, `parikesitad-pm`
