@@ -6,7 +6,8 @@ Author: parikesitad-pm
 
 import time
 import threading
-from typing import List, Dict, Optional, Callable
+from typing import List, Dict, Optional, Callable, Any
+
 from ...models.interface import NetworkInterface, InterfaceState
 from ...models.policy import PolicyConfig, WorkloadProfile, CandidateScore
 from ...models.events import EventType, FailoverEvent
