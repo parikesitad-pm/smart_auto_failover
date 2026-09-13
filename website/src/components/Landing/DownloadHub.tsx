@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Download,
   Clock,
@@ -7,19 +7,13 @@ import {
   FileText,
   AlertCircle,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
-import { getLatestAutoFailoverRelease } from '../../services/githubReleases';
-import { ResolvedRelease, PlatformReleaseInfo } from '../../types/releases';
+import { useLatestRelease } from '../../hooks/useLatestRelease';
+import { PlatformReleaseInfo } from '../../types/releases';
 
 export const DownloadHub: React.FC = () => {
-  const [release, setRelease] = useState<ResolvedRelease | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getLatestAutoFailoverRelease()
-      .then((data) => setRelease(data))
-      .finally(() => setLoading(false));
-  }, []);
+  const { release, loading, isRefreshing, refresh } = useLatestRelease();
 
   const platforms: PlatformReleaseInfo[] = release
     ? Object.values(release.platforms)
@@ -48,9 +42,20 @@ export const DownloadHub: React.FC = () => {
 
         {release && (
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs font-mono text-slate-400">
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-emerald-400 font-semibold">
+            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-emerald-400 font-semibold flex items-center gap-1.5">
               {release.tagName}
             </span>
+            <button
+              onClick={refresh}
+              disabled={isRefreshing}
+              title="Check for latest releases"
+              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-emerald-400 transition-all cursor-pointer flex items-center gap-1"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`}
+              />
+              <span className="text-[10px] hidden sm:inline">Refresh</span>
+            </button>
             <span>•</span>
             <span className="text-slate-400">{release.releaseTitle}</span>
             {release.checksumsUrl && (
