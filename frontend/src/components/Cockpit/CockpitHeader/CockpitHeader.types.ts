@@ -8,4 +8,6 @@ export interface CockpitHeaderProps {
   onForceReinit: () => void;
   onOpenStartupModal: () => void;
   onOpenDiagnostics: () => void;
+  isBrowserPreview?: boolean;
+  isSimulationActive?: boolean;
 }

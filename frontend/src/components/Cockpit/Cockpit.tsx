@@ -48,10 +48,17 @@ export const Cockpit: React.FC<CockpitProps> = ({ onOpenStartupModal }) => {
     simulateJitterDegradation,
     simulateInterfaceDisconnect,
     simulateHotplugDocking,
+    runtimeMode,
+    isCoreReachable,
+    isSimulationActive,
+    enableSimulation,
+    disableSimulation,
   } = useNetworkCockpit();
 
-  const activeAdapter = adapters.find((a) => a.id === activePath);
-  const activePathName = activeAdapter?.name || 'Primary';
+  const activeAdapter = adapters.find(
+    (a) => a.id === activePath && a.state === 'ONLINE'
+  );
+  const activePathName = activeAdapter?.name || '';
 
   return (
     <main className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden border border-slate-800 bg-[#080b10] shadow-2xl flex flex-row">
@@ -69,6 +76,8 @@ export const Cockpit: React.FC<CockpitProps> = ({ onOpenStartupModal }) => {
           onForceReinit={forceManualCoreReinit}
           onOpenStartupModal={onOpenStartupModal}
           onOpenDiagnostics={() => setIsDiagnosticsOpen(true)}
+          isBrowserPreview={runtimeMode === 'browser_preview'}
+          isSimulationActive={isSimulationActive}
         />
 
         {/* Administrative Confirmation Bubble */}
@@ -143,6 +152,11 @@ export const Cockpit: React.FC<CockpitProps> = ({ onOpenStartupModal }) => {
           adapters={adapters}
           activePath={activePath}
           onToggleAdapter={toggleInterface}
+          runtimeMode={runtimeMode}
+          isCoreReachable={isCoreReachable}
+          isSimulationActive={isSimulationActive}
+          onEnableSimulation={enableSimulation}
+          onDisableSimulation={disableSimulation}
         />
 
         {/* Cockpit Footer Attribution */}

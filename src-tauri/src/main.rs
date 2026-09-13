@@ -40,6 +40,7 @@ fn main() {
             commands::get_system_telemetry,
             commands::get_device_health,
             commands::get_system_identity,
+            commands::core_handshake,
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();

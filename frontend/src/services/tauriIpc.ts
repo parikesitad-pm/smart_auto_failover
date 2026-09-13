@@ -15,11 +15,55 @@ export const isTauri =
     (window as any).__TAURI_IPC__
   );
 
+export interface CoreHandshakeResult {
+  isTauriRuntime: boolean;
+  isCoreAvailable: boolean;
+  platform?: string;
+  coreVersion?: string;
+  error?: string;
+}
+
 /**
  * Atomic Tauri IPC Service
  * UI only requests actions and observes engine state. Never executes routing or probing logic directly.
  */
 export const tauriIpc = {
+  /**
+   * Verify whether Rust Core backend is actively reachable within a bounded window.
+   */
+  async checkCoreHandshake(timeoutMs = 2500): Promise<CoreHandshakeResult> {
+    if (!isTauri) {
+      return {
+        isTauriRuntime: false,
+        isCoreAvailable: false,
+        error: 'NATIVE_CORE_UNAVAILABLE',
+      };
+    }
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const response = await Promise.race([
+        invoke<{ core_version: string; status: string; platform: string }>(
+          'core_handshake'
+        ),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('HANDSHAKE_TIMEOUT')), timeoutMs)
+        ),
+      ]);
+      return {
+        isTauriRuntime: true,
+        isCoreAvailable: true,
+        platform: response.platform,
+        coreVersion: response.core_version,
+      };
+    } catch (err: any) {
+      return {
+        isTauriRuntime: true,
+        isCoreAvailable: false,
+        error: err?.message || 'CORE_UNAVAILABLE',
+      };
+    }
+  },
+
   /**
    * Administratively enable interface (admit into READY candidate pool, never forces ONLINE).
    */

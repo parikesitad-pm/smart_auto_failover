@@ -3,6 +3,22 @@ use tauri::State;
 use rust_core::models::{AuthoritativeState, DeviceHealth, PolicyConfig, SpeedtestReport, SystemIdentity, SystemTelemetry};
 use rust_core::AutoFailoverCore;
 
+#[derive(serde::Serialize)]
+pub struct HandshakeResponse {
+    pub core_version: String,
+    pub status: String,
+    pub platform: String,
+}
+
+#[tauri::command]
+pub async fn core_handshake() -> Result<HandshakeResponse, String> {
+    Ok(HandshakeResponse {
+        core_version: "3.0.0".into(),
+        status: "READY".into(),
+        platform: std::env::consts::OS.into(),
+    })
+}
+
 
 #[tauri::command]
 pub async fn get_interface_state(

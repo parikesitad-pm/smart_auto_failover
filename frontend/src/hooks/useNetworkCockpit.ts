@@ -6,7 +6,7 @@ import {
   FailoverEvent,
   DeviceHealth,
 } from '../types/cockpit.types';
-import { tauriIpc } from '../services/tauriIpc';
+import { tauriIpc, isTauri } from '../services/tauriIpc';
 
 const DEFAULT_DEVICE_HEALTH: DeviceHealth = {
   cpuUsagePercent: 14.5,
@@ -31,6 +31,46 @@ const DEFAULT_DEVICE_HEALTH: DeviceHealth = {
 };
 
 const BASELINE_LAPTOP_INTERFACES: NetworkInterface[] = [];
+
+export const DETERMINISTIC_SIMULATION_INTERFACES: NetworkInterface[] = [
+  {
+    id: 'sim_eth0',
+    name: 'Ethernet 1 (Simulated)',
+    carrier: 'Connected',
+    mediaType: 'ethernet',
+    enabled: true,
+    state: 'ONLINE',
+    latency: 8.2,
+    jitter: 1.1,
+    score: 98.4,
+    bgProbingScore: 98.4,
+    ipAddress: '192.168.1.105',
+    netmask: '255.255.255.0',
+    gateway: '192.168.1.1',
+    linkSpeed: '1 Gbps',
+    adminState: 'enabled',
+    linkState: 'connected',
+  },
+  {
+    id: 'sim_wlan0',
+    name: 'Wi-Fi 6 (Simulated)',
+    carrier: 'SSID: Studio-5G',
+    mediaType: 'wifi',
+    enabled: true,
+    state: 'READY',
+    latency: 18.5,
+    jitter: 3.4,
+    score: 86.2,
+    bgProbingScore: 86.2,
+    ipAddress: '192.168.1.120',
+    netmask: '255.255.255.0',
+    gateway: '192.168.1.1',
+    ssid: 'Studio-5G',
+    linkSpeed: '866 Mbps',
+    adminState: 'enabled',
+    linkState: 'connected',
+  },
+];
 
 function normalizeAdapter(raw: any): NetworkInterface {
   const isDisabled =
@@ -118,6 +158,12 @@ function normalizeAdapter(raw: any): NetworkInterface {
 }
 
 export function useNetworkCockpit() {
+  const [runtimeMode, setRuntimeMode] = useState<'native' | 'browser_preview'>(
+    isTauri ? 'native' : 'browser_preview'
+  );
+  const [isCoreReachable, setIsCoreReachable] = useState<boolean | null>(null);
+  const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
+
   const [adapters, setAdapters] = useState<NetworkInterface[]>(
     BASELINE_LAPTOP_INTERFACES
   );
@@ -171,6 +217,40 @@ export function useNetworkCockpit() {
     []
   );
 
+  const enableSimulation = useCallback(() => {
+    setIsSimulationActive(true);
+    setAdapters(DETERMINISTIC_SIMULATION_INTERFACES);
+    setActivePath('sim_eth0');
+    setTelemetry({
+      downloadSpeed: 187.6,
+      uploadSpeed: 48.2,
+      targetDownload: 187.6,
+      targetUpload: 48.2,
+      latency: 8.2,
+      jitter: 1.1,
+      healthScore: 98,
+      activePath: 'sim_eth0',
+    });
+    showToast('🧪', 'Deterministic browser simulation mode enabled', 'info');
+  }, [showToast]);
+
+  const disableSimulation = useCallback(() => {
+    setIsSimulationActive(false);
+    setAdapters([]);
+    setActivePath('');
+    setTelemetry({
+      downloadSpeed: 0,
+      uploadSpeed: 0,
+      targetDownload: 0,
+      targetUpload: 0,
+      latency: 0,
+      jitter: 0,
+      healthScore: 0,
+      activePath: '',
+    });
+    showToast('🌐', 'Browser simulation disabled — Core unavailable', 'info');
+  }, [showToast]);
+
   // 60 FPS Client-Side Lerping loop
   useEffect(() => {
     let animId: number;
@@ -207,6 +287,20 @@ export function useNetworkCockpit() {
     // Initial snapshot on mount (initial load, resync)
     const fetchInitialState = async () => {
       try {
+        const handshake = await tauriIpc.checkCoreHandshake(2500);
+        if (!isMounted) return;
+
+        if (!handshake.isCoreAvailable) {
+          setRuntimeMode('browser_preview');
+          setIsCoreReachable(false);
+          setAdapters([]);
+          setActivePath('');
+          return;
+        }
+
+        setRuntimeMode('native');
+        setIsCoreReachable(true);
+
         const [initialHealth, initialAdapters] = await Promise.all([
           tauriIpc.getDeviceHealth(),
           tauriIpc.getInterfaceState(),
@@ -243,7 +337,10 @@ export function useNetworkCockpit() {
           }
         }
       } catch {
-        // Fallback in browser preview mode
+        if (isMounted) {
+          setRuntimeMode('browser_preview');
+          setIsCoreReachable(false);
+        }
       }
     };
 
@@ -716,5 +813,10 @@ export function useNetworkCockpit() {
     simulateJitterDegradation,
     simulateInterfaceDisconnect,
     simulateHotplugDocking,
+    runtimeMode,
+    isCoreReachable,
+    isSimulationActive,
+    enableSimulation,
+    disableSimulation,
   };
 }

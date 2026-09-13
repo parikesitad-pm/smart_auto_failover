@@ -45,6 +45,8 @@ export interface StartupSequenceState {
   systemIdentity: SystemIdentity | null;
   discoveredInterfaces: DiscoveredInterfaceDetail[];
   activePath: string | null;
+  isCoreAvailable: boolean | null;
+  isTauriRuntime: boolean;
 }
 
 export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
@@ -69,6 +71,8 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     systemIdentity: null,
     discoveredInterfaces: [],
     activePath: null,
+    isCoreAvailable: null,
+    isTauriRuntime: true,
   });
 
   const timerRef = useRef<number | null>(null);
@@ -88,7 +92,7 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     }));
   }, []);
 
-  const runStartup = useCallback(() => {
+  const runStartup = useCallback(async () => {
     if (config.skipEnabled) {
       setState((prev) => ({
         ...prev,
@@ -109,6 +113,46 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     const initTargetMs = config.simulatedEngineInitMs;
     const minSplashMs = config.splashMinDurationMs;
 
+    // Check Core Handshake first before attempting native queries
+    const handshake = await tauriIpc.checkCoreHandshake(2000);
+
+    if (!handshake.isCoreAvailable) {
+      if (!handshake.isTauriRuntime) {
+        // Normal web browser preview mode (http://localhost:3000 / Vercel)
+        setState((prev) => ({
+          ...prev,
+          isActive: false,
+          progress: 100,
+          statusText: 'BROWSER PREVIEW MODE • CORE UNAVAILABLE',
+          currentStep: 'ready',
+          isReady: true,
+          actualInitMs: 0,
+          minDurationMs: 0,
+          remainingMs: 0,
+          isDeparting: false,
+          isCoreAvailable: false,
+          isTauriRuntime: false,
+          systemIdentity: null,
+          discoveredInterfaces: [],
+          activePath: null,
+        }));
+        return;
+      } else {
+        // Desktop shell launched but Rust Core timed out or unresponsive
+        setState((prev) => ({
+          ...prev,
+          progress: 100,
+          statusText: 'BOOTSTRAP_ERROR: CORE UNRESPONSIVE',
+          currentStep: 'ready',
+          isReady: true,
+          actualInitMs: null,
+          isCoreAvailable: false,
+          isTauriRuntime: true,
+        }));
+        return;
+      }
+    }
+
     setState((prev) => ({
       ...prev,
       isActive: true,
@@ -120,6 +164,8 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
       minDurationMs: minSplashMs,
       remainingMs: minSplashMs,
       isDeparting: false,
+      isCoreAvailable: true,
+      isTauriRuntime: true,
     }));
 
     // Step 1: Query actual system hardware identity

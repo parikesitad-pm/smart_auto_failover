@@ -10,6 +10,8 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
   onForceReinit,
   onOpenStartupModal,
   onOpenDiagnostics,
+  isBrowserPreview,
+  isSimulationActive,
 }) => {
   const [isReinitSpinning, setIsReinitSpinning] = useState(false);
 
@@ -132,6 +134,27 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
           <span>Diagnostics</span>
         </button>
 
+        {/* Environment Runtime Badge */}
+        {isBrowserPreview && (
+          <div
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono border transition-colors ${
+              isSimulationActive
+                ? 'bg-amber-950/60 border-amber-600/70 text-amber-300'
+                : 'bg-slate-900/80 border-slate-700 text-slate-400'
+            }`}
+            title={
+              isSimulationActive
+                ? 'Deterministic browser simulation mode'
+                : 'Running in browser without native Tauri Core access'
+            }
+          >
+            <span>{isSimulationActive ? '🧪' : '🌐'}</span>
+            <span className="font-semibold uppercase tracking-wider">
+              {isSimulationActive ? 'SIMULATION MODE' : 'BROWSER PREVIEW'}
+            </span>
+          </div>
+        )}
+
         {/* Master Status Pill */}
         {activePathName &&
         activePathName !== 'NONE' &&
@@ -139,14 +162,14 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
           <div className="flex items-center space-x-2 bg-emerald-950/60 border border-emerald-700/50 px-3 py-1.5 rounded-full transition-all duration-300">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-glow-emerald"></span>
             <span className="text-xs font-semibold tracking-wider font-mono text-emerald-300">
-              ONLINE • {activePathName.toUpperCase()} PRIMARY
+              ONLINE • {activePathName.toUpperCase()}
             </span>
           </div>
         ) : (
           <div className="flex items-center space-x-2 bg-rose-950/60 border border-rose-700/50 px-3 py-1.5 rounded-full transition-all duration-300">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
             <span className="text-xs font-semibold tracking-wider font-mono text-rose-300">
-              NO CONNECTION • NO USABLE PATH
+              OFFLINE • NO ACTIVE PATH
             </span>
           </div>
         )}
