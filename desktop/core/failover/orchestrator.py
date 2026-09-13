@@ -397,7 +397,7 @@ class FailoverOrchestrator:
                     )
 
             # 4. Policy Arbitration
-            workload, apps = self.workload_watcher.detect_active_profile()
+            workload = self._cached_workload_profile
             switch_decision = PolicyEngine.evaluate_failover(
                 list(self._interfaces.values()),
                 self._active_interface_id,
@@ -485,11 +485,11 @@ class FailoverOrchestrator:
             self._loop_thread.start()
 
     def stop_loop(self) -> None:
-        """Stops monitoring loop."""
+        """Stops monitoring loop cleanly and immediately."""
         with self._lock:
             self._is_running = False
         if self._loop_thread and self._loop_thread.is_alive():
-            self._loop_thread.join(timeout=1.5)
+            self._loop_thread.join(timeout=2.0)
 
     def start(self) -> None:
         """Alias for start_loop to provide standard lifecycle interface."""
@@ -499,11 +499,13 @@ class FailoverOrchestrator:
         """Alias for stop_loop to provide standard lifecycle interface."""
         self.stop_loop()
 
-
     def _run_loop(self) -> None:
         while self._is_running:
             try:
                 self.tick()
             except Exception:
                 pass
-            time.sleep(self.probe_interval_sec)
+            # Responsive sleep slice: allows immediate teardown on stop()
+            t_end = time.monotonic() + self.probe_interval_sec
+            while self._is_running and time.monotonic() < t_end:
+                time.sleep(0.05)

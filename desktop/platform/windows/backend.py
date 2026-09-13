@@ -97,6 +97,7 @@ class WindowsPlatformBackend(PlatformBackend):
         self._ssid_ttl_sec: float = 10.0
 
         self._last_discovery_duration_ms: float = 0.0
+        self._modified_metrics: bool = False
 
     def _run_ps(self, cmd: str, timeout: float = 2.5) -> Optional[str]:
         full_cmd = [
@@ -318,10 +319,34 @@ class WindowsPlatformBackend(PlatformBackend):
         return res is not None
 
     def set_default_route(self, interface_name: str, gateway: str) -> bool:
-        ps_cmd = f"Set-NetIPInterface -InterfaceAlias '{interface_name}' -InterfaceMetric 10 -ErrorAction Stop"
+        """
+        Executes authoritative Windows Layer-3 default route switch:
+        - Promotes target interface to metric 5 (highest priority)
+        - Demotes other active interfaces to metric 50 (standby)
+        Ensures unambiguous, instantaneous route adoption across Zoom, OBS, and vMix.
+        """
+        ps_cmd = (
+            f"Set-NetIPInterface -InterfaceAlias '{interface_name}' -InterfaceMetric 5 -ErrorAction SilentlyContinue; "
+            f"Get-NetIPInterface -AddressFamily IPv4 | Where-Object {{ $_.InterfaceAlias -ne '{interface_name}' -and $_.InterfaceAlias -notlike '*Loopback*' }} | "
+            f"Set-NetIPInterface -InterfaceMetric 50 -ErrorAction SilentlyContinue"
+        )
         out = self._run_ps(ps_cmd, timeout=2.5)
         self._cache_default_route = None
+        self._modified_metrics = True
         return out is not None
+
+    def cleanup(self) -> None:
+        """
+        Restores Windows network adapter metrics to Automatic on application exit.
+        Completely eliminates lingering routing skew or NDIS filter driver conflicts.
+        """
+        if self._modified_metrics:
+            try:
+                ps_cmd = "Get-NetIPInterface -AddressFamily IPv4 | Set-NetIPInterface -AutomaticMetric Enabled -ErrorAction SilentlyContinue"
+                self._run_ps(ps_cmd, timeout=2.0)
+            except Exception:
+                pass
+            self._modified_metrics = False
 
     def get_default_route(self) -> Optional[Tuple[str, str]]:
         now = time.monotonic()

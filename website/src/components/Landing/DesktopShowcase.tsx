@@ -47,7 +47,7 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
         {/* Real App Screenshot with Native Frame */}
         <div className="relative overflow-hidden rounded-xl bg-[#080b10] border border-slate-800 shadow-2xl">
           <img
-            src="/dashboard_app.png"
+            src="/modula_betarelease.png"
             alt="AutoFailover 3.0 Desktop Digital Network Cockpit"
             className="w-full h-auto object-cover rounded-xl shadow-2xl transition-transform duration-700 group-hover:scale-[1.005]"
           />

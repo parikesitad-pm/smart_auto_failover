@@ -81,6 +81,8 @@ class CockpitDashboard:
         self._last_health_breakdown: Dict[str, Any] = {}
         self._all_events: List[FailoverEvent] = []
         self._event_filter_severity = "ALL"
+        self._is_active: bool = True
+        self._ui_tick_id: Optional[str] = None
 
         if not HAS_CTK:
             return
@@ -1441,8 +1443,36 @@ class CockpitDashboard:
     # =========================================================================
 
     def _schedule_ui_tick(self):
+        if not getattr(self, "_is_active", True):
+            return
         self._refresh_state()
-        self.parent.after(200, self._schedule_ui_tick)
+        if getattr(self, "_is_active", True):
+            self._ui_tick_id = self.parent.after(200, self._schedule_ui_tick)
+
+    def stop(self):
+        """
+        Gracefully terminates all scheduled tickers, toast timers, and background tasks.
+        """
+        self._is_active = False
+        if self._ui_tick_id:
+            try:
+                self.parent.after_cancel(self._ui_tick_id)
+            except Exception:
+                pass
+            self._ui_tick_id = None
+
+        if hasattr(self, "_notif_timer_id") and self._notif_timer_id:
+            try:
+                self.parent.after_cancel(self._notif_timer_id)
+            except Exception:
+                pass
+            self._notif_timer_id = None
+
+        if hasattr(self, "speedtest_runner") and self.speedtest_runner:
+            try:
+                self.speedtest_runner.cancel()
+            except Exception:
+                pass
 
     def _refresh_state(self):
         if not HAS_CTK:

@@ -108,12 +108,38 @@ class AutoFailoverApp:
         )
 
     def _on_close(self):
-        # Stop background failover orchestrator cleanly
+        """
+        Executes an orderly, crash-free teardown:
+        1. Halt dashboard polling ticker and cancel running speedtests
+        2. Signal orchestrator background thread to stop cleanly
+        3. Call platform backend cleanup (restoring Windows automatic metrics)
+        4. Destroy Tkinter display context
+        """
+        # 1. Stop dashboard UI tickers & active benchmark threads
+        if hasattr(self, "dashboard") and self.dashboard:
+            try:
+                self.dashboard.stop()
+            except Exception:
+                pass
+
+        # 2. Stop background failover orchestrator cleanly
         try:
             self.orchestrator.stop()
         except Exception:
             pass
-        self.root.destroy()
+
+        # 3. Platform HAL cleanup (restore adapter metrics on Windows)
+        if hasattr(self, "backend") and self.backend:
+            try:
+                self.backend.cleanup()
+            except Exception:
+                pass
+
+        # 4. Destroy window and exit cleanly
+        try:
+            self.root.destroy()
+        except Exception:
+            pass
         sys.exit(0)
 
     def run(self):

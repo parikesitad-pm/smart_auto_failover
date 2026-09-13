@@ -46,3 +46,7 @@ class PlatformBackend(ABC):
     def get_system_identity(self) -> Dict[str, str]:
         """Query system device name, OS, architecture, kernel."""
         pass
+
+    def cleanup(self) -> None:
+        """Optional teardown hook to restore network settings on application exit."""
+        pass

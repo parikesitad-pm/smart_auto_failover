@@ -45,13 +45,26 @@ class RFC3550JitterTracker:
         self.samples_count = 0
 
 
+import struct
+
+
 def probe_socket_rtt(target_host: str, target_port: int = 443, timeout_sec: float = 0.8, source_ip: Optional[str] = None) -> Tuple[bool, float]:
     """
     Perform a low-overhead socket connection to measure precise round-trip time.
+    Configures SO_REUSEADDR and SO_LINGER (1, 0) to abort gracefully upon close,
+    preventing TIME_WAIT socket exhaustion in the OS kernel TCP/IP stack.
     Returns (success: bool, rtt_ms: float).
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout_sec)
+
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Linger for 0 seconds: Discards pending data and sends TCP RST on close
+        # Completely prevents socket accumulation in kernel TIME_WAIT state
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+    except Exception:
+        pass
 
     if source_ip and source_ip != "0.0.0.0" and source_ip != "N/A":
         try:
@@ -63,7 +76,6 @@ def probe_socket_rtt(target_host: str, target_port: int = 443, timeout_sec: floa
     try:
         sock.connect((target_host, target_port))
         rtt_ms = (time.monotonic() - start_time) * 1000.0
-        sock.close()
         return True, rtt_ms
     except socket.timeout:
         return False, timeout_sec * 1000.0

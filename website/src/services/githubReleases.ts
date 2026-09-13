@@ -10,7 +10,7 @@ const REPO_OWNER = 'parikesitad-pm';
 const REPO_NAME = 'smart_auto_failover';
 const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases`;
 const FALLBACK_RELEASES_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases`;
-const CACHE_KEY = 'autofailover_release_cache_v7';
+const CACHE_KEY = 'autofailover_release_cache_v8';
 
 // Immediately purge stale legacy cache keys
 if (typeof window !== 'undefined') {
@@ -21,6 +21,7 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('autofailover_release_cache_v4');
     localStorage.removeItem('autofailover_release_cache_v5');
     localStorage.removeItem('autofailover_release_cache_v6');
+    localStorage.removeItem('autofailover_release_cache_v7');
   } catch {
     // ignore
   }
@@ -341,14 +342,14 @@ export function resolveReleaseFromList(
 }
 
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
-  const latestTag = 'v3.0.0-preview.24';
-  const ver = '3.0.0 Beta (preview.24)';
+  const latestTag = 'v3.0.0-preview.25';
+  const ver = '3.0.0 Beta (preview.25)';
   const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${latestTag}`;
   const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestTag}`;
 
   return {
     tagName: latestTag,
-    releaseTitle: 'AutoFailover 3.0.0 Beta Release (v3.0.0-preview.24)',
+    releaseTitle: 'AutoFailover 3.0.0 Beta Release (v3.0.0-preview.25)',
     channel: 'BETA',
     publishedAt: new Date().toISOString(),
     htmlUrl: releaseUrl,

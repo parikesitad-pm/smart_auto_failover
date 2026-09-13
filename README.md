@@ -2,7 +2,7 @@
 
 > by Modula • _light seamless and usefull_
 >
-> 🚀 **Current Release: [AutoFailover 3.0 Beta (v3.0.0-preview.24)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.24)** — Multi-platform desktop packages verified and ready for testing.
+> 🚀 **Current Release: [AutoFailover 3.0 Beta (v3.0.0-preview.25)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.25)** — Multi-platform desktop packages verified and ready for testing.
 
 AutoFailover 3.0 protects active real-time workloads (Zoom, OBS Studio, Microsoft Teams, Google Meet, vMix) by autonomously detecting network path degradation and switching seamlessly to healthy backup paths.
 
@@ -30,23 +30,23 @@ Build:
 
 ## Download / How To Use
 
-Official packages from the [AutoFailover 3.0 Beta (v3.0.0-preview.24)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.24) release:
+Official packages from the [AutoFailover 3.0 Beta (v3.0.0-preview.25)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.25) release:
 
 ### Windows (x64)
 
-1. Download **[AutoFailover-3.0.0-Windows-x64.zip](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.24/AutoFailover-3.0.0-Windows-x64.zip)**.
+1. Download **[AutoFailover-3.0.0-Windows-x64.zip](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.25/AutoFailover-3.0.0-Windows-x64.zip)**.
 2. Extract the ZIP archive.
 3. Run `AutoFailover 3.0.exe`.
 
 ### Linux (x86_64)
 
-1. Download **[AutoFailover-3.0.0-Linux-x86_64.tar.gz](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.24/AutoFailover-3.0.0-Linux-x86_64.tar.gz)**.
+1. Download **[AutoFailover-3.0.0-Linux-x86_64.tar.gz](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.25/AutoFailover-3.0.0-Linux-x86_64.tar.gz)**.
 2. Extract: `tar -xzf AutoFailover-3.0.0-Linux-x86_64.tar.gz`
 3. Enter directory and run: `./AutoFailover\ 3.0`
 
 ### macOS (Apple Silicon arm64)
 
-1. Download **[AutoFailover-3.0.0-macOS-arm64.dmg](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.24/AutoFailover-3.0.0-macOS-arm64.dmg)**.
+1. Download **[AutoFailover-3.0.0-macOS-arm64.dmg](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.25/AutoFailover-3.0.0-macOS-arm64.dmg)**.
 2. Open the DMG and drag or run `AutoFailover 3.0.app`.
 
 ## Run From Source
