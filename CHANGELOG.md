@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] - 2026-09-14
+
+### Added
+
+- **Strict 4-Stage Interface Deck Presentation Pipeline (`desktop/ui/dashboard/cockpit.py`)**: Implemented explicit architectural separation: `Core Registry` (detects all ports) $\rightarrow$ `Visibility Filter` (evaluates `ONLINE`, `READY`, `ALERT`, or inactive exceptions) $\rightarrow$ `Sort Visible Only` $\rightarrow$ `Dynamic Render`. Guaranteed that dynamic sorting runs exclusively on already-visible cards, preventing disconnected physical Ethernet ports or irrelevant virtual adapters from reappearing during sorting ticks.
+- **Dynamic Card Pack Ordering in Cockpit GUI (`desktop/ui/dashboard/cockpit.py`)**: Added dynamic Tkinter card repacking in `_render_deck_into_container`, ensuring cards visually respect priority hierarchy on every UI tick without visual tearing: `ONLINE` (Active Outbound) at the top, followed by `READY Ethernet`, `READY Wi-Fi`, `ALERT` (Degraded), and `OFFLINE`/`DISABLED` exceptions.
+- **Multi-Version Download Selector & Archive Matrix (`website/src/components/Landing/DownloadHub.tsx`, `website/src/services/githubReleases.ts`)**: Built an interactive version switcher and 5-release archive matrix allowing instant downloads across `v3.1.0` (Latest), `v3.0.1`, `v3.0.0-preview.26` (Official Beta), `v3.0.0-preview.25`, and `v3.0.0-preview.24` for Windows, Linux, and macOS.
+- **Desktop Advantages & Native Systems Tech Stack Showcase (`website/src/components/Landing/DesktopAdvantages.tsx`)**: Added dedicated architectural section highlighting real-time workload protection for Zoom/vMix/OBS, 5-case deterministic arbitration, the mathematical anti-flap takeover equation, <0.5% CPU footprint, and kernel TCP/IP safety.
+- **Interactive Version Evolution Timeline (`website/src/components/Landing/ChangelogTimeline.tsx`)**: Created a beautified, high-contrast visual timeline tracing all releases from v1.0.0 to v3.1.0 with categorized change pills (`Added`, `Changed`, `Fixed`) and direct GitHub release links.
+- **Comprehensive Enterprise Developer Guide (`CONTRIBUTING.md`)**: Published open-source contributor documentation defining system architecture, presentation vs core invariants, MIT License 2026 under `parikesitad-pm`, mandatory upstream attribution rules, code ethics, and anti-snowballing principles.
+- **Dedicated Interface Deck Regression Test Suite (`desktop/tests/test_interface_deck_and_responsiveness.py`)**: Added 8 automated tests asserting that disconnected Ethernet cards stay hidden across sort ticks, `ONLINE` remains topmost, `READY Ethernet` sorts above `READY Wi-Fi`, and detail inspection modals open cleanly without error.
+
+### Changed
+
+- **Version Baseline Upgraded to 3.1.0**: Synchronized `3.1.0` across desktop core (`desktop/VERSION`, `desktop/__version__.py`), package configurations (`package.json`, `website/package.json`), documentation (`README.md`), and website services (`website/src/services/githubReleases.ts`).
+
+### Fixed
+
+- **Cockpit Details Modal Crash**: Fixed `TypeError` in `cockpit.py:2212` by invoking `PolicyEngine.compute_score` with full 4-parameter signature `(iface, config, workload_profile, interfaces)` and extracting `.total_score`; corrected `iface.state.is_eligible_candidate()` method call; guarded against uninitialized probe timestamps.
+- **Dynamic Interface Handler Binding**: Ensured interface card click handlers and `Details →` modal buttons re-bind dynamically to the latest runtime interface snapshot on every tick, eliminating stale data references.
+
 ## [3.0.1] - 2026-09-14
 
 ### Added

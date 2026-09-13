@@ -4,7 +4,7 @@ Crafted by parikesitad-pm
 © 2026
 """
 
-__version__ = "3.0.1"
+__version__ = "3.1.0"
 __author__ = "parikesitad-pm"
-__product__ = "Auto Failover 3.0.1"
+__product__ = "Auto Failover 3.1.0"
 __tagline__ = "light seamless and usefull"

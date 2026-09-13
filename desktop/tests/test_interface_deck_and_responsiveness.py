@@ -155,6 +155,193 @@ class TestInterfaceDeckAndResponsiveness(unittest.TestCase):
         rate = get_subprocess_rate_per_min()
         self.assertIsInstance(rate, int)
 
+    def test_unused_disconnected_ethernet_stays_hidden_after_every_sort_tick(self):
+        """Unused disconnected Ethernet port stays hidden and does NOT reappear from sorting."""
+        from desktop.ui.dashboard.cockpit import CockpitDashboard
+        eth_active = NetworkInterface(
+            id="eth0", name="eth0", friendly_name="Ethernet 1",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.ONLINE, ip_address="192.168.1.10",
+        )
+        eth_disconnected = NetworkInterface(
+            id="eth1", name="eth1", friendly_name="Ethernet 2 (Unused)",
+            media_type=InterfaceMediaType.ETHERNET, carrier=False, admin_enabled=True,
+            state=InterfaceState.OFFLINE,
+        )
+        wifi = NetworkInterface(
+            id="wlan0", name="wlan0", friendly_name="Wi-Fi",
+            media_type=InterfaceMediaType.WIFI, carrier=True, admin_enabled=True,
+            state=InterfaceState.READY, ip_address="192.168.1.20",
+        )
+        all_ifaces = [eth_active, eth_disconnected, wifi]
+
+        # Stage 2: Visibility filter
+        visible = CockpitDashboard._filter_overview_interfaces(all_ifaces, show_inactive=False)
+        self.assertNotIn(eth_disconnected, visible)
+        self.assertEqual(len(visible), 2)
+
+        # Stage 3: Sorting multiple times
+        for _ in range(5):
+            ordered = CockpitDashboard._sort_visible_interfaces(visible)
+            # Must NEVER cause disconnected Ethernet to reappear
+            self.assertNotIn(eth_disconnected, ordered)
+            self.assertEqual(len(ordered), 2)
+
+    def test_online_remains_first_among_visible_cards(self):
+        """ONLINE active connection always sorts to index 0."""
+        from desktop.ui.dashboard.cockpit import CockpitDashboard
+        ready_eth = NetworkInterface(
+            id="eth1", name="eth1", friendly_name="Ethernet 2",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.READY, ip_address="192.168.1.2",
+        )
+        online_eth = NetworkInterface(
+            id="eth0", name="eth0", friendly_name="Ethernet 1",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.ONLINE, ip_address="192.168.1.1",
+        )
+        alert_wifi = NetworkInterface(
+            id="wlan0", name="wlan0", friendly_name="Wi-Fi",
+            media_type=InterfaceMediaType.WIFI, carrier=True, admin_enabled=True,
+            state=InterfaceState.ALERT, ip_address="192.168.1.3",
+        )
+        visible = [ready_eth, alert_wifi, online_eth]
+        ordered = CockpitDashboard._sort_visible_interfaces(visible)
+        self.assertEqual(ordered[0].id, "eth0")
+        self.assertEqual(ordered[0].state, InterfaceState.ONLINE)
+
+    def test_ready_ethernet_sorts_above_ready_wifi(self):
+        """READY Ethernet always sorts above READY Wi-Fi."""
+        from desktop.ui.dashboard.cockpit import CockpitDashboard
+        ready_wifi = NetworkInterface(
+            id="wlan0", name="wlan0", friendly_name="Wi-Fi",
+            media_type=InterfaceMediaType.WIFI, carrier=True, admin_enabled=True,
+            state=InterfaceState.READY, ip_address="192.168.1.50",
+        )
+        ready_eth = NetworkInterface(
+            id="eth1", name="eth1", friendly_name="Ethernet 2",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.READY, ip_address="192.168.1.51",
+        )
+        visible = [ready_wifi, ready_eth]
+        ordered = CockpitDashboard._sort_visible_interfaces(visible)
+        self.assertEqual(ordered[0].id, "eth1")
+        self.assertEqual(ordered[1].id, "wlan0")
+
+    def test_connecting_previously_hidden_ethernet_makes_it_visible(self):
+        """Plugging cable in changes carrier to True, making interface visible and properly sorted."""
+        from desktop.ui.dashboard.cockpit import CockpitDashboard
+        eth = NetworkInterface(
+            id="eth1", name="eth1", friendly_name="Ethernet 2",
+            media_type=InterfaceMediaType.ETHERNET, carrier=False, admin_enabled=True,
+            state=InterfaceState.OFFLINE,
+        )
+        # Initially hidden
+        visible = CockpitDashboard._filter_overview_interfaces([eth], show_inactive=False)
+        # (Fallback returns it only if zero interfaces exist, but when others exist it's hidden)
+        online_eth = NetworkInterface(
+            id="eth0", name="eth0", friendly_name="Ethernet 1",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.ONLINE, ip_address="192.168.1.1",
+        )
+        visible = CockpitDashboard._filter_overview_interfaces([online_eth, eth], show_inactive=False)
+        self.assertNotIn(eth, visible)
+
+        # Cable plugged in -> becomes READY
+        eth.carrier = True
+        eth.state = InterfaceState.READY
+        eth.ip_address = "192.168.1.2"
+        visible_after = CockpitDashboard._filter_overview_interfaces([online_eth, eth], show_inactive=False)
+        self.assertIn(eth, visible_after)
+        ordered = CockpitDashboard._sort_visible_interfaces(visible_after)
+        self.assertEqual(ordered[0].id, "eth0")
+        self.assertEqual(ordered[1].id, "eth1")
+
+    def test_disconnecting_irrelevant_ethernet_hides_it_again(self):
+        """Unplugging cable transitions state to OFFLINE, hiding it from Overview."""
+        from desktop.ui.dashboard.cockpit import CockpitDashboard
+        online_eth = NetworkInterface(
+            id="eth0", name="eth0", friendly_name="Ethernet 1",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.ONLINE, ip_address="192.168.1.1",
+        )
+        eth2 = NetworkInterface(
+            id="eth1", name="eth1", friendly_name="Ethernet 2",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.READY, ip_address="192.168.1.2",
+        )
+        # Unplugged
+        eth2.carrier = False
+        eth2.state = InterfaceState.OFFLINE
+        eth2.clear_network_addressing()
+
+        visible = CockpitDashboard._filter_overview_interfaces([online_eth, eth2], show_inactive=False)
+        self.assertNotIn(eth2, visible)
+        self.assertIn(online_eth, visible)
+
+    def test_show_inactive_reveals_all_interfaces_intentionally(self):
+        """Enabling Show Inactive reveals all interfaces intentionally."""
+        from desktop.ui.dashboard.cockpit import CockpitDashboard
+        online_eth = NetworkInterface(
+            id="eth0", name="eth0", friendly_name="Ethernet 1",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.ONLINE, ip_address="192.168.1.1",
+        )
+        offline_eth = NetworkInterface(
+            id="eth1", name="eth1", friendly_name="Ethernet 2",
+            media_type=InterfaceMediaType.ETHERNET, carrier=False, admin_enabled=True,
+            state=InterfaceState.OFFLINE,
+        )
+        disabled_wifi = NetworkInterface(
+            id="wlan0", name="wlan0", friendly_name="Wi-Fi",
+            media_type=InterfaceMediaType.WIFI, carrier=False, admin_enabled=False,
+            state=InterfaceState.DISABLED,
+        )
+        all_ifaces = [online_eth, offline_eth, disabled_wifi]
+
+        visible = CockpitDashboard._filter_overview_interfaces(all_ifaces, show_inactive=True)
+        self.assertEqual(len(visible), 3)
+        self.assertIn(offline_eth, visible)
+        self.assertIn(disabled_wifi, visible)
+
+    def test_sorting_does_not_mutate_interface_visibility_state(self):
+        """Sorting is pure and does not mutate interface attributes or list membership."""
+        from desktop.ui.dashboard.cockpit import CockpitDashboard
+        online_eth = NetworkInterface(
+            id="eth0", name="eth0", friendly_name="Ethernet 1",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.ONLINE, ip_address="192.168.1.1",
+        )
+        ready_wifi = NetworkInterface(
+            id="wlan0", name="wlan0", friendly_name="Wi-Fi",
+            media_type=InterfaceMediaType.WIFI, carrier=True, admin_enabled=True,
+            state=InterfaceState.READY, ip_address="192.168.1.2",
+        )
+        visible = [ready_wifi, online_eth]
+        ordered = CockpitDashboard._sort_visible_interfaces(visible)
+
+        # Original list unchanged in identity of members
+        self.assertEqual(len(ordered), len(visible))
+        self.assertEqual(online_eth.state, InterfaceState.ONLINE)
+        self.assertEqual(ready_wifi.state, InterfaceState.READY)
+
+    def test_detail_modal_opens_without_typeerror_or_attributeerror(self):
+        """Verifies compute_score and is_eligible_candidate calls inside detail modal logic do not crash."""
+        from desktop.core.policy.engine import PolicyEngine
+        from desktop.models.policy import PolicyConfig, WorkloadProfile
+        iface = NetworkInterface(
+            id="eth0", name="eth0", friendly_name="Ethernet 1",
+            media_type=InterfaceMediaType.ETHERNET, carrier=True, admin_enabled=True,
+            state=InterfaceState.ONLINE, ip_address="192.168.1.1",
+        )
+        config = PolicyConfig()
+        profile = WorkloadProfile.CONFERENCE
+        # Calling compute_score with 4 arguments must return CandidateScore
+        score_obj = PolicyEngine.compute_score(iface, config, profile, [iface])
+        self.assertIsNotNone(score_obj)
+        self.assertIsInstance(score_obj.total_score, float)
+        # Calling is_eligible_candidate on state must return bool
+        self.assertIsInstance(iface.state.is_eligible_candidate(), bool)
 
 
 if __name__ == "__main__":

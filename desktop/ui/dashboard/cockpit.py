@@ -1624,37 +1624,98 @@ class CockpitDashboard:
             self._prev_interface_states[iface.id] = curr
 
     # =========================================================================
-    # INTERFACE DECK RENDERING
+    # INTERFACE DECK RENDERING (4-STAGE PIPELINE)
     # =========================================================================
 
+    @staticmethod
+    def _filter_overview_interfaces(
+        interfaces: List[NetworkInterface],
+        show_inactive: bool,
+    ) -> List[NetworkInterface]:
+        """
+        STAGE 2: Visibility Filter.
+        Decides whether an interface belongs on the Overview dashboard.
+        SHOW:
+          - ONLINE active path
+          - READY eligible standby
+          - ALERT degraded path
+        HIDE:
+          - disconnected unused Ethernet ports (carrier=False, state=OFFLINE)
+          - inactive physical ports with no carrier
+          - irrelevant virtual/loopback adapters
+          - OFFLINE/DISABLED interfaces not relevant to current session
+        EXCEPTION:
+          - user enables show_inactive -> show all interfaces
+        """
+        if show_inactive:
+            return list(interfaces)
+
+        visible = [
+            i for i in interfaces
+            if i.state in (InterfaceState.ONLINE, InterfaceState.READY, InterfaceState.ALERT)
+        ]
+        # Fallback if zero connected interfaces exist so dashboard is not empty
+        if not visible:
+            visible = list(interfaces)
+        return visible
+
+    @staticmethod
+    def _sort_visible_interfaces(
+        interfaces: List[NetworkInterface],
+    ) -> List[NetworkInterface]:
+        """
+        STAGE 3: Presentation-Only Sorting.
+        Sorts ONLY the already-visible interfaces.
+        Ordering:
+          ONLINE
+          -> READY Ethernet
+          -> READY Wi-Fi
+          -> READY Other
+          -> ALERT
+          -> OFFLINE / DISABLED (visible exceptions)
+        """
+        def _tier(i: NetworkInterface) -> Tuple[int, int, str]:
+            if i.state == InterfaceState.ONLINE:
+                return (0, 0, i.friendly_name.lower())
+            if i.state == InterfaceState.READY:
+                if i.media_type == InterfaceMediaType.ETHERNET or "eth" in i.name.lower() or "ethernet" in i.friendly_name.lower():
+                    return (1, 0, i.friendly_name.lower())
+                if i.media_type == InterfaceMediaType.WIFI or "wlan" in i.name.lower() or "wi-fi" in i.friendly_name.lower():
+                    return (1, 1, i.friendly_name.lower())
+                return (1, 2, i.friendly_name.lower())
+            if i.state == InterfaceState.ALERT:
+                return (2, 0, i.friendly_name.lower())
+            if i.state == InterfaceState.OFFLINE:
+                return (3, 0, i.friendly_name.lower())
+            return (4, 0, i.friendly_name.lower())
+
+        return sorted(interfaces, key=_tier)
+
     def _render_overview_deck(self, snapshot: RuntimeSnapshot):
-        interfaces = snapshot.interfaces
+        # STAGE 1: Core Registry
+        all_interfaces = snapshot.interfaces
 
-        # Filter for Overview: show connected/active/ready/alert, or all if toggled
-        if self._show_inactive:
-            filtered = interfaces
-        else:
-            filtered = [
-                i for i in interfaces
-                if i.state in (InterfaceState.ONLINE, InterfaceState.READY, InterfaceState.ALERT)
-            ]
-            # If no connected interfaces, show whatever exists so it's not totally empty
-            if not filtered:
-                filtered = interfaces
+        # STAGE 2: Visibility Filter (Determines what belongs on Overview)
+        visible = self._filter_overview_interfaces(all_interfaces, self._show_inactive)
 
+        # STAGE 3: Sort Visible Only (Presentation ordering)
+        ordered = self._sort_visible_interfaces(visible)
+
+        # STAGE 4: Render Cards
         self._render_deck_into_container(
             container=self.overview_interfaces_scroll,
             cards_map=self._overview_interface_cards,
-            interfaces=filtered,
+            interfaces=ordered,
             snapshot=snapshot,
         )
 
     def _render_full_deck(self, snapshot: RuntimeSnapshot):
-        # Full deck shows all interfaces
+        # Full deck shows all interfaces, sorted by presentation priority
+        ordered = self._sort_visible_interfaces(snapshot.interfaces)
         self._render_deck_into_container(
             container=self.full_interfaces_scroll,
             cards_map=self._full_interface_cards,
-            interfaces=snapshot.interfaces,
+            interfaces=ordered,
             snapshot=snapshot,
         )
 
@@ -1747,6 +1808,9 @@ class CockpitDashboard:
                     w["grid"].pack_forget()
                     w["offline_lbl"].configure(text=offline_text)
                     w["offline_lbl"].pack(fill="x", padx=14, pady=10, after=w["top_row"])
+
+                w["details_btn"].configure(command=lambda i=iface: self._show_interface_detail_modal(i))
+                w["card"].bind("<Button-1>", lambda e, i=iface: self._show_interface_detail_modal(i))
 
                 if iface.state == InterfaceState.DISABLED:
                     w["btn"].configure(
@@ -1956,6 +2020,11 @@ class CockpitDashboard:
                     "btn": action_btn,
                     "details_btn": details_btn,
                 }
+
+        # Enforce presentation-only vertical pack order for visible cards
+        for iface in interfaces:
+            if iface.id in cards_map:
+                cards_map[iface.id]["card"].pack(fill="x", pady=6, padx=4)
 
     # =========================================================================
     # MODALS & ADMINISTRATIVE ACTIONS
@@ -2209,7 +2278,13 @@ class CockpitDashboard:
             loss = getattr(m, "packet_loss_pct", 0.0)
             health = getattr(m, "health_index", 0)
             rating, _ = get_health_rating(health, iface.carrier)
-            score_val = PolicyEngine.compute_score(iface, self.orchestrator.config)
+            score_obj = PolicyEngine.compute_score(
+                iface,
+                self.orchestrator.config,
+                getattr(self.orchestrator, "_cached_workload_profile", WorkloadProfile.CONFERENCE),
+                list(self.orchestrator._interfaces.values()),
+            )
+            score_val = score_obj.total_score if score_obj else 0.0
             _add_section("QUALITY & PERFORMANCE (RFC 3550)", [
                 ("Latency (RTT):", f"{rtt:.1f} ms" if rtt > 0 else "-- ms"),
                 ("RFC 3550 Jitter:", f"{jit:.2f} ms" if jit > 0 else "-- ms"),
@@ -2219,8 +2294,10 @@ class CockpitDashboard:
             ])
 
         # 4. POLICY & ARBITRATION
-        is_eligible = iface.is_eligible_candidate(self.orchestrator.config.min_health_threshold)
-        last_probe_str = time.strftime("%H:%M:%S", time.localtime(m.last_probe_timestamp)) if (m and m.last_probe_timestamp > 0) else "Never"
+        is_eligible = iface.state.is_eligible_candidate()
+        last_probe_str = "Never"
+        if m and getattr(m, "last_probe_timestamp", 0) > 0:
+            last_probe_str = time.strftime("%H:%M:%S", time.localtime(m.last_probe_timestamp))
         _add_section("POLICY & FAILOVER ARBITRATION", [
             ("Failover Eligibility:", "ELIGIBLE FOR PROMOTION" if is_eligible else "INELIGIBLE"),
             ("Takeover Margin Threshold:", f"{self.orchestrator.config.takeover_margin:.1f} pts"),

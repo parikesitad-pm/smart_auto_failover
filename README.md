@@ -1,10 +1,10 @@
-# AutoFailover 3.0.1
+# AutoFailover 3.1.0
 
 > by Modula • _light seamless and usefull_
 >
-> 🚀 **Current Release: [AutoFailover 3.0.1 (v3.0.1)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.1)** — Multi-platform desktop packages verified with 5-case failover hierarchy and live workload protection.
+> 🚀 **Current Release: [AutoFailover 3.1.0 (v3.1.0)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.1.0)** — Multi-platform desktop packages verified with 4-stage interface visibility pipeline and live workload protection.
 
-AutoFailover 3.0.1 protects active real-time workloads (Zoom, OBS Studio, Microsoft Teams, Google Meet, vMix) by autonomously detecting network path degradation and switching seamlessly to healthy backup paths.
+AutoFailover 3.1.0 protects active real-time workloads (Zoom, OBS Studio, Microsoft Teams, Google Meet, vMix) by autonomously detecting network path degradation and switching seamlessly to healthy backup paths.
 
 ## Failover Priority & Workload Protection Rules
 
@@ -14,6 +14,11 @@ AutoFailover 3.0.1 protects active real-time workloads (Zoom, OBS Studio, Micros
 4. **Case 3 (Primary Degradation)**: When `eth0`, `eth1`, and `wifi` are connected and `eth0` degrades (ALERT/RTO/packet loss), immediately failover to `eth1`.
 5. **Case 4 (All Ethernet Alert)**: When both `eth0` and `eth1` degrade (ALERT/RTO), immediately failover to `wifi`.
 6. **Live Workload Continuity**: When an active Ethernet (`eth0` or `eth1`) is healthy, the engine enforces stability delay and avoids impulsive switching for small speed variations, protecting ongoing Zoom, vMix, and OBS sessions from socket disruptions.
+
+## Contributing & Developer Guide
+
+AutoFailover 3.0 is open source under the **MIT License** (Copyright 2026 `parikesitad-pm`).
+For developer onboarding, architecture specifications, fork & attribution requirements, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Tech Stack
 
@@ -39,23 +44,23 @@ Build:
 
 ## Download / How To Use
 
-Official packages from the [AutoFailover 3.0.1 (v3.0.1)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.1) release:
+Official packages from the [AutoFailover 3.1.0 (v3.1.0)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.1.0) release:
 
 ### Windows (x64)
 
-1. Download **[AutoFailover-3.0.1-Windows-x64.zip](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.1/AutoFailover-3.0.1-Windows-x64.zip)**.
+1. Download **[AutoFailover-3.1.0-Windows-x64.zip](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.1.0/AutoFailover-3.1.0-Windows-x64.zip)**.
 2. Extract the ZIP archive.
 3. Run `AutoFailover 3.0.exe`.
 
 ### Linux (x86_64)
 
-1. Download **[AutoFailover-3.0.1-Linux-x86_64.tar.gz](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.1/AutoFailover-3.0.1-Linux-x86_64.tar.gz)**.
-2. Extract: `tar -xzf AutoFailover-3.0.1-Linux-x86_64.tar.gz`
+1. Download **[AutoFailover-3.1.0-Linux-x86_64.tar.gz](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.1.0/AutoFailover-3.1.0-Linux-x86_64.tar.gz)**.
+2. Extract: `tar -xzf AutoFailover-3.1.0-Linux-x86_64.tar.gz`
 3. Enter directory and run: `./AutoFailover\ 3.0`
 
 ### macOS (Apple Silicon arm64)
 
-1. Download **[AutoFailover-3.0.1-macOS-arm64.dmg](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.1/AutoFailover-3.0.1-macOS-arm64.dmg)**.
+1. Download **[AutoFailover-3.1.0-macOS-arm64.dmg](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.1.0/AutoFailover-3.1.0-macOS-arm64.dmg)**.
 2. Open the DMG and drag or run `AutoFailover 3.0.app`.
 
 ## Run From Source

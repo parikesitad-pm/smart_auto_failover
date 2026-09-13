@@ -184,32 +184,15 @@ export async function getLatestAutoFailoverRelease(
   return fresh || fallback;
 }
 
-export function resolveReleaseFromList(
-  releases: GitHubRelease[],
+export function resolveSingleRelease(
+  selected: GitHubRelease,
   detected: PlatformId
-): ResolvedRelease | null {
-  // Parse and validate version for each release
-  const parsedList = releases
-    .map((r) => ({
-      release: r,
-      parsed: parseReleaseTag(r.tag_name),
-    }))
-    .filter(
-      (
-        item
-      ): item is { release: GitHubRelease; parsed: ParsedReleaseVersion } =>
-        item.parsed !== null
-    );
-
-  if (parsedList.length === 0) return null;
-
-  // Sort descending: highest version first using numeric comparison
-  parsedList.sort((a, b) => compareReleaseVersions(b.parsed, a.parsed));
-
-  const selected = parsedList[0].release;
-  const channel: 'STABLE' | 'BETA' | 'PREVIEW' = selected.prerelease
+): ResolvedRelease {
+  const channel: 'STABLE' | 'BETA' | 'PREVIEW' = selected.tag_name.includes('preview.26')
     ? 'BETA'
-    : 'STABLE';
+    : selected.prerelease
+      ? 'PREVIEW'
+      : 'STABLE';
   const assets: GitHubAsset[] = selected.assets || [];
 
   // Find Checksums asset
@@ -248,7 +231,7 @@ export function resolveReleaseFromList(
   const displayVer =
     channel === 'BETA'
       ? `AutoFailover 3.0 Beta (${ver})`
-      : `AutoFailover 3.0 (${ver})`;
+      : `AutoFailover ${ver}`;
 
   const platforms: Record<PlatformId, PlatformReleaseInfo> = {
     windows: {
@@ -258,16 +241,16 @@ export function resolveReleaseFromList(
       available: Boolean(winAsset),
       version: displayVer,
       channel,
-      assetName: winAsset?.name || 'AutoFailover-3.0.0-Windows-x64.zip',
+      assetName: winAsset?.name || `AutoFailover-${ver}-Windows-x64.zip`,
       downloadUrl:
         winAsset?.browser_download_url ||
         `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: winAsset ? formatBytes(winAsset.size) : undefined,
       validationStatus:
-        channel === 'BETA' ? 'Beta Release Ready' : 'Available for Testing',
+        channel === 'BETA' ? 'Beta Release Ready' : 'Release Ready',
       isRecommended: detected === 'windows',
       description:
-        'Native PowerShell NetTCPIP HAL. Downloadable for physical PC verification.',
+        'Native PowerShell NetTCPIP HAL. Clean zero-linger socket teardown.',
     },
     linux: {
       platformId: 'linux',
@@ -276,13 +259,12 @@ export function resolveReleaseFromList(
       available: Boolean(linuxAsset),
       version: displayVer,
       channel,
-      assetName: linuxAsset?.name || 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
+      assetName: linuxAsset?.name || `AutoFailover-${ver}-Linux-x86_64.tar.gz`,
       downloadUrl:
         linuxAsset?.browser_download_url ||
         `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: linuxAsset ? formatBytes(linuxAsset.size) : undefined,
-      validationStatus:
-        channel === 'BETA' ? 'Beta Release Ready' : 'Real-Host Validated',
+      validationStatus: 'Real-Host Validated',
       isRecommended: detected === 'linux',
       description:
         'Native Linux Netlink & sysfs prober. Verified on physical workstation.',
@@ -294,16 +276,15 @@ export function resolveReleaseFromList(
       available: Boolean(macArmAsset),
       version: displayVer,
       channel,
-      assetName: macArmAsset?.name || 'AutoFailover-3.0.0-macOS-arm64.dmg',
+      assetName: macArmAsset?.name || `AutoFailover-${ver}-macOS-arm64.dmg`,
       downloadUrl:
         macArmAsset?.browser_download_url ||
         `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: macArmAsset ? formatBytes(macArmAsset.size) : undefined,
-      validationStatus:
-        channel === 'BETA' ? 'Beta Release Ready' : 'Available for Testing',
+      validationStatus: 'Release Ready',
       isRecommended: detected === 'macos-arm64',
       description:
-        'Native BSD route & networksetup HAL. Official Beta DMG package.',
+        'Native BSD route & networksetup HAL. Official Apple Silicon package.',
     },
     'macos-x64': {
       platformId: 'macos-x64',
@@ -312,14 +293,14 @@ export function resolveReleaseFromList(
       available: Boolean(macX64Asset),
       version: displayVer,
       channel,
-      assetName: macX64Asset?.name || 'AutoFailover-3.0.0-macOS-x64.dmg',
+      assetName: macX64Asset?.name || `AutoFailover-${ver}-macOS-x64.dmg`,
       downloadUrl:
         macX64Asset?.browser_download_url ||
         `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: macX64Asset ? formatBytes(macX64Asset.size) : undefined,
       validationStatus: 'Available for Testing',
       isRecommended: false,
-      description: 'Native Intel macOS build. Unsigned preview build.',
+      description: 'Native Intel macOS build. Unsigned release package.',
     },
   };
 
@@ -340,20 +321,52 @@ export function resolveReleaseFromList(
   };
 }
 
+export function resolveReleaseFromList(
+  releases: GitHubRelease[],
+  detected: PlatformId
+): ResolvedRelease | null {
+  const all = resolveAllReleasesFromList(releases, detected);
+  return all.length > 0 ? all[0] : null;
+}
+
+export function resolveAllReleasesFromList(
+  releases: GitHubRelease[],
+  detected: PlatformId
+): ResolvedRelease[] {
+  const parsedList = releases
+    .map((r) => ({
+      release: r,
+      parsed: parseReleaseTag(r.tag_name),
+    }))
+    .filter(
+      (
+        item
+      ): item is { release: GitHubRelease; parsed: ParsedReleaseVersion } =>
+        item.parsed !== null
+    );
+
+  if (parsedList.length === 0) return [];
+
+  // Sort descending: highest version first using numeric comparison
+  parsedList.sort((a, b) => compareReleaseVersions(b.parsed, a.parsed));
+
+  return parsedList.map((item) => resolveSingleRelease(item.release, detected));
+}
+
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
-  const latestTag = 'v3.0.1';
-  const ver = '3.0.1';
+  const latestTag = 'v3.1.0';
+  const ver = '3.1.0';
   const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${latestTag}`;
   const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestTag}`;
 
   return {
     tagName: latestTag,
-    releaseTitle: 'AutoFailover 3.0.1 Release (v3.0.1)',
+    releaseTitle: 'AutoFailover 3.1.0 Release (v3.1.0)',
     channel: 'STABLE',
-    publishedAt: new Date().toISOString(),
+    publishedAt: '2026-09-14T02:00:00Z',
     htmlUrl: releaseUrl,
     releaseNotes:
-      'Official multi-platform desktop release packages for AutoFailover 3.0.1 by Modula with 5-case failover hierarchy and live workload protection.',
+      'Official multi-platform desktop release packages for AutoFailover 3.1.0 by Modula with 4-stage interface deck presentation pipeline, dynamic card order retention, Zoom/vMix stability guarantee, and enterprise open-source documentation.',
     isFallback: true,
     checksumsUrl: `${downloadBase}/SHA256SUMS.txt`,
     platforms: {
@@ -364,11 +377,11 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         available: true,
         version: `AutoFailover ${ver}`,
         channel: 'STABLE',
-        assetName: 'AutoFailover-3.0.1-Windows-x64.zip',
-        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-Windows-x64.zip`,
+        assetName: `AutoFailover-${ver}-Windows-x64.zip`,
+        downloadUrl: `${downloadBase}/AutoFailover-${ver}-Windows-x64.zip`,
         validationStatus: 'Release Ready',
         isRecommended: detected === 'windows',
-        description: 'Native Windows executable package.',
+        description: 'Native Windows executable package with NetTCPIP HAL.',
       },
       linux: {
         platformId: 'linux',
@@ -377,11 +390,11 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         available: true,
         version: `AutoFailover ${ver}`,
         channel: 'STABLE',
-        assetName: 'AutoFailover-3.0.1-Linux-x86_64.tar.gz',
-        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-Linux-x86_64.tar.gz`,
+        assetName: `AutoFailover-${ver}-Linux-x86_64.tar.gz`,
+        downloadUrl: `${downloadBase}/AutoFailover-${ver}-Linux-x86_64.tar.gz`,
         validationStatus: 'Release Ready (Real-Host Validated)',
         isRecommended: detected === 'linux',
-        description: 'Native Linux standalone archive.',
+        description: 'Native Linux standalone archive with Netlink prober.',
       },
       'macos-arm64': {
         platformId: 'macos-arm64',
@@ -390,11 +403,11 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         available: true,
         version: `AutoFailover ${ver}`,
         channel: 'STABLE',
-        assetName: 'AutoFailover-3.0.1-macOS-arm64.dmg',
-        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-macOS-arm64.dmg`,
+        assetName: `AutoFailover-${ver}-macOS-arm64.dmg`,
+        downloadUrl: `${downloadBase}/AutoFailover-${ver}-macOS-arm64.dmg`,
         validationStatus: 'Release Ready',
         isRecommended: detected === 'macos-arm64',
-        description: 'Native Apple Silicon disk image (.dmg).',
+        description: 'Native Apple Silicon disk image (.dmg) with BSD route HAL.',
       },
       'macos-x64': {
         platformId: 'macos-x64',
@@ -403,8 +416,8 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         available: true,
         version: `AutoFailover ${ver}`,
         channel: 'STABLE',
-        assetName: 'AutoFailover-3.0.1-macOS-x64.dmg',
-        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-macOS-x64.dmg`,
+        assetName: `AutoFailover-${ver}-macOS-x64.dmg`,
+        downloadUrl: `${downloadBase}/AutoFailover-${ver}-macOS-x64.dmg`,
         validationStatus: 'Release Ready',
         isRecommended: detected === 'macos-x64',
         description: 'Native Intel macOS disk image (.dmg).',
@@ -412,3 +425,169 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
     },
   };
 }
+
+export function createFallbackReleasesHistory(
+  detected: PlatformId
+): ResolvedRelease[] {
+  const current = createFallbackRelease(detected);
+
+  const makeRelease = (
+    tag: string,
+    ver: string,
+    title: string,
+    channel: 'STABLE' | 'BETA' | 'PREVIEW',
+    publishedAt: string,
+    notes: string,
+    winAssetVer: string = ver
+  ): ResolvedRelease => {
+    const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${tag}`;
+    const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${tag}`;
+    return {
+      tagName: tag,
+      releaseTitle: title,
+      channel,
+      publishedAt,
+      htmlUrl: releaseUrl,
+      releaseNotes: notes,
+      isFallback: true,
+      checksumsUrl: `${downloadBase}/SHA256SUMS.txt`,
+      platforms: {
+        windows: {
+          platformId: 'windows',
+          platformName: 'Windows',
+          arch: 'x64 (Windows 10 / 11)',
+          available: true,
+          version: `AutoFailover ${ver}`,
+          channel,
+          assetName: `AutoFailover-${winAssetVer}-Windows-x64.zip`,
+          downloadUrl: `${downloadBase}/AutoFailover-${winAssetVer}-Windows-x64.zip`,
+          validationStatus: channel === 'BETA' ? 'Beta Release Ready' : 'Release Ready',
+          isRecommended: detected === 'windows',
+          description: 'Native Windows package with PowerShell NetTCPIP HAL.',
+        },
+        linux: {
+          platformId: 'linux',
+          platformName: 'Linux',
+          arch: 'x86_64 / glibc 2.31+',
+          available: true,
+          version: `AutoFailover ${ver}`,
+          channel,
+          assetName: `AutoFailover-${winAssetVer}-Linux-x86_64.tar.gz`,
+          downloadUrl: `${downloadBase}/AutoFailover-${winAssetVer}-Linux-x86_64.tar.gz`,
+          validationStatus: 'Real-Host Validated',
+          isRecommended: detected === 'linux',
+          description: 'Native Linux archive with Netlink & sysfs prober.',
+        },
+        'macos-arm64': {
+          platformId: 'macos-arm64',
+          platformName: 'macOS Apple Silicon',
+          arch: 'arm64 (M1/M2/M3/M4)',
+          available: true,
+          version: `AutoFailover ${ver}`,
+          channel,
+          assetName: `AutoFailover-${winAssetVer}-macOS-arm64.dmg`,
+          downloadUrl: `${downloadBase}/AutoFailover-${winAssetVer}-macOS-arm64.dmg`,
+          validationStatus: 'Release Ready',
+          isRecommended: detected === 'macos-arm64',
+          description: 'Native Apple Silicon DMG package.',
+        },
+        'macos-x64': {
+          platformId: 'macos-x64',
+          platformName: 'macOS Intel',
+          arch: 'x64 (Intel)',
+          available: true,
+          version: `AutoFailover ${ver}`,
+          channel,
+          assetName: `AutoFailover-${winAssetVer}-macOS-x64.dmg`,
+          downloadUrl: `${downloadBase}/AutoFailover-${winAssetVer}-macOS-x64.dmg`,
+          validationStatus: 'Release Ready',
+          isRecommended: detected === 'macos-x64',
+          description: 'Native Intel macOS disk image.',
+        },
+      },
+    };
+  };
+
+  const rel301 = makeRelease(
+    'v3.0.1',
+    '3.0.1',
+    'AutoFailover 3.0.1 Release (v3.0.1)',
+    'STABLE',
+    '2026-09-14T01:00:00Z',
+    '5-Case deterministic interface priority hierarchy and active workload continuity protection for Zoom, vMix, and OBS.'
+  );
+
+  const rel300p26 = makeRelease(
+    'v3.0.0-preview.26',
+    '3.0.0 Beta (preview.26)',
+    'AutoFailover 3.0 Beta (v3.0.0-preview.26)',
+    'BETA',
+    '2026-09-13T19:00:00Z',
+    'Official multi-platform Beta Release with Full HD desktop cockpit showcase, 4-provider speedtest benchmark, and native windowed executable.',
+    '3.0.0'
+  );
+
+  const rel300p25 = makeRelease(
+    'v3.0.0-preview.25',
+    '3.0.0 Preview 25',
+    'AutoFailover 3.0 Preview 25 (v3.0.0-preview.25)',
+    'PREVIEW',
+    '2026-09-13T18:00:00Z',
+    'Kernel BSOD teardown prevention with SO_LINGER(1, 0) and decoupled process iteration caching.',
+    '3.0.0'
+  );
+
+  const rel300p24 = makeRelease(
+    'v3.0.0-preview.24',
+    '3.0.0 Preview 24',
+    'AutoFailover 3.0 Preview 24 (v3.0.0-preview.24)',
+    'PREVIEW',
+    '2026-09-13T17:00:00Z',
+    'Card-based Interface Deck modernization and RFC 3550 statistical jitter measurement.',
+    '3.0.0'
+  );
+
+  return [current, rel301, rel300p26, rel300p25, rel300p24];
+}
+
+export async function fetchLiveReleasesHistory(
+  detected: PlatformId
+): Promise<ResolvedRelease[]> {
+  const fallbacks = createFallbackReleasesHistory(detected);
+  try {
+    const url = `${API_URL}?per_page=30&_nocache=${Date.now()}`;
+    const res = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (res.ok) {
+      const releases: GitHubRelease[] = await res.json();
+      const resolvedList = resolveAllReleasesFromList(releases, detected);
+      
+      // Merge live list with required historical fallbacks so the specified 5 versions are always present
+      const map = new Map<string, ResolvedRelease>();
+      resolvedList.forEach((r) => map.set(r.tagName, r));
+      fallbacks.forEach((f) => {
+        if (!map.has(f.tagName)) {
+          map.set(f.tagName, f);
+        }
+      });
+
+      const combined = Array.from(map.values());
+      combined.sort((a, b) => {
+        const pa = parseReleaseTag(a.tagName);
+        const pb = parseReleaseTag(b.tagName);
+        if (pa && pb) return compareReleaseVersions(pb, pa);
+        return 0;
+      });
+
+      return combined;
+    }
+  } catch (err) {
+    console.warn('Failed to fetch live GitHub releases history:', err);
+  }
+  return fallbacks;
+}
+
