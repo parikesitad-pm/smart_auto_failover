@@ -122,7 +122,7 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
           className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <Download className="w-4 h-4" />
-          Download AutoFailover Desktop App{' '}
+          Download AutoFailover 3.0 Beta{' '}
           {release ? `(${release.tagName})` : ''}
         </button>
 

@@ -23,7 +23,7 @@ export interface PlatformReleaseInfo {
   arch: string;
   available: boolean;
   version: string;
-  channel: 'STABLE' | 'PREVIEW';
+  channel: 'STABLE' | 'BETA' | 'PREVIEW';
   assetName?: string;
   downloadUrl?: string;
   sizeFormatted?: string;
@@ -35,7 +35,7 @@ export interface PlatformReleaseInfo {
 export interface ResolvedRelease {
   tagName: string;
   releaseTitle: string;
-  channel: 'STABLE' | 'PREVIEW';
+  channel: 'STABLE' | 'BETA' | 'PREVIEW';
   publishedAt: string;
   htmlUrl: string;
   commitSha?: string;

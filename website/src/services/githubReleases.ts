@@ -10,7 +10,7 @@ const REPO_OWNER = 'parikesitad-pm';
 const REPO_NAME = 'smart_auto_failover';
 const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases`;
 const FALLBACK_RELEASES_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases`;
-const CACHE_KEY = 'autofailover_release_cache_v5';
+const CACHE_KEY = 'autofailover_release_cache_v6';
 
 // Immediately purge stale legacy cache keys
 if (typeof window !== 'undefined') {
@@ -19,6 +19,7 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('autofailover_release_cache_v2');
     localStorage.removeItem('autofailover_release_cache_v3');
     localStorage.removeItem('autofailover_release_cache_v4');
+    localStorage.removeItem('autofailover_release_cache_v5');
   } catch {
     // ignore
   }
@@ -205,8 +206,8 @@ export function resolveReleaseFromList(
   parsedList.sort((a, b) => compareReleaseVersions(b.parsed, a.parsed));
 
   const selected = parsedList[0].release;
-  const channel: 'STABLE' | 'PREVIEW' = selected.prerelease
-    ? 'PREVIEW'
+  const channel: 'STABLE' | 'BETA' | 'PREVIEW' = selected.prerelease
+    ? 'BETA'
     : 'STABLE';
   const assets: GitHubAsset[] = selected.assets || [];
 
@@ -243,6 +244,10 @@ export function resolveReleaseFromList(
   );
 
   const ver = selected.tag_name.replace(/^v/, '');
+  const displayVer =
+    channel === 'BETA'
+      ? `AutoFailover 3.0 Beta (${ver})`
+      : `AutoFailover 3.0 (${ver})`;
 
   const platforms: Record<PlatformId, PlatformReleaseInfo> = {
     windows: {
@@ -250,14 +255,15 @@ export function resolveReleaseFromList(
       platformName: 'Windows',
       arch: 'x64 (Windows 10 / 11)',
       available: Boolean(winAsset),
-      version: `AutoFailover 3.0 (${ver})`,
+      version: displayVer,
       channel,
       assetName: winAsset?.name || 'AutoFailover-3.0.0-Windows-x64.zip',
       downloadUrl:
         winAsset?.browser_download_url ||
         `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: winAsset ? formatBytes(winAsset.size) : undefined,
-      validationStatus: 'Available for Testing',
+      validationStatus:
+        channel === 'BETA' ? 'Beta Release Ready' : 'Available for Testing',
       isRecommended: detected === 'windows',
       description:
         'Native PowerShell NetTCPIP HAL. Downloadable for physical PC verification.',
@@ -267,14 +273,15 @@ export function resolveReleaseFromList(
       platformName: 'Linux',
       arch: 'x86_64 / glibc 2.31+',
       available: Boolean(linuxAsset),
-      version: `AutoFailover 3.0 (${ver})`,
+      version: displayVer,
       channel,
       assetName: linuxAsset?.name || 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
       downloadUrl:
         linuxAsset?.browser_download_url ||
         `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: linuxAsset ? formatBytes(linuxAsset.size) : undefined,
-      validationStatus: 'Real-Host Validated',
+      validationStatus:
+        channel === 'BETA' ? 'Beta Release Ready' : 'Real-Host Validated',
       isRecommended: detected === 'linux',
       description:
         'Native Linux Netlink & sysfs prober. Verified on physical workstation.',
@@ -284,24 +291,25 @@ export function resolveReleaseFromList(
       platformName: 'macOS Apple Silicon',
       arch: 'arm64 (M1/M2/M3/M4)',
       available: Boolean(macArmAsset),
-      version: `AutoFailover 3.0 (${ver})`,
+      version: displayVer,
       channel,
       assetName: macArmAsset?.name || 'AutoFailover-3.0.0-macOS-arm64.dmg',
       downloadUrl:
         macArmAsset?.browser_download_url ||
         `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: macArmAsset ? formatBytes(macArmAsset.size) : undefined,
-      validationStatus: 'Available for Testing',
+      validationStatus:
+        channel === 'BETA' ? 'Beta Release Ready' : 'Available for Testing',
       isRecommended: detected === 'macos-arm64',
       description:
-        'Native BSD route & networksetup HAL. Unsigned preview build.',
+        'Native BSD route & networksetup HAL. Official Beta DMG package.',
     },
     'macos-x64': {
       platformId: 'macos-x64',
       platformName: 'macOS Intel',
       arch: 'x64 (Intel Mac)',
       available: Boolean(macX64Asset),
-      version: `AutoFailover 3.0 (${ver})`,
+      version: displayVer,
       channel,
       assetName: macX64Asset?.name || 'AutoFailover-3.0.0-macOS-x64.dmg',
       downloadUrl:
@@ -314,9 +322,12 @@ export function resolveReleaseFromList(
     },
   };
 
+  const titlePrefix = channel === 'BETA' ? 'AutoFailover 3.0 Beta' : 'AutoFailover';
+
   return {
     tagName: selected.tag_name,
-    releaseTitle: selected.name || `AutoFailover ${selected.tag_name}`,
+    releaseTitle:
+      selected.name || `${titlePrefix} (${selected.tag_name})`,
     channel,
     publishedAt: selected.published_at,
     htmlUrl: selected.html_url,
@@ -330,18 +341,18 @@ export function resolveReleaseFromList(
 
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
   const latestTag = 'v3.0.0-preview.23';
-  const ver = '3.0.0 (preview.23)';
+  const ver = '3.0.0 Beta (preview.23)';
   const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${latestTag}`;
   const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestTag}`;
 
   return {
     tagName: latestTag,
-    releaseTitle: 'AutoFailover 3.0 Preview 23',
-    channel: 'PREVIEW',
+    releaseTitle: 'AutoFailover 3.0 Beta Release (v3.0.0-preview.23)',
+    channel: 'BETA',
     publishedAt: new Date().toISOString(),
     htmlUrl: releaseUrl,
     releaseNotes:
-      'Native multi-platform desktop preview packages for AutoFailover 3.0 by Modula.',
+      'Official multi-platform desktop Beta release packages for AutoFailover 3.0 by Modula.',
     isFallback: true,
     checksumsUrl: `${downloadBase}/SHA256SUMS.txt`,
     platforms: {
@@ -351,10 +362,10 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         arch: 'x64 (Windows 10 / 11)',
         available: true,
         version: `AutoFailover ${ver}`,
-        channel: 'PREVIEW',
+        channel: 'BETA',
         assetName: 'AutoFailover-3.0.0-Windows-x64.zip',
         downloadUrl: `${downloadBase}/AutoFailover-3.0.0-Windows-x64.zip`,
-        validationStatus: 'Available for Testing',
+        validationStatus: 'Beta Release Ready',
         isRecommended: detected === 'windows',
         description: 'Native Windows executable package.',
       },
@@ -364,10 +375,10 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         arch: 'x86_64 / glibc 2.31+',
         available: true,
         version: `AutoFailover ${ver}`,
-        channel: 'PREVIEW',
+        channel: 'BETA',
         assetName: 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
         downloadUrl: `${downloadBase}/AutoFailover-3.0.0-Linux-x86_64.tar.gz`,
-        validationStatus: 'Real-Host Validated',
+        validationStatus: 'Beta Release Ready (Real-Host Validated)',
         isRecommended: detected === 'linux',
         description: 'Native Linux standalone archive.',
       },
@@ -377,10 +388,10 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         arch: 'arm64 (M1/M2/M3/M4)',
         available: true,
         version: `AutoFailover ${ver}`,
-        channel: 'PREVIEW',
+        channel: 'BETA',
         assetName: 'AutoFailover-3.0.0-macOS-arm64.dmg',
         downloadUrl: `${downloadBase}/AutoFailover-3.0.0-macOS-arm64.dmg`,
-        validationStatus: 'Available for Testing',
+        validationStatus: 'Beta Release Ready',
         isRecommended: detected === 'macos-arm64',
         description: 'Native Apple Silicon DMG package.',
       },
@@ -390,7 +401,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         arch: 'x64 (Intel Mac)',
         available: false,
         version: `AutoFailover ${ver}`,
-        channel: 'PREVIEW',
+        channel: 'BETA',
         assetName: 'AutoFailover-3.0.0-macOS-x64.dmg',
         downloadUrl: releaseUrl,
         validationStatus: 'Available for Testing',

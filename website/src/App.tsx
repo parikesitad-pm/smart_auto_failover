@@ -80,7 +80,7 @@ export const App: React.FC = () => {
             rel="noopener noreferrer"
             className="hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
           >
-            Releases ({release ? release.tagName : 'v3.0.0-preview.23'})
+            Releases ({release ? `Beta: ${release.tagName}` : 'v3.0.0-preview.23'})
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </a>
         </nav>
@@ -92,7 +92,7 @@ export const App: React.FC = () => {
             className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            Download {release ? release.tagName : 'App'}
+            Download Beta {release ? `(${release.tagName})` : ''}
           </button>
         </div>
       </header>

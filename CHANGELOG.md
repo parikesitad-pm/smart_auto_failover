@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Designated Release 23 as Official Beta Release (`README.md`, `website/src/`)**: Updated `README.md` with direct platform asset links (`AutoFailover-3.0.0-Windows-x64.zip`, `AutoFailover-3.0.0-Linux-x86_64.tar.gz`, `AutoFailover-3.0.0-macOS-arm64.dmg`) and callout for `v3.0.0-preview.23` as the current Beta Release. Updated website landing page channel badges, download hub, hero section, desktop showcase, and navbar CTA buttons to prominently present and link to the Beta Release.
 - **Cross-Platform App Logo & Window Icon (`desktop/ui/app.py`, `desktop/autofailover.spec`)**: Configured native window icons across all operating systems using `root.iconbitmap` for Windows (`.ico`), `root.iconphoto` with garbage-collection retention for Linux/macOS (`.png`), and `BUNDLE` icon resolution for macOS (`.icns`).
 - **Filtered Overview Interface Deck (`desktop/ui/dashboard/cockpit.py`)**: Overview tab now prioritizes active, standby, and degraded paths, filtering out inactive/virtual adapters by default while providing an optional "Show Inactive" toggle.
 - **Refined Website Navigation (`website/src/App.tsx`)**: Removed the competing browser "Live Preview" mode from primary navigation and hero buttons in favor of directing users to the native desktop application as the true source of truth.
