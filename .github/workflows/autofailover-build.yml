@@ -90,11 +90,10 @@ jobs:
           TMP_DIR=$(mktemp -d)
           tar -xzvf "dist/packages/${ARCHIVE_NAME}" -C "$TMP_DIR"
           cd "$TMP_DIR/AutoFailover 3.0"
-          "./AutoFailover 3.0" --version
-          "./AutoFailover 3.0" --self-test
+          "./AutoFailover Diagnostics" --version
+          "./AutoFailover Diagnostics" --self-test
           xvfb-run -a "./AutoFailover 3.0" --gui-smoke
-          echo "SMOKE TEST PASS: Linux binary executed, self-test passed, and GUI smoke test passed at $TMP_DIR"
-
+          echo "SMOKE TEST PASS: Linux binaries verified (Diagnostics + Windowed GUI)."
 
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
@@ -145,13 +144,13 @@ jobs:
           $TMP_DIR = New-Item -ItemType Directory -Path "$env:TEMP/af_smoke_test" -Force
           Expand-Archive -Path "dist/packages/$PACKAGE_NAME" -DestinationPath $TMP_DIR.FullName
           cd "$($TMP_DIR.FullName)"
-          if (Test-Path ".\AutoFailover 3.0.exe") {
-            & ".\AutoFailover 3.0.exe" --version
-            & ".\AutoFailover 3.0.exe" --self-test
+          if ((Test-Path ".\AutoFailover 3.0.exe") -and (Test-Path ".\AutoFailover Diagnostics.exe")) {
+            & ".\AutoFailover Diagnostics.exe" --version
+            & ".\AutoFailover Diagnostics.exe" --self-test
             & ".\AutoFailover 3.0.exe" --gui-smoke
-            Write-Host "SMOKE TEST PASS: Windows executable executed, self-test passed, and GUI smoke test passed."
+            Write-Host "SMOKE TEST PASS: Windows windowed GUI and diagnostic runner verified."
           } else {
-            throw "Smoke test failed: AutoFailover 3.0.exe not found in archive."
+            throw "Smoke test failed: Required executables not found in archive."
           }
 
       - name: Upload Windows Artifacts
@@ -189,10 +188,10 @@ jobs:
           TMP_DIR=$(mktemp -d)
           cp -R "dist/AutoFailover 3.0.app" "$TMP_DIR/"
           cd "$TMP_DIR"
-          "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --version
-          "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --self-test
+          "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover Diagnostics" --version
+          "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover Diagnostics" --self-test
           "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --gui-smoke
-          echo "SMOKE TEST PASS: macOS Apple Silicon binary executed, self-test passed, and GUI smoke test passed."
+          echo "SMOKE TEST PASS: macOS Apple Silicon verified (Diagnostics + Windowed GUI)."
 
 
       - name: Archive macOS ARM64 Package

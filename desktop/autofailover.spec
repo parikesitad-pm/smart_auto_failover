@@ -87,6 +87,13 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+ico_path = os.path.join(desktop_dir, 'assets', 'modula_3.0.ico')
+if not os.path.exists(ico_path) and os.path.exists(os.path.join(repo_root, 'assets', 'modula_3.0.ico')):
+    ico_path = os.path.join(repo_root, 'assets', 'modula_3.0.ico')
+elif not os.path.exists(ico_path):
+    ico_path = None
+
+# 1. Primary Public Windowed Application (NO console/terminal window on Windows)
 exe = EXE(
     pyz,
     a.scripts,
@@ -97,16 +104,38 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=True,  # console=True allows diagnostic logging and CLI flags like --headless, --version, --self-test
+    console=False,  # WINDOWED GUI: Zero terminal/cmd window on Windows/macOS!
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=ico_path,
+)
+
+# 2. Dedicated Diagnostic / CI Console Runner (full stdout/stderr support)
+exe_diag = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='AutoFailover Diagnostics',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=True,  # Console runner for headless, self-test, acceptance
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=ico_path,
 )
 
 coll = COLLECT(
     exe,
+    exe_diag,
     a.binaries,
     a.zipfiles,
     a.datas,
@@ -121,6 +150,7 @@ if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
         name='AutoFailover 3.0.app',
-        icon=None,
+        icon=ico_path,
         bundle_identifier='com.modula.autofailover',
     )
+

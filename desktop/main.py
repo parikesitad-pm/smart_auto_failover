@@ -314,6 +314,44 @@ def run_gui_smoke_test() -> int:
         return 1
 
 
+def show_gui_error(title: str, message: str, technical_detail: Optional[str] = None):
+    """
+    Shows a visible GUI error dialog when possible, and logs technical details
+    to a local crash log file without dropping to terminal.
+    """
+    import os
+    log_dir = os.path.expanduser("~/.modula_autofailover")
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        log_path = os.path.join(log_dir, "startup_error.log")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] {title}\n{message}\n")
+            if technical_detail:
+                f.write(f"{technical_detail}\n")
+    except Exception:
+        log_path = "startup_error.log"
+
+    # Display GUI error dialog if display is available
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        content = f"{message}\n\nTechnical Details:\n{technical_detail or 'None'}\n\nLog Path: {log_path}"
+        messagebox.showerror(title, content)
+        root.destroy()
+        return
+    except Exception:
+        pass
+
+    # Print to stderr if available
+    try:
+        sys.stderr.write(f"[{title}] {message}\n{technical_detail}\nLogs: {log_path}\n")
+        sys.stderr.flush()
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser(description="AutoFailover 3.0 by Modula")
     parser.add_argument("--version", action="store_true", help="Show application version and exit")
@@ -347,10 +385,11 @@ def main():
         import tkinter
         import customtkinter
     except (ImportError, ModuleNotFoundError) as exc:
-        print("\n[ERROR] GUI Toolkit Dependency Missing.")
-        print(f"        Detail: {exc}")
-        print("        Tkinter / CustomTkinter is not installed in this environment.")
-        print("        To run without GUI, use: AutoFailover 3.0 --headless\n")
+        show_gui_error(
+            "AutoFailover 3.0 — Missing GUI Dependency",
+            "Tkinter or CustomTkinter is not installed in this Python environment.\nTo run without GUI, launch AutoFailover Diagnostics or use --headless.",
+            str(exc)
+        )
         sys.exit(1)
 
     # 2. Separate internal application import: Never mislabel internal error as missing Tkinter
@@ -358,12 +397,12 @@ def main():
         from .ui.app import AutoFailoverApp
     except Exception as exc:
         import traceback
-        print("\n[FATAL] GUI STARTUP ERROR")
-        print(f"        Internal application module failed to load: {exc}")
-        print("-" * 60)
-        traceback.print_exc()
-        print("-" * 60)
-        print("        Do not run with broken internal modules. Please report this issue.\n")
+        tb = traceback.format_exc()
+        show_gui_error(
+            "AutoFailover 3.0 — GUI Startup Error",
+            "The application could not initialize due to an internal module error.",
+            tb
+        )
         sys.exit(1)
 
     # 3. Instantiate and run application
@@ -372,8 +411,12 @@ def main():
         app.run()
     except Exception as exc:
         import traceback
-        print(f"\n[FATAL] Unhandled runtime exception in GUI: {exc}")
-        traceback.print_exc()
+        tb = traceback.format_exc()
+        show_gui_error(
+            "AutoFailover 3.0 — Runtime Error",
+            "An unhandled error occurred in the desktop GUI.",
+            tb
+        )
         sys.exit(1)
 
 

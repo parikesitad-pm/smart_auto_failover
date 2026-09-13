@@ -24,10 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Packaged GUI Startup Failure (Speedtest Import Contract)**: Fixed packaged GUI startup failure caused by stale/broken `SpeedTestRunner` import and casing mismatch (`SpeedtestRunner` vs `SpeedTestRunner`), establishing canonical public API and aliases.
-- **GUI Bootstrap Error Handling**: Corrected GUI bootstrap error handling in `desktop/main.py` so internal `ImportError` exceptions are no longer misreported as missing Tkinter, surfacing real stack traces instead of silently falling back to headless mode.
-- **Full GUI Dependency Self-Test & Non-Interactive Smoke Test**: Expanded packaged `--self-test` (8/8 checks) and added `--gui-smoke` to cover the complete CustomTkinter startup dependency graph, window creation, and dashboard construction across all native CI runners.
+- **Native GUI Startup Failure (Speedtest Import Contract)**: Fixed native GUI startup failure caused by stale/broken `SpeedTestRunner` import and casing mismatch (`SpeedtestRunner` vs `SpeedTestRunner`), establishing canonical public API and aliases.
+- **Windows Windowed GUI Application**: Fixed Windows package launching as console/headless application. Windows public application (`AutoFailover 3.0.exe`) now builds with `console=False` and official icon as a true native windowed CustomTkinter desktop application without spawning any terminal window.
+- **Dedicated Diagnostics Runner**: Included `AutoFailover Diagnostics` console-enabled executable alongside the windowed application for headless automation, self-tests, and CI validation.
+- **GUI Bootstrap Error Handling**: Improved GUI startup error handling with visible modal error dialogs and local crash logging (`~/.modula_autofailover/startup_error.log`) instead of misreporting internal errors as missing Tkinter.
+- **Packaged GUI Smoke Validation**: Added packaged GUI smoke validation (`--gui-smoke`) to native CI across Linux, Windows, and macOS, verifying full CustomTkinter widget hierarchy and dashboard construction outside the source tree.
 - **Packaged Entrypoint Relative Import Failure**: Fixed packaged AutoFailover startup failure caused by invalid Python package context when running PyInstaller from top-level `desktop/main.py`.
+
 
 - **Dedicated Native Packaging Launcher**: Added dedicated external packaging entrypoint (`packaging/autofailover_entry.py`) executing `from desktop.main import main`, preserving `desktop` as a proper Python package.
 - **Centralized Resource Discovery**: Implemented `desktop/resources.py` providing robust asset resolution for `modula_3.0.png` and icons across development and PyInstaller frozen environments without depending on working directory.

@@ -30,14 +30,15 @@ class FailoverOrchestrator:
     def __init__(
         self,
         platform_backend: PlatformBackend,
-        event_bus: EventBus,
+        event_bus: Optional[EventBus] = None,
         config: Optional[PolicyConfig] = None,
         probe_target_host: str = "1.1.1.1",
         probe_interval_sec: float = 0.5,
     ):
         self.backend = platform_backend
-        self.bus = event_bus
+        self.bus = event_bus or EventBus()
         self.config = config or PolicyConfig()
+
         self.probe_target_host = probe_target_host
         self.probe_interval_sec = probe_interval_sec
 

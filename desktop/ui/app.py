@@ -18,6 +18,7 @@ from .theme import COCKPIT_THEME
 from .splash.screen import SplashScreen
 from .dashboard.cockpit import CockpitDashboard
 from ..resources import get_asset_path
+from ..core.events.bus import EventBus
 from ..core.failover.orchestrator import FailoverOrchestrator
 from ..platform import get_platform_backend
 
@@ -45,10 +46,12 @@ class AutoFailoverApp:
 
         # Instantiate Platform HAL and Failover Orchestrator
         self.backend = get_platform_backend()
-        self.orchestrator = FailoverOrchestrator(platform_backend=self.backend)
+        self.bus = EventBus()
+        self.orchestrator = FailoverOrchestrator(platform_backend=self.backend, event_bus=self.bus)
 
         # Start orchestrator background engine thread
         self.orchestrator.start()
+
 
         # Launch Splash Screen
         self.splash = SplashScreen(

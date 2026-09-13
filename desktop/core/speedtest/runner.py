@@ -154,4 +154,3 @@ SpeedTestRunner = SpeedtestRunner
 SpeedTestResult = SpeedtestResult
 SpeedTestProvider = SpeedtestProvider
 SpeedTestMode = SpeedtestMode
-
