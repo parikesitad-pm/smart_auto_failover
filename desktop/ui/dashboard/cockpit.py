@@ -862,8 +862,8 @@ class CockpitDashboard:
             ("UPLOAD", 95, "e"),
             ("PING", 75, "e"),
             ("JITTER", 75, "e"),
-            ("STATUS", 100, "c"),
-            ("DETAILS", 80, "c"),
+            ("STATUS", 100, "center"),
+            ("DETAILS", 80, "center"),
         ]
         for title_text, col_width, align in headers:
             col_lbl = ctk.CTkLabel(
@@ -1362,7 +1362,7 @@ class CockpitDashboard:
             font=("Segoe UI", 9, "bold"),
             text_color=st_color,
             width=100,
-            anchor="c",
+            anchor="center",
         )
         st_lbl.pack(side="left", padx=4)
 
