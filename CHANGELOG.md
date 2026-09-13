@@ -10,16 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - **Interactive Deterministic Cockpit Scenario Controller (`website/src/components/Cockpit/DemoToolbar.tsx`)**: Embedded 7 core demo actions (`Disconnect Ethernet`, `Reconnect Ethernet`, `Disable Wi-Fi`, `Enable Wi-Fi`, `Degrade Connection`, `Recover Connection`, `Reset Demo`) directly in the Live Cockpit view with instant needle lerp animations and transition toasts.
 - **Standalone Deterministic Demo Engine (`website/src/hooks/useNetworkCockpit.ts`)**: Browser-native simulation with 60 FPS client-side tachometer lerping, passive device health monitoring, and RFC 3550 degradation behavior.
 
 ### Changed
+
 - **Dual-Surface Repository Architecture**: Consolidated active codebase strictly into Surface A (`desktop/`) and Surface B (`website/`).
 - **Cockpit Header & Interface Deck Refinements**: Completely eliminated all legacy runtime warnings and "NATIVE CORE UNAVAILABLE" error copy in favor of a technical `INTERACTIVE DEMO` mode and seamless matrix cards.
 - **Dynamic Startup Sequence (`website/src/hooks/useStartupSequence.ts`)**: Refined 9-stage enterprise initialization sequence into a self-contained browser simulator.
 - **Documentation Overhaul (`README.md`)**: Complete rewrite reflecting the Python 3 + CustomTkinter desktop core and React + TypeScript website, with transparent platform verification statuses.
+- **Executable Smoke Testing Gate**: Native CI now runs actual packaged binaries outside the source tree before publishing preview artifacts.
+
+### Fixed
+
+- **Packaged Entrypoint Relative Import Failure**: Fixed packaged AutoFailover startup failure caused by invalid Python package context when running PyInstaller from top-level `desktop/main.py`.
+- **Dedicated Native Packaging Launcher**: Added dedicated external packaging entrypoint (`packaging/autofailover_entry.py`) executing `from desktop.main import main`, preserving `desktop` as a proper Python package.
+- **Centralized Resource Discovery**: Implemented `desktop/resources.py` providing robust asset resolution for `modula_3.0.png` and icons across development and PyInstaller frozen environments without depending on working directory.
+- **CLI Flags in Packaged Binary**: Implemented `--version` (returning `AutoFailover 3.0.0`) and `--self-test` (running 6-point autonomous runtime verification) for pre-release validation.
 
 ### Removed
+
 - **Retired Legacy Rust/Tauri Active Trees**: Safely removed deprecated trees (`frontend/`, `src-tauri/`, `rust-core/`, `Cargo.toml`, `Cargo.lock`).
 - **Obsolete IPC Module**: Removed `website/src/services/tauriIpc.ts` and all legacy Tauri package dependencies.
 

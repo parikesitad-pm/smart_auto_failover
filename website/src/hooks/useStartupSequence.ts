@@ -130,7 +130,8 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     const detectedPlatform =
       typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
         ? 'macOS'
-        : typeof navigator !== 'undefined' && navigator.userAgent.includes('Win')
+        : typeof navigator !== 'undefined' &&
+            navigator.userAgent.includes('Win')
           ? 'Windows'
           : 'Linux';
 

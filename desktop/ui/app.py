@@ -17,13 +17,15 @@ except ImportError:
 from .theme import COCKPIT_THEME
 from .splash.screen import SplashScreen
 from .dashboard.cockpit import CockpitDashboard
+from ..resources import get_asset_path
 from ..core.failover.orchestrator import FailoverOrchestrator
 from ..platform import get_platform_backend
 
 
 class AutoFailoverApp:
     """
-    Main desktop GUI application orchestrator for AutoFailover 3.0.
+    Main desktop window container orchestrating the Splash gate
+    and the primary automotive-inspired Cockpit dashboard.
     """
 
     def __init__(self, logo_path: Optional[str] = None):
@@ -38,11 +40,8 @@ class AutoFailoverApp:
         self.root.minsize(980, 640)
         self.root.configure(fg_color=COCKPIT_THEME["bg_dark"])
 
-        # Determine logo path
-        if not logo_path:
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            logo_path = os.path.join(base_dir, "assets", "modula_3.0.png")
-        self.logo_path = logo_path
+        # Determine logo path via centralized resource resolver
+        self.logo_path = logo_path or get_asset_path("modula_3.0.png")
 
         # Instantiate Platform HAL and Failover Orchestrator
         self.backend = get_platform_backend()

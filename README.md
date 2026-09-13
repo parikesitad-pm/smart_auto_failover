@@ -13,11 +13,11 @@
 
 ### _"light seamless and usefull"_
 
-**Navigate Your Internet Pipeline to Keep You Online**  
-**Through Video Conference & Livestreaming Production**  
+**Navigate Your Internet Pipeline to Keep You Online**
+**Through Video Conference & Livestreaming Production**
 _Windows • macOS (Apple Silicon) • Linux_
 
-*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)***
+\*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Website-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://dist-jade-seven-59.vercel.app)
 [![GitHub Release](https://img.shields.io/badge/Release-v3.0.0--preview-emerald?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm/smart_auto_failover/releases)
@@ -33,10 +33,10 @@ _Windows • macOS (Apple Silicon) • Linux_
 
 AutoFailover 3.0 terdiri dari **DUA permukaan aplikasi mandiri** yang terisolasi secara ketat:
 
-| Permukaan | Direktori | Stack Teknologi | Tanggung Jawab Utama |
-|---|---|---|---|
-| **A. Desktop Application** | `desktop/` | **Python 3**, **CustomTkinter**, Native OS Networking | **Produk Nyata**: Engine pengalihan rute Layer-3, monitoring socket RFC 3550 Jitter, scoring 5-state, anti-flap takeover margin, headless CLI ticker, dan Cockpit GUI desktop native. |
-| **B. Public Website & Cockpit Demo** | `website/` | **React**, **TypeScript**, **Vite**, **TailwindCSS** | **Portal Publik & Simulator**: Landing page resmi dengan logo Modula 3.0 hidup, Download Hub dengan deteksi rilis GitHub dinamis, dan simulator Cockpit interaktif dengan kontrol skenario deterministik di browser. |
+| Permukaan                            | Direktori  | Stack Teknologi                                       | Tanggung Jawab Utama                                                                                                                                                                                                 |
+| ------------------------------------ | ---------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. Desktop Application**           | `desktop/` | **Python 3**, **CustomTkinter**, Native OS Networking | **Produk Nyata**: Engine pengalihan rute Layer-3, monitoring socket RFC 3550 Jitter, scoring 5-state, anti-flap takeover margin, headless CLI ticker, dan Cockpit GUI desktop native.                                |
+| **B. Public Website & Cockpit Demo** | `website/` | **React**, **TypeScript**, **Vite**, **TailwindCSS**  | **Portal Publik & Simulator**: Landing page resmi dengan logo Modula 3.0 hidup, Download Hub dengan deteksi rilis GitHub dinamis, dan simulator Cockpit interaktif dengan kontrol skenario deterministik di browser. |
 
 ---
 
@@ -79,6 +79,7 @@ desktop/
 ### 2. Menjalankan Aplikasi Desktop
 
 #### A. Mode Headless Engine & Terminal Monitor
+
 Dapat dijalankan langsung di server, terminal, atau workstation tanpa display server:
 
 ```bash
@@ -93,6 +94,7 @@ python3 -m desktop.main --acceptance
 ```
 
 #### B. Menjalankan Desktop Cockpit GUI (CustomTkinter)
+
 ```bash
 # Instal dependensi desktop
 pip install -r desktop/requirements.txt
@@ -102,11 +104,13 @@ python3 -m desktop.main
 ```
 
 #### C. Menjalankan Rangkaian Pengujian Unit Test
+
 ```bash
 python3 -m unittest discover -s desktop/tests
 ```
 
 ### 3. Pembuatan Paket Distribusi Mandiri (PyInstaller)
+
 Setiap platform dikompilasi secara independen menggunakan GitHub Actions native runners:
 
 ```bash
@@ -182,11 +186,11 @@ Cockpit pada website menyediakan simulator skenario deterministik lengkap dengan
 
 Sesuai dengan prinsip kejujuran teknis, rilis pratinjau diberi label transparan:
 
-| Platform | Arsitektur | Format Paket | Status Verifikasi |
-|---|---|---|---|
-| **Linux** | x86_64 | `.tar.gz` | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
-| **Windows** | x64 | `.zip` (`AutoFailover 3.0.exe`) | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
-| **macOS** | Apple Silicon (ARM64) | `.dmg` | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
+| Platform    | Arsitektur            | Format Paket                    | Status Verifikasi                               |
+| ----------- | --------------------- | ------------------------------- | ----------------------------------------------- |
+| **Linux**   | x86_64                | `.tar.gz`                       | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
+| **Windows** | x64                   | `.zip` (`AutoFailover 3.0.exe`) | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
+| **macOS**   | Apple Silicon (ARM64) | `.dmg`                          | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
 
 > Setiap build pratinjau dilengkapi dengan file ringkasan checksum SHA-256 (`SHA256SUMS.txt`) untuk memverifikasi integritas unduhan.
 

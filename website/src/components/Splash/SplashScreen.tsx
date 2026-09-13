@@ -578,7 +578,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
             <div className="flex items-center gap-2 text-slate-400">
               <span className="text-base">🌐</span>
               <span>
-                <strong className="text-slate-300">Interactive Simulator Mode</strong>{' '}
+                <strong className="text-slate-300">
+                  Interactive Simulator Mode
+                </strong>{' '}
                 · Simulating deterministic multi-path network engine.
               </span>
             </div>

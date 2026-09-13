@@ -125,12 +125,121 @@ def run_acceptance_inspection():
     print("=" * 75 + "\n")
 
 
+def run_self_test() -> int:
+    """
+    Executes an autonomous runtime integrity self-test.
+    Verifies:
+      1. Package imports resolve
+      2. Core modules load
+      3. Platform backend can initialize safely
+      4. Resources can be found
+      5. CustomTkinter runtime can be imported
+      6. Application bootstrap can initialize without immediate fatal error
+    Returns exit code 0 on success, non-zero on failure.
+    """
+    print("=" * 70)
+    print(f"  AutoFailover {__version__} — Runtime Self-Test")
+    print("=" * 70)
+
+    # 1. Package version & metadata
+    sys.stdout.write("[CHECK 1/6] Verifying package metadata... ")
+    sys.stdout.flush()
+    try:
+        from .__version__ import __version__ as v, __product__ as p
+        print(f"PASS ({p} {v})")
+    except Exception as e:
+        print(f"FAIL ({e})")
+        return 1
+
+    # 2. Core engine modules
+    sys.stdout.write("[CHECK 2/6] Verifying core engine modules... ")
+    sys.stdout.flush()
+    try:
+        from .core.events.bus import EventBus
+        from .core.failover.orchestrator import FailoverOrchestrator
+        from .core.health.evaluator import HealthEngine
+        from .core.policy.engine import PolicyEngine
+        from .core.probe.rfc3550 import RFC3550JitterTracker
+        from .core.recovery.arbiter import RecoveryArbiter
+        from .core.telemetry.sampler import TelemetrySampler
+        print("PASS")
+    except Exception as e:
+        print(f"FAIL ({e})")
+        return 1
+
+    # 3. Platform backend initialization
+    sys.stdout.write("[CHECK 3/6] Verifying native platform HAL... ")
+    sys.stdout.flush()
+    try:
+        backend = get_platform_backend()
+        sys_id = backend.get_system_identity()
+        print(f"PASS ({sys_id['os_name']} {sys_id['architecture']})")
+    except Exception as e:
+        print(f"FAIL ({e})")
+        return 1
+
+    # 4. Resource resolution
+    sys.stdout.write("[CHECK 4/6] Verifying asset & resource discovery... ")
+    sys.stdout.flush()
+    try:
+        import os
+        from .resources import get_asset_path
+        logo = get_asset_path("modula_3.0.png")
+        if not os.path.isfile(logo):
+            print(f"FAIL (Asset missing at {logo})")
+            return 1
+        print(f"PASS ({os.path.basename(logo)})")
+    except Exception as e:
+        print(f"FAIL ({e})")
+        return 1
+
+    # 5. CustomTkinter GUI framework
+    sys.stdout.write("[CHECK 5/6] Verifying CustomTkinter GUI framework... ")
+    sys.stdout.flush()
+    try:
+        import customtkinter as ctk
+        import tkinter
+        from PIL import Image
+        print(f"PASS (CustomTkinter {ctk.__version__})")
+    except Exception as e:
+        if getattr(sys, "frozen", False):
+            print(f"FAIL ({e})")
+            return 1
+        print(f"NOTICE (Unpackaged environment lacks CustomTkinter: {e})")
+
+    # 6. Bootstrap verification
+    sys.stdout.write("[CHECK 6/6] Verifying orchestrator initialization... ")
+    sys.stdout.flush()
+    try:
+        bus = EventBus()
+        orch = FailoverOrchestrator(platform_backend=backend, event_bus=bus)
+        orch.initialize()
+        print("PASS")
+    except Exception as e:
+        print(f"FAIL ({e})")
+        return 1
+
+    print("-" * 70)
+    print("ALL SELF-TEST CHECKS PASSED SUCCESSFULLY.")
+    print("=" * 70)
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="AutoFailover 3.0 by Modula")
+    parser.add_argument("--version", action="store_true", help="Show application version and exit")
+    parser.add_argument("--self-test", action="store_true", help="Run comprehensive runtime integrity self-test")
     parser.add_argument("--headless", action="store_true", help="Run in headless terminal monitor mode (no Tkinter required)")
     parser.add_argument("--acceptance", action="store_true", help="Run hardware acceptance inspection and verify 5-state model")
     parser.add_argument("--ticks", type=int, default=None, help="Number of ticks to run in headless mode (default: infinite)")
     args = parser.parse_args()
+
+    if args.version:
+        print(f"AutoFailover {__version__}")
+        sys.exit(0)
+
+    if args.self_test:
+        sys.exit(run_self_test())
 
     if args.acceptance:
         run_acceptance_inspection()

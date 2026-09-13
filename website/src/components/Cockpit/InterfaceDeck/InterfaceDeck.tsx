@@ -22,9 +22,12 @@ export const InterfaceDeck: React.FC<InterfaceDeckProps> = ({
 
       {adapters.length === 0 ? (
         <div className="py-8 px-6 rounded-xl border border-slate-800 bg-slate-950/60 text-center font-mono">
-          <p className="text-xs text-slate-300 font-bold">No active network interfaces</p>
+          <p className="text-xs text-slate-300 font-bold">
+            No active network interfaces
+          </p>
           <p className="text-[11px] text-slate-500 mt-1">
-            Click 'Reset Demo' or 'Reconnect Ethernet' above to restore adapter links.
+            Click 'Reset Demo' or 'Reconnect Ethernet' above to restore adapter
+            links.
           </p>
         </div>
       ) : (

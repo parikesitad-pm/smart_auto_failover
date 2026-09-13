@@ -5,12 +5,24 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = None
 
-base_dir = os.path.dirname(os.path.abspath(SPEC))
+spec_dir = os.path.dirname(os.path.abspath(SPEC))
+# When spec is in desktop/, repo_root is one level up
+if os.path.basename(spec_dir) == 'desktop':
+    desktop_dir = spec_dir
+    repo_root = os.path.dirname(spec_dir)
+else:
+    repo_root = spec_dir
+    desktop_dir = os.path.join(repo_root, 'desktop')
+
+entrypoint = os.path.join(repo_root, 'packaging', 'autofailover_entry.py')
 
 datas = [
-    (os.path.join(base_dir, 'assets'), 'desktop/assets'),
-    (os.path.join(base_dir, 'VERSION'), 'desktop'),
+    (os.path.join(desktop_dir, 'assets'), 'desktop/assets'),
+    (os.path.join(desktop_dir, 'VERSION'), 'desktop'),
 ]
+
+if os.path.exists(os.path.join(repo_root, 'assets')):
+    datas.append((os.path.join(repo_root, 'assets'), 'assets'))
 
 try:
     datas += collect_data_files('customtkinter')
@@ -21,6 +33,7 @@ hiddenimports = [
     'PIL',
     'PIL.Image',
     'desktop',
+    'desktop.resources',
     'desktop.models',
     'desktop.models.interface',
     'desktop.models.metrics',
@@ -55,8 +68,8 @@ except Exception:
     pass
 
 a = Analysis(
-    [os.path.join(base_dir, 'main.py')],
-    pathex=[os.path.dirname(base_dir)],
+    [entrypoint],
+    pathex=[repo_root],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
@@ -82,7 +95,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=True,  # console=True allows diagnostic logging and CLI flags like --headless
+    console=True,  # console=True allows diagnostic logging and CLI flags like --headless, --version, --self-test
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

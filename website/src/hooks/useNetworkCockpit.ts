@@ -75,13 +75,22 @@ const NOMINAL_INTERFACES: NetworkInterface[] = [
 ];
 
 export function useNetworkCockpit() {
-  const [adapters, setAdapters] = useState<NetworkInterface[]>(NOMINAL_INTERFACES);
+  const [adapters, setAdapters] =
+    useState<NetworkInterface[]>(NOMINAL_INTERFACES);
   const [activePath, setActivePath] = useState<string>('eth0');
-  const [workloadProfile, setWorkloadProfile] = useState<WorkloadProfile>('conference');
-  const [smartBubbleTarget, setSmartBubbleTarget] = useState<string | null>(null);
-  const [newDeviceAlert, setNewDeviceAlert] = useState<{ id: string; name: string } | null>(null);
+  const [workloadProfile, setWorkloadProfile] =
+    useState<WorkloadProfile>('conference');
+  const [smartBubbleTarget, setSmartBubbleTarget] = useState<string | null>(
+    null
+  );
+  const [newDeviceAlert, setNewDeviceAlert] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [recentToast, setRecentToast] = useState<FailoverEvent | null>(null);
-  const [deviceHealth, setDeviceHealth] = useState<DeviceHealth>(DEFAULT_DEVICE_HEALTH);
+  const [deviceHealth, setDeviceHealth] = useState<DeviceHealth>(
+    DEFAULT_DEVICE_HEALTH
+  );
 
   const [telemetry, setTelemetry] = useState<TelemetryState>({
     downloadSpeed: 187.6,
@@ -97,7 +106,11 @@ export function useNetworkCockpit() {
   const toastTimerRef = useRef<number | null>(null);
 
   const showToast = useCallback(
-    (icon: string, message: string, type: 'info' | 'alert' | 'success' = 'info') => {
+    (
+      icon: string,
+      message: string,
+      type: 'info' | 'alert' | 'success' = 'info'
+    ) => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       const event: FailoverEvent = {
         id: String(Date.now()),
@@ -117,7 +130,8 @@ export function useNetworkCockpit() {
   // 60 FPS Client-Side Lerping loop for smooth gauge animations
   useEffect(() => {
     let animId: number;
-    const lerp = (start: number, end: number, amt: number) => (1 - amt) * start + amt * end;
+    const lerp = (start: number, end: number, amt: number) =>
+      (1 - amt) * start + amt * end;
 
     const loop = () => {
       setTelemetry((prev) => {
@@ -147,7 +161,10 @@ export function useNetworkCockpit() {
     const interval = setInterval(() => {
       setDeviceHealth((prev) => {
         const cpuNoise = (Math.random() - 0.5) * 2;
-        const newCpu = Math.max(8, Math.min(32, +(prev.cpuUsagePercent + cpuNoise).toFixed(1)));
+        const newCpu = Math.max(
+          8,
+          Math.min(32, +(prev.cpuUsagePercent + cpuNoise).toFixed(1))
+        );
         return {
           ...prev,
           cpuUsagePercent: newCpu,
@@ -300,7 +317,9 @@ export function useNetworkCockpit() {
     setAdapters((prev) =>
       prev.map((a) => {
         if (a.id === 'wifi0') {
-          const isEthOnline = prev.some((x) => x.id === 'eth0' && x.state === 'ONLINE');
+          const isEthOnline = prev.some(
+            (x) => x.id === 'eth0' && x.state === 'ONLINE'
+          );
           return {
             ...a,
             enabled: true,
@@ -433,7 +452,11 @@ export function useNetworkCockpit() {
       healthScore: 98,
       activePath: 'eth0',
     });
-    showToast('✨', 'DEMO RESET: Restored nominal dual-homed network cockpit topology.', 'success');
+    showToast(
+      '✨',
+      'DEMO RESET: Restored nominal dual-homed network cockpit topology.',
+      'success'
+    );
   }, [showToast]);
 
   // Interface Deck toggle handler
@@ -498,7 +521,11 @@ export function useNetworkCockpit() {
       ];
     });
     setNewDeviceAlert(null);
-    showToast('🔄', 'Topology refreshed: USB-C Dock synchronized into interface deck.', 'success');
+    showToast(
+      '🔄',
+      'Topology refreshed: USB-C Dock synchronized into interface deck.',
+      'success'
+    );
   }, [showToast]);
 
   const handleDismissNewDevice = useCallback(() => {
@@ -510,11 +537,19 @@ export function useNetworkCockpit() {
       id: 'eth2',
       name: 'Ethernet 2 (USB-C Docking Station)',
     });
-    showToast('🔌', 'Dynamic detection: USB-C Docking Station attached.', 'info');
+    showToast(
+      '🔌',
+      'Dynamic detection: USB-C Docking Station attached.',
+      'info'
+    );
   }, [showToast]);
 
   const forceManualCoreReinit = useCallback(() => {
-    showToast('🔄', 'Policy Engine re-evaluating physical link quality scores...', 'info');
+    showToast(
+      '🔄',
+      'Policy Engine re-evaluating physical link quality scores...',
+      'info'
+    );
     setTimeout(() => {
       showToast('✅', 'Kernel route metrics verified nominal.', 'success');
     }, 600);
@@ -538,7 +573,11 @@ export function useNetworkCockpit() {
     simulateNominal: resetDemo,
     simulateAdminPrompt: useCallback(() => {
       setSmartBubbleTarget('eth0');
-      showToast('🛡️', 'Background socket probe detected Ethernet 1 healthy while disabled.', 'alert');
+      showToast(
+        '🛡️',
+        'Background socket probe detected Ethernet 1 healthy while disabled.',
+        'alert'
+      );
     }, [showToast]),
     simulateJitterDegradation: degradeConnection,
     simulateInterfaceDisconnect: disconnectEthernet,

@@ -89,8 +89,10 @@ jobs:
           ARCHIVE_NAME="AutoFailover-${VERSION}-Linux-x86_64.tar.gz"
           TMP_DIR=$(mktemp -d)
           tar -xzvf "dist/packages/${ARCHIVE_NAME}" -C "$TMP_DIR"
-          test -f "$TMP_DIR/AutoFailover 3.0/AutoFailover 3.0"
-          echo "SMOKE TEST PASS: Linux binary extracted and verified at $TMP_DIR"
+          cd "$TMP_DIR/AutoFailover 3.0"
+          "./AutoFailover 3.0" --version
+          "./AutoFailover 3.0" --self-test
+          echo "SMOKE TEST PASS: Linux binary executed and self-test passed at $TMP_DIR"
 
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
@@ -140,8 +142,11 @@ jobs:
           $PACKAGE_NAME = "AutoFailover-$VERSION-Windows-x64.zip"
           $TMP_DIR = New-Item -ItemType Directory -Path "$env:TEMP/af_smoke_test" -Force
           Expand-Archive -Path "dist/packages/$PACKAGE_NAME" -DestinationPath $TMP_DIR.FullName
-          if (Test-Path "$($TMP_DIR.FullName)/AutoFailover 3.0.exe") {
-            Write-Host "SMOKE TEST PASS: Windows executable verified in isolated directory."
+          cd "$($TMP_DIR.FullName)"
+          if (Test-Path ".\AutoFailover 3.0.exe") {
+            & ".\AutoFailover 3.0.exe" --version
+            & ".\AutoFailover 3.0.exe" --self-test
+            Write-Host "SMOKE TEST PASS: Windows executable executed and self-test passed."
           } else {
             throw "Smoke test failed: AutoFailover 3.0.exe not found in archive."
           }
@@ -175,6 +180,15 @@ jobs:
       - name: Package with PyInstaller Spec
         run: |
           pyinstaller --noconfirm desktop/autofailover.spec
+
+      - name: Smoke Test Built Application
+        run: |
+          TMP_DIR=$(mktemp -d)
+          cp -R "dist/AutoFailover 3.0.app" "$TMP_DIR/"
+          cd "$TMP_DIR"
+          "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --version
+          "./AutoFailover 3.0.app/Contents/MacOS/AutoFailover 3.0" --self-test
+          echo "SMOKE TEST PASS: macOS Apple Silicon binary executed and self-test passed."
 
       - name: Archive macOS ARM64 Package
         run: |
