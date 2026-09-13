@@ -54,7 +54,8 @@ export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
             Download
           </span>
           <span className="text-slate-400">
-            Peak {peakDlRef.current > 0 ? `${peakDlRef.current} Mbps` : '0 Mbps'}
+            Peak{' '}
+            {peakDlRef.current > 0 ? `${peakDlRef.current} Mbps` : '0 Mbps'}
           </span>
         </div>
 
@@ -284,7 +285,8 @@ export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
             Upload
           </span>
           <span className="text-slate-400">
-            Peak {peakUlRef.current > 0 ? `${peakUlRef.current} Mbps` : '0 Mbps'}
+            Peak{' '}
+            {peakUlRef.current > 0 ? `${peakUlRef.current} Mbps` : '0 Mbps'}
           </span>
         </div>
 

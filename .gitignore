@@ -33,3 +33,5 @@ src-tauri/gen/
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*
