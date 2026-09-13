@@ -6,7 +6,14 @@ import {
 } from '../types/cockpit.types';
 
 // Check if running inside the Tauri native desktop shell
-const isTauri = typeof window !== 'undefined' && '__TAURI_IPC__' in window;
+export const isTauri =
+  typeof window !== 'undefined' &&
+  Boolean(
+    (window as any).isTauri ||
+    (window as any).__TAURI_INTERNALS__ ||
+    (window as any).__TAURI__ ||
+    (window as any).__TAURI_IPC__
+  );
 
 /**
  * Atomic Tauri IPC Service
@@ -18,7 +25,7 @@ export const tauriIpc = {
    */
   async enableInterface(id: string): Promise<void> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<void>('enable_interface', { id });
     }
   },
@@ -28,7 +35,7 @@ export const tauriIpc = {
    */
   async disableInterface(id: string): Promise<void> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<void>('disable_interface', { id });
     }
   },
@@ -38,7 +45,7 @@ export const tauriIpc = {
    */
   async requestPolicyUpdate(config: PolicyConfig): Promise<void> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<void>('request_policy_update', { config });
     }
   },
@@ -49,18 +56,23 @@ export const tauriIpc = {
   async getInterfaceState(): Promise<NetworkInterface[]> {
     if (isTauri) {
       try {
-        const { invoke } = await import('@tauri-apps/api');
+        const { invoke } = await import('@tauri-apps/api/core');
         const state = await invoke<any>('get_interface_state');
         if (state && state.interfaces) {
           return state.interfaces.map((i: any) => {
             const isDisabled =
               i.state === 'DISABLED' || i.is_admin_enabled === false;
+            const isCarrier =
+              !isDisabled &&
+              (i.carrier_detected === true ||
+                i.state === 'ONLINE' ||
+                i.state === 'READY');
             return {
               id: i.id,
               name: i.name,
               carrier: isDisabled
                 ? 'Disabled'
-                : i.carrier_detected
+                : isCarrier
                   ? i.ssid
                     ? `SSID: ${i.ssid}`
                     : 'Connected'
@@ -68,25 +80,27 @@ export const tauriIpc = {
               mediaType: i.kind === 'wifi' ? 'wifi' : 'ethernet',
               enabled: !isDisabled,
               state: i.state,
-              latency: isDisabled ? 0 : (i.metrics?.latency_ms ?? 0),
-              jitter: isDisabled ? 0 : (i.metrics?.jitter_ms ?? 0),
-              score: isDisabled ? 0 : (i.metrics?.ewma_score ?? 100),
-              bgProbingScore: isDisabled ? 0 : (i.metrics?.ewma_score ?? 100),
-              ipAddress: isDisabled ? 'N/A' : (i.ip_addresses?.[0] ?? 'N/A'),
-              netmask: '255.255.255.0',
-              gateway: isDisabled ? 'N/A' : (i.gateway ?? 'N/A'),
-              ssid: isDisabled ? undefined : (i.ssid ?? undefined),
-              linkSpeed: isDisabled
-                ? 'N/A'
-                : i.kind === 'wifi'
-                  ? 'N/A'
-                  : '100 Mbps',
+              latency:
+                isDisabled || !isCarrier ? 0 : (i.metrics?.latency_ms ?? 0),
+              jitter:
+                isDisabled || !isCarrier ? 0 : (i.metrics?.jitter_ms ?? 0),
+              score:
+                isDisabled || !isCarrier ? 0 : (i.metrics?.ewma_score ?? 0),
+              bgProbingScore:
+                isDisabled || !isCarrier ? 0 : (i.metrics?.ewma_score ?? 0),
+              ipAddress:
+                isDisabled || !isCarrier ? '—' : (i.ip_addresses?.[0] ?? '—'),
+              netmask:
+                isDisabled || !isCarrier ? '—' : (i.netmask ?? '255.255.255.0'),
+              gateway: isDisabled || !isCarrier ? '—' : (i.gateway ?? '—'),
+              ssid:
+                isDisabled || !isCarrier ? undefined : (i.ssid ?? undefined),
+              linkSpeed:
+                isDisabled || !isCarrier
+                  ? '—'
+                  : (i.link_speed ?? (i.kind === 'wifi' ? '—' : '1 Gbps')),
               adminState: isDisabled ? 'disabled' : 'enabled',
-              linkState: isDisabled
-                ? 'disconnected'
-                : i.carrier_detected
-                  ? 'connected'
-                  : 'disconnected',
+              linkState: isCarrier ? 'connected' : 'disconnected',
             };
           });
         }
@@ -94,45 +108,7 @@ export const tauriIpc = {
         console.warn('[IPC] Failed to fetch interface state:', err);
       }
     }
-    return [
-      {
-        id: 'enp44s0',
-        name: 'Ethernet 1 (enp44s0)',
-        carrier: 'Active 100 Mbps',
-        mediaType: 'ethernet',
-        enabled: true,
-        state: 'ONLINE',
-        latency: 8.2,
-        jitter: 1.1,
-        score: 98.4,
-        bgProbingScore: 98.4,
-        ipAddress: '192.168.50.88',
-        netmask: '255.255.255.0',
-        gateway: '192.168.50.1',
-        linkSpeed: '100 Mbps',
-        adminState: 'enabled',
-        linkState: 'connected',
-      },
-      {
-        id: 'wlp0s20f3',
-        name: 'Wi-Fi (wlp0s20f3)',
-        carrier: 'Disabled',
-        mediaType: 'wifi',
-        enabled: false,
-        state: 'DISABLED',
-        latency: 0,
-        jitter: 0,
-        score: 0,
-        bgProbingScore: 0,
-        ipAddress: 'N/A',
-        netmask: '255.255.255.0',
-        gateway: 'N/A',
-        ssid: undefined,
-        linkSpeed: 'N/A',
-        adminState: 'disabled',
-        linkState: 'disconnected',
-      },
-    ];
+    return [];
   },
 
   /**
@@ -140,7 +116,7 @@ export const tauriIpc = {
    */
   async forceCoreReinit(): Promise<void> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<void>('force_core_reinit');
     }
   },
@@ -150,7 +126,7 @@ export const tauriIpc = {
    */
   async refreshTopology(): Promise<any> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<any>('refresh_topology');
     }
     return null;
@@ -162,7 +138,7 @@ export const tauriIpc = {
    */
   async runSpeedtest(interfaceId: string): Promise<any> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<any>('run_speedtest', { interfaceId });
     }
     return null;
@@ -173,7 +149,7 @@ export const tauriIpc = {
    */
   async getSystemTelemetry(): Promise<any> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<any>('get_system_telemetry');
     }
     return null;
@@ -184,7 +160,7 @@ export const tauriIpc = {
    */
   async getDeviceHealth(): Promise<DeviceHealth | null> {
     if (isTauri) {
-      const { invoke } = await import('@tauri-apps/api');
+      const { invoke } = await import('@tauri-apps/api/core');
       return invoke<DeviceHealth>('get_device_health');
     }
     return null;
@@ -196,20 +172,13 @@ export const tauriIpc = {
   async getSystemIdentity(): Promise<SystemIdentity | null> {
     if (isTauri) {
       try {
-        const { invoke } = await import('@tauri-apps/api');
+        const { invoke } = await import('@tauri-apps/api/core');
         return await invoke<SystemIdentity>('get_system_identity');
       } catch (err) {
         console.warn('[IPC] Failed to fetch system identity:', err);
       }
     }
-    return {
-      deviceName: 'Nitro AN515-56',
-      osName: 'Linux',
-      architecture: 'x86_64',
-      kernelOrVersion: '7.1.13-MANJARO',
-      totalInterfacesDetected: 2,
-      activeConnection: 'wlp0s20f3',
-    };
+    return null;
   },
 
   /**
@@ -247,15 +216,6 @@ export const tauriIpc = {
    * Open an external URL in the system default browser.
    */
   async openUrl(url: string): Promise<void> {
-    if (isTauri) {
-      try {
-        const { open } = await import('@tauri-apps/api/shell');
-        await open(url);
-        return;
-      } catch {
-        // Fallback if Tauri shell plugin is not active
-      }
-    }
     window.open(url, '_blank', 'noopener,noreferrer');
   },
 };

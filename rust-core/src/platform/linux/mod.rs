@@ -84,9 +84,22 @@ impl LinuxBackend {
         routes
     }
 
-    /// Query local IPv4 addresses assigned to interfaces using ip -o -4 addr.
-    fn read_ipv4_addresses() -> HashMap<String, Vec<String>> {
-        let mut map: HashMap<String, Vec<String>> = HashMap::new();
+    /// Convert CIDR prefix length (e.g. 24) to dotted-decimal netmask (e.g. "255.255.255.0").
+    fn cidr_to_netmask(prefix_len: u8) -> String {
+        let mask: u32 = if prefix_len >= 32 {
+            u32::MAX
+        } else if prefix_len == 0 {
+            0
+        } else {
+            !((1u32 << (32 - prefix_len)) - 1)
+        };
+        let bytes = mask.to_be_bytes();
+        format!("{}.{}.{}.{}", bytes[0], bytes[1], bytes[2], bytes[3])
+    }
+
+    /// Query local IPv4 addresses and netmask assigned to interfaces using ip -o -4 addr.
+    fn read_ipv4_details() -> HashMap<String, (Vec<String>, Option<String>)> {
+        let mut map: HashMap<String, (Vec<String>, Option<String>)> = HashMap::new();
 
         let output = match Command::new("ip")
             .args(["-o", "-4", "addr", "show"])
@@ -102,12 +115,37 @@ impl LinuxBackend {
             if parts.len() >= 4 && parts[2] == "inet" {
                 let iface_name = parts[1].to_string();
                 let ip_cidr = parts[3];
-                let ip = ip_cidr.split('/').next().unwrap_or(ip_cidr).to_string();
-                map.entry(iface_name).or_default().push(ip);
+                let mut cidr_parts = ip_cidr.split('/');
+                let ip = cidr_parts.next().unwrap_or(ip_cidr).to_string();
+                let netmask = cidr_parts
+                    .next()
+                    .and_then(|p| p.parse::<u8>().ok())
+                    .map(Self::cidr_to_netmask);
+
+                let entry = map.entry(iface_name).or_insert_with(|| (Vec::new(), None));
+                entry.0.push(ip);
+                if entry.1.is_none() && netmask.is_some() {
+                    entry.1 = netmask;
+                }
             }
         }
 
         map
+    }
+
+    /// Read dynamic link speed from /sys/class/net/<name>/speed (e.g. 1000 -> "1 Gbps", 100 -> "100 Mbps").
+    fn read_link_speed(name: &str) -> Option<String> {
+        let path = format!("/sys/class/net/{}/speed", name);
+        fs::read_to_string(path).ok().and_then(|s| {
+            let speed_mbps: i64 = s.trim().parse().ok()?;
+            if speed_mbps <= 0 {
+                None
+            } else if speed_mbps >= 1000 {
+                Some(format!("{} Gbps", speed_mbps / 1000))
+            } else {
+                Some(format!("{} Mbps", speed_mbps))
+            }
+        })
     }
 
     /// Query connected Wi-Fi SSID for an interface via iw or nmcli.
@@ -166,7 +204,7 @@ impl PlatformBackend for LinuxBackend {
         }
 
         let routes = Self::read_proc_net_route();
-        let ip_map = Self::read_ipv4_addresses();
+        let ip_details = Self::read_ipv4_details();
 
         let mut devices = Vec::new();
         let entries = fs::read_dir(net_dir)?;
@@ -209,14 +247,14 @@ impl PlatformBackend for LinuxBackend {
                 .filter(|m| !m.is_empty() && m != "00:00:00:00:00:00");
 
             let kind = Self::classify_interface(&name, is_physical);
-            let ip_addresses = if admin_up {
-                ip_map.get(&name).cloned().unwrap_or_default()
+            let (ip_addresses, netmask) = if admin_up && carrier {
+                ip_details.get(&name).cloned().unwrap_or((Vec::new(), None))
             } else {
-                Vec::new()
+                (Vec::new(), None)
             };
 
             // Find default route gateway and metric for this interface if configured
-            let default_route = if admin_up {
+            let default_route = if admin_up && carrier {
                 routes.iter().find(|r| r.iface == name && r.destination == "00000000")
             } else {
                 None
@@ -236,17 +274,25 @@ impl PlatformBackend for LinuxBackend {
                 None
             };
 
+            let link_speed = if admin_up && carrier && kind == InterfaceKind::Ethernet {
+                Self::read_link_speed(&name)
+            } else {
+                None
+            };
+
             devices.push(RawDiscoveredDevice {
                 name,
                 kind,
                 mac,
                 ip_addresses,
+                netmask,
                 gateway,
                 carrier,
                 admin_up,
                 is_physical,
                 metric,
                 ssid,
+                link_speed,
             });
         }
 
@@ -409,8 +455,8 @@ impl PlatformBackend for LinuxBackend {
     }
 
     async fn get_interface_network_info(&self, name: &str) -> Result<Option<InterfaceNetworkInfo>, PlatformError> {
-        let ip_map = Self::read_ipv4_addresses();
-        let ip_addresses = ip_map.get(name).cloned().unwrap_or_default();
+        let ip_details = Self::read_ipv4_details();
+        let ip_addresses = ip_details.get(name).map(|d| d.0.clone()).unwrap_or_default();
         let gateway = self.get_interface_gateway(name).await?;
 
         let routes = Self::read_proc_net_route();
@@ -438,8 +484,10 @@ impl PlatformBackend for LinuxBackend {
                 admin_up: false,
                 carrier: false,
                 ip_addresses: Vec::new(),
+                netmask: None,
                 gateway: None,
                 ssid: None,
+                link_speed: None,
             });
         }
 
@@ -458,8 +506,10 @@ impl PlatformBackend for LinuxBackend {
                 admin_up: false,
                 carrier: false,
                 ip_addresses: Vec::new(),
+                netmask: None,
                 gateway: None,
                 ssid: None,
+                link_speed: None,
             });
         }
 
@@ -469,16 +519,23 @@ impl PlatformBackend for LinuxBackend {
                 admin_up: true,
                 carrier: false,
                 ip_addresses: Vec::new(),
+                netmask: None,
                 gateway: None,
                 ssid: None,
+                link_speed: None,
             });
         }
 
-        let ip_map = Self::read_ipv4_addresses();
-        let ip_addresses = ip_map.get(name).cloned().unwrap_or_default();
+        let ip_details = Self::read_ipv4_details();
+        let (ip_addresses, netmask) = ip_details.get(name).cloned().unwrap_or((Vec::new(), None));
         let gateway = self.get_interface_gateway(name).await.unwrap_or(None);
         let ssid = if kind == InterfaceKind::WiFi {
             Self::query_wifi_ssid(name)
+        } else {
+            None
+        };
+        let link_speed = if kind == InterfaceKind::Ethernet {
+            Self::read_link_speed(name)
         } else {
             None
         };
@@ -487,8 +544,10 @@ impl PlatformBackend for LinuxBackend {
             admin_up: true,
             carrier: true,
             ip_addresses,
+            netmask,
             gateway,
             ssid,
+            link_speed,
         })
     }
 }

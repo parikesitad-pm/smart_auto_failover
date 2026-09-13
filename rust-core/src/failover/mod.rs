@@ -227,6 +227,8 @@ mod tests {
             carrier_detected: carrier,
             metric_priority: 100,
             ssid: None,
+            netmask: None,
+            link_speed: None,
         }
     }
 

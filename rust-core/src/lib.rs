@@ -215,17 +215,17 @@ impl AutoFailoverCore {
                     if avg_lat > 0.0 {
                         iface.metrics.latency_ms = (avg_lat * 10.0).round() / 10.0;
                     } else {
-                        iface.metrics.latency_ms = 18.0;
+                        iface.metrics.latency_ms = 0.0;
                     }
                     iface.metrics.jitter_ms = (probe.current_jitter() * 10.0).round() / 10.0;
                     iface.metrics.packet_loss_pct = (probe.packet_loss_pct() * 10.0).round() / 10.0;
                 } else {
-                    iface.metrics.latency_ms = 18.0;
-                    iface.metrics.jitter_ms = 1.2;
+                    iface.metrics.latency_ms = 0.0;
+                    iface.metrics.jitter_ms = 0.0;
                     iface.metrics.packet_loss_pct = 0.0;
                 }
-                iface.metrics.download_mbps = 185.0;
-                iface.metrics.upload_mbps = 48.0;
+                iface.metrics.download_mbps = 0.0;
+                iface.metrics.upload_mbps = 0.0;
             }
         }
 
@@ -510,8 +510,10 @@ impl AutoFailoverCore {
                         }
 
                         iface.ip_addresses = details.ip_addresses;
+                        iface.netmask = details.netmask;
                         iface.gateway = details.gateway;
                         iface.ssid = details.ssid;
+                        iface.link_speed = details.link_speed;
                     }
                 }
             }
@@ -522,9 +524,12 @@ impl AutoFailoverCore {
             let mut state = self.state.write().await;
             let mut monitor = self.throughput_monitor.write().await;
             for iface in state.interfaces.iter_mut() {
-                let (rx_bytes, tx_bytes) = ThroughputMonitor::sample_interface_bytes(&iface.id);
-                let (rx_mbps, tx_mbps) = monitor.calculate_rate(&iface.id, rx_bytes, tx_bytes);
-                if rx_mbps > 0.0 || tx_mbps > 0.0 {
+                if !iface.carrier_detected || !iface.is_admin_enabled {
+                    iface.metrics.download_mbps = 0.0;
+                    iface.metrics.upload_mbps = 0.0;
+                } else {
+                    let (rx_bytes, tx_bytes) = ThroughputMonitor::sample_interface_bytes(&iface.id);
+                    let (rx_mbps, tx_mbps) = monitor.calculate_rate(&iface.id, rx_bytes, tx_bytes);
                     iface.metrics.download_mbps = rx_mbps;
                     iface.metrics.upload_mbps = tx_mbps;
                 }
@@ -584,18 +589,24 @@ impl AutoFailoverCore {
                     arbiter.reset(&iface.id);
                     iface.state = InterfaceState::Disabled;
                     iface.metrics = models::PathMetrics::default();
+                    iface.metrics.ewma_score = 0.0;
                     iface.metrics.packet_loss_pct = 100.0;
                     iface.ip_addresses.clear();
+                    iface.netmask = None;
                     iface.gateway = None;
                     iface.ssid = None;
+                    iface.link_speed = None;
                 } else if !iface.carrier_detected {
                     arbiter.reset(&iface.id);
                     iface.state = InterfaceState::Offline;
                     iface.metrics = models::PathMetrics::default();
+                    iface.metrics.ewma_score = 0.0;
                     iface.metrics.packet_loss_pct = 100.0;
                     iface.ip_addresses.clear();
+                    iface.netmask = None;
                     iface.gateway = None;
                     iface.ssid = None;
+                    iface.link_speed = None;
                 } else {
                     // Carrier is detected & admin enabled
                     if iface.state == InterfaceState::Offline || iface.state == InterfaceState::Disabled {
@@ -777,6 +788,8 @@ mod tests {
                     is_physical: true,
                     metric: 100,
                     ssid: None,
+                    netmask: Some("255.255.255.0".to_string()),
+                    link_speed: Some("1 Gbps".to_string()),
                 },
                 platform::RawDiscoveredDevice {
                     name: "wlan0".to_string(),
@@ -789,6 +802,8 @@ mod tests {
                     is_physical: true,
                     metric: 600,
                     ssid: None,
+                    netmask: Some("255.255.255.0".to_string()),
+                    link_speed: None,
                 },
             ])
         }
@@ -798,8 +813,10 @@ mod tests {
                 admin_up: true,
                 carrier,
                 ip_addresses: vec!["127.0.0.1".to_string()],
+                netmask: Some("255.255.255.0".to_string()),
                 gateway: Some("192.168.1.1".to_string()),
                 ssid: None,
+                link_speed: if name == "eth0" { Some("1 Gbps".to_string()) } else { None },
             })
         }
         async fn set_interface_admin_state(&self, _name: &str, _up: bool) -> Result<(), platform::PlatformError> {

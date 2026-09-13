@@ -177,6 +177,8 @@ mod tests {
             carrier_detected: true,
             metric_priority: 100,
             ssid: None,
+            netmask: None,
+            link_speed: None,
         }
     }
 

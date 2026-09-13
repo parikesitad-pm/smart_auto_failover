@@ -78,6 +78,10 @@ pub struct NetworkInterface {
     pub metric_priority: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ssid: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub netmask: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link_speed: Option<String>,
 }
 
 /// Multi-metric scoring formula weights and takeover anti-flap thresholds.

@@ -93,6 +93,8 @@ fn build_iface(id: &str, state: InterfaceState, ips: Vec<&str>, gw: Option<&str>
         carrier_detected: carrier,
         metric_priority: 100,
         ssid: None,
+        netmask: None,
+        link_speed: None,
     }
 }
 

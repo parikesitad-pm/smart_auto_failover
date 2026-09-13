@@ -32,12 +32,14 @@ pub struct RawDiscoveredDevice {
     pub kind: InterfaceKind,
     pub mac: Option<String>,
     pub ip_addresses: Vec<String>,
+    pub netmask: Option<String>,
     pub gateway: Option<String>,
     pub carrier: bool,
     pub admin_up: bool,
     pub is_physical: bool,
     pub metric: u32,
     pub ssid: Option<String>,
+    pub link_speed: Option<String>,
 }
 
 /// Dynamic runtime parameters of an interface polled every tick.
@@ -46,8 +48,10 @@ pub struct InterfaceDynamicDetails {
     pub admin_up: bool,
     pub carrier: bool,
     pub ip_addresses: Vec<String>,
+    pub netmask: Option<String>,
     pub gateway: Option<String>,
     pub ssid: Option<String>,
+    pub link_speed: Option<String>,
 }
 
 /// Platform-agnostic interface manipulation interface.
@@ -87,8 +91,10 @@ pub trait PlatformBackend: Send + Sync {
             admin_up: true,
             carrier,
             ip_addresses,
+            netmask: None,
             gateway,
             ssid: None,
+            link_speed: None,
         })
     }
 }

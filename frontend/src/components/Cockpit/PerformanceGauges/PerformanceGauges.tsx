@@ -150,26 +150,74 @@ export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
               strokeWidth="6"
               fill="none"
             />
-            <circle
-              cx="50"
-              cy="50"
-              r="42"
-              stroke="#10b981"
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray="264"
-              strokeDashoffset={264 - (telemetry.healthScore / 100) * 264}
-              fill="none"
-              style={{ filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))' }}
-            />
+            {telemetry.healthScore > 0 && telemetry.activePath && (
+              <circle
+                cx="50"
+                cy="50"
+                r="42"
+                stroke={
+                  telemetry.healthScore >= 75
+                    ? '#10b981'
+                    : telemetry.healthScore >= 40
+                      ? '#f59e0b'
+                      : '#ef4444'
+                }
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="264"
+                strokeDashoffset={264 - (telemetry.healthScore / 100) * 264}
+                fill="none"
+                style={{
+                  filter:
+                    telemetry.healthScore >= 75
+                      ? 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))'
+                      : telemetry.healthScore >= 40
+                        ? 'drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))'
+                        : 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))',
+                }}
+              />
+            )}
           </svg>
           <div className="absolute flex flex-col items-center">
-            <span className="text-3xl font-black font-mono text-emerald-400">
-              {telemetry.healthScore}
-            </span>
-            <span className="text-[9px] font-mono text-emerald-300 uppercase tracking-widest font-bold">
-              /100 HEALTHY
-            </span>
+            {telemetry.healthScore > 0 && telemetry.activePath ? (
+              <>
+                <span
+                  className={`text-3xl font-black font-mono ${
+                    telemetry.healthScore >= 75
+                      ? 'text-emerald-400'
+                      : telemetry.healthScore >= 40
+                        ? 'text-amber-400'
+                        : 'text-rose-400'
+                  }`}
+                >
+                  {telemetry.healthScore}
+                </span>
+                <span
+                  className={`text-[9px] font-mono uppercase tracking-widest font-bold ${
+                    telemetry.healthScore >= 75
+                      ? 'text-emerald-300'
+                      : telemetry.healthScore >= 40
+                        ? 'text-amber-300'
+                        : 'text-rose-300'
+                  }`}
+                >
+                  {telemetry.healthScore >= 75
+                    ? '/100 HEALTHY'
+                    : telemetry.healthScore >= 40
+                      ? '/100 DEGRADED'
+                      : '/100 CRITICAL'}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-3xl font-black font-mono text-slate-500">
+                  --
+                </span>
+                <span className="text-[9px] font-mono text-rose-400 uppercase tracking-widest font-bold">
+                  NO CONNECTION
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -180,7 +228,11 @@ export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
               Latency
             </span>
             <span className="text-xs font-bold text-white">
-              {telemetry.latency} ms
+              {telemetry.healthScore > 0 &&
+              telemetry.activePath &&
+              telemetry.latency > 0
+                ? `${telemetry.latency} ms`
+                : 'N/A'}
             </span>
           </div>
           <div className="bg-slate-900/60 rounded-lg p-1.5 border border-slate-800">
@@ -188,7 +240,9 @@ export const PerformanceGauges: React.FC<PerformanceGaugesProps> = ({
               RFC 3550 Jitter
             </span>
             <span className="text-xs font-bold text-cyan-300">
-              {telemetry.jitter} ms
+              {telemetry.healthScore > 0 && telemetry.activePath
+                ? `${telemetry.jitter} ms`
+                : 'N/A'}
             </span>
           </div>
         </div>

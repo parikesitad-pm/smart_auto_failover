@@ -85,53 +85,124 @@ export const InterfaceDeck: React.FC<InterfaceDeckProps> = ({
               statusLabel = 'READY';
             }
 
+            const isUsable = !isDisabled && !isOffline;
+            const displayIp =
+              isUsable && adapter.ipAddress && adapter.ipAddress !== 'N/A'
+                ? adapter.ipAddress
+                : '—';
+            const displayGateway =
+              isUsable && adapter.gateway && adapter.gateway !== 'N/A'
+                ? adapter.gateway
+                : '—';
+            const displayNetmask =
+              isUsable && adapter.netmask ? adapter.netmask : '—';
+            const displayLinkSpeed =
+              isUsable && adapter.linkSpeed && adapter.linkSpeed !== 'N/A'
+                ? adapter.linkSpeed
+                : '—';
+            const displayLatency =
+              isUsable && adapter.latency > 0
+                ? `${adapter.latency.toFixed(1)} ms`
+                : '—';
+            const displayJitter =
+              isUsable && adapter.jitter > 0
+                ? `${adapter.jitter.toFixed(1)} ms`
+                : '—';
+            const displayScore = isUsable ? adapter.score.toFixed(1) : '—';
+            const displaySsid =
+              isUsable && adapter.mediaType === 'wifi'
+                ? (adapter.ssid ?? '—')
+                : null;
+
             return (
               <div
                 key={adapter.id}
                 className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${borderClass}`}
               >
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold font-mono text-slate-300 flex items-center gap-1">
-                      {adapter.name}
-                    </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold font-mono text-slate-200">
+                        {adapter.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500">
+                        ID: {adapter.id} • {adapter.mediaType.toUpperCase()}
+                      </span>
+                    </div>
                     <span
-                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${statusBadgeClass}`}
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded ${statusBadgeClass}`}
                     >
                       {statusLabel}
                     </span>
                   </div>
 
-                  <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between mb-1">
-                    <span>
-                      {isDisabled || isOffline
-                        ? '-- ms'
-                        : `${adapter.latency} ms`}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      Score{' '}
-                      {isDisabled || isOffline
-                        ? '--'
-                        : adapter.score.toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="text-[9px] text-slate-500 font-mono">
-                    Carrier: {isDisabled ? 'Disabled' : adapter.carrier}
+                  {/* Compact 2-column Network Parameter Grid */}
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] font-mono py-1.5 border-t border-slate-800/60 text-slate-400">
+                    <div>
+                      <span className="text-slate-500 block text-[9px] uppercase">
+                        IPv4 Address
+                      </span>
+                      <span className="text-slate-300 font-semibold truncate block">
+                        {displayIp}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[9px] uppercase">
+                        Gateway
+                      </span>
+                      <span className="text-slate-300 truncate block">
+                        {displayGateway}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[9px] uppercase">
+                        Netmask
+                      </span>
+                      <span className="text-slate-300 truncate block">
+                        {displayNetmask}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[9px] uppercase">
+                        Link Speed
+                      </span>
+                      <span className="text-slate-300 truncate block">
+                        {displayLinkSpeed}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[9px] uppercase">
+                        Latency / Jitter
+                      </span>
+                      <span className="text-slate-300 truncate block">
+                        {displayLatency} / {displayJitter}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[9px] uppercase">
+                        {displaySsid !== null ? 'SSID / Score' : 'Health Score'}
+                      </span>
+                      <span className="text-cyan-400 font-bold truncate block">
+                        {displaySsid !== null
+                          ? `${displaySsid} (${displayScore})`
+                          : displayScore}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Administrative hardware toggle */}
                 <div className="pt-2 mt-2 border-t border-slate-800/80 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400">
-                    Administrative:
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    Admin State:
                   </span>
                   <button
                     type="button"
                     onClick={() => onToggleAdapter(adapter.id)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors border ${
+                    className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold transition-colors border ${
                       !isDisabled
-                        ? 'bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border-emerald-700/60'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border-slate-700'
+                        ? 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-emerald-700/60'
+                        : 'bg-slate-900 hover:bg-slate-800 text-slate-400 border-slate-700'
                     }`}
                   >
                     {!isDisabled ? 'ENABLED' : 'DISABLED'}

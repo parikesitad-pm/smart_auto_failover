@@ -30,32 +30,7 @@ const DEFAULT_DEVICE_HEALTH: DeviceHealth = {
   platform: 'Linux',
 };
 
-const BASELINE_LAPTOP_INTERFACES: NetworkInterface[] = [
-  {
-    id: 'enp44s0',
-    name: 'Ethernet 1 (enp44s0)',
-    carrier: 'Active 100 Mbps',
-    mediaType: 'ethernet',
-    enabled: true,
-    state: 'ONLINE',
-    latency: 8.2,
-    jitter: 1.2,
-    score: 98.4,
-    bgProbingScore: 98.4,
-  },
-  {
-    id: 'wlp0s20f3',
-    name: 'Wi-Fi (wlp0s20f3)',
-    carrier: 'Disabled',
-    mediaType: 'wifi',
-    enabled: false,
-    state: 'DISABLED',
-    latency: 0,
-    jitter: 0,
-    score: 0,
-    bgProbingScore: 0,
-  },
-];
+const BASELINE_LAPTOP_INTERFACES: NetworkInterface[] = [];
 
 function normalizeAdapter(raw: any): NetworkInterface {
   const isDisabled =
@@ -86,6 +61,11 @@ function normalizeAdapter(raw: any): NetworkInterface {
         ? 'READY'
         : 'OFFLINE';
 
+  const isUsable =
+    authoritativeState === 'ONLINE' ||
+    authoritativeState === 'READY' ||
+    authoritativeState === 'ALERT';
+
   return {
     id: raw.id,
     name: raw.name,
@@ -101,41 +81,39 @@ function normalizeAdapter(raw: any): NetworkInterface {
     mediaType: raw.mediaType ?? (raw.kind === 'wifi' ? 'wifi' : 'ethernet'),
     enabled: !isDisabled,
     state: authoritativeState,
-    latency: isDisabled
+    latency: !isUsable
       ? 0
       : typeof raw.latency === 'number'
         ? raw.latency
         : (raw.metrics?.latency_ms ?? 0),
-    jitter: isDisabled
+    jitter: !isUsable
       ? 0
       : typeof raw.jitter === 'number'
         ? raw.jitter
         : (raw.metrics?.jitter_ms ?? 0),
-    score: isDisabled
+    score: !isUsable
       ? 0
       : typeof raw.score === 'number'
         ? raw.score
-        : (raw.metrics?.ewma_score ?? 100),
-    bgProbingScore: isDisabled
+        : (raw.metrics?.ewma_score ?? 0),
+    bgProbingScore: !isUsable
       ? 0
       : typeof raw.bgProbingScore === 'number'
         ? raw.bgProbingScore
-        : (raw.metrics?.ewma_score ?? 100),
-    ipAddress: isDisabled
-      ? 'N/A'
-      : (raw.ipAddress ?? raw.ip_addresses?.[0] ?? 'N/A'),
-    netmask: raw.netmask ?? '255.255.255.0',
-    gateway: isDisabled ? 'N/A' : (raw.gateway ?? 'N/A'),
-    ssid: isDisabled ? undefined : (raw.ssid ?? undefined),
-    linkSpeed: isDisabled
-      ? 'N/A'
-      : (raw.linkSpeed ?? (raw.kind === 'ethernet' ? '100 Mbps' : 'N/A')),
+        : (raw.metrics?.ewma_score ?? 0),
+    ipAddress: !isUsable
+      ? '—'
+      : (raw.ipAddress ?? raw.ip_addresses?.[0] ?? '—'),
+    netmask: !isUsable ? '—' : (raw.netmask ?? '255.255.255.0'),
+    gateway: !isUsable ? '—' : (raw.gateway ?? '—'),
+    ssid: !isUsable ? undefined : (raw.ssid ?? undefined),
+    linkSpeed: !isUsable
+      ? '—'
+      : (raw.linkSpeed ??
+        raw.link_speed ??
+        (raw.kind === 'wifi' ? '—' : '1 Gbps')),
     adminState: isDisabled ? 'disabled' : 'enabled',
-    linkState: isDisabled
-      ? 'disconnected'
-      : isCarrier
-        ? 'connected'
-        : 'disconnected',
+    linkState: isCarrier ? 'connected' : 'disconnected',
   };
 }
 
@@ -143,7 +121,7 @@ export function useNetworkCockpit() {
   const [adapters, setAdapters] = useState<NetworkInterface[]>(
     BASELINE_LAPTOP_INTERFACES
   );
-  const [activePath, setActivePath] = useState<string>('enp44s0');
+  const [activePath, setActivePath] = useState<string>('');
   const [workloadProfile, setWorkloadProfile] =
     useState<WorkloadProfile>('conference');
   const [smartBubbleTarget, setSmartBubbleTarget] = useState<string | null>(
@@ -159,14 +137,14 @@ export function useNetworkCockpit() {
   );
 
   const [telemetry, setTelemetry] = useState<TelemetryState>({
-    downloadSpeed: 187.6,
-    uploadSpeed: 43.2,
-    targetDownload: 187.6,
-    targetUpload: 43.2,
-    latency: 8.2,
-    jitter: 1.2,
-    healthScore: 98,
-    activePath: 'eth1',
+    downloadSpeed: 0,
+    uploadSpeed: 0,
+    targetDownload: 0,
+    targetUpload: 0,
+    latency: 0,
+    jitter: 0,
+    healthScore: 0,
+    activePath: '',
   });
 
   const toastTimerRef = useRef<number | null>(null);
@@ -222,39 +200,6 @@ export function useNetworkCockpit() {
     return () => cancelAnimationFrame(animId);
   }, []);
 
-  // Dynamic telemetry cadence simulation (5-10 Hz)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTelemetry((prev) => {
-        const currentActive = adapters.find((a) => a.id === activePath);
-        if (
-          !currentActive ||
-          !currentActive.enabled ||
-          currentActive.state === 'OFFLINE'
-        ) {
-          return prev;
-        }
-        const dlJitter = (Math.random() - 0.5) * 6;
-        const ulJitter = (Math.random() - 0.5) * 2;
-        return {
-          ...prev,
-          targetDownload: Math.max(
-            10,
-            Math.min(290, prev.targetDownload + dlJitter)
-          ),
-          targetUpload: Math.max(5, Math.min(95, prev.targetUpload + ulJitter)),
-          latency: Number(
-            (currentActive.latency + (Math.random() - 0.5) * 0.4).toFixed(1)
-          ),
-          jitter: Number(
-            (currentActive.jitter + (Math.random() - 0.5) * 0.2).toFixed(1)
-          ),
-        };
-      });
-    }, 900);
-    return () => clearInterval(interval);
-  }, [adapters, activePath]);
-
   // Authoritative Core Event Subscription & Initial Snapshot
   useEffect(() => {
     let isMounted = true;
@@ -272,7 +217,29 @@ export function useNetworkCockpit() {
             const normalized = initialAdapters.map(normalizeAdapter);
             setAdapters(normalized);
             const active = normalized.find((a) => a.state === 'ONLINE');
-            if (active) setActivePath(active.id);
+            if (active) {
+              setActivePath(active.id);
+              setTelemetry((prev) => ({
+                ...prev,
+                activePath: active.id,
+                latency: active.latency,
+                jitter: active.jitter,
+                healthScore: active.score,
+              }));
+            } else {
+              setActivePath('');
+              setTelemetry((prev) => ({
+                ...prev,
+                activePath: '',
+                downloadSpeed: 0,
+                uploadSpeed: 0,
+                targetDownload: 0,
+                targetUpload: 0,
+                latency: 0,
+                jitter: 0,
+                healthScore: 0,
+              }));
+            }
           }
         }
       } catch {
@@ -305,7 +272,37 @@ export function useNetworkCockpit() {
               state.active_interface_id ?? state.activeInterfaceId;
             if (activeId) {
               setActivePath(activeId);
-              setTelemetry((prev) => ({ ...prev, activePath: activeId }));
+              const activeIface = state.interfaces?.find(
+                (i: any) => i.id === activeId
+              );
+              const dl = activeIface?.metrics?.download_mbps ?? 0;
+              const ul = activeIface?.metrics?.upload_mbps ?? 0;
+              const lat = activeIface?.metrics?.latency_ms ?? 0;
+              const jit = activeIface?.metrics?.jitter_ms ?? 0;
+              const hs = state.overall_health_index ?? 0;
+
+              setTelemetry((prev) => ({
+                ...prev,
+                activePath: activeId,
+                targetDownload: dl,
+                targetUpload: ul,
+                latency: lat,
+                jitter: jit,
+                healthScore: hs,
+              }));
+            } else {
+              setActivePath('');
+              setTelemetry((prev) => ({
+                ...prev,
+                activePath: '',
+                downloadSpeed: 0,
+                uploadSpeed: 0,
+                targetDownload: 0,
+                targetUpload: 0,
+                latency: 0,
+                jitter: 0,
+                healthScore: 0,
+              }));
             }
             const liveHealth = state.device_health ?? state.deviceHealth;
             if (liveHealth) {

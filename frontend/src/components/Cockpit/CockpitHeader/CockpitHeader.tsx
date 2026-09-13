@@ -133,12 +133,23 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
         </button>
 
         {/* Master Status Pill */}
-        <div className="flex items-center space-x-2 bg-emerald-950/60 border border-emerald-700/50 px-3 py-1.5 rounded-full transition-all duration-300">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-glow-emerald"></span>
-          <span className="text-xs font-semibold tracking-wider font-mono text-emerald-300">
-            ONLINE • {activePathName.toUpperCase()} PRIMARY
-          </span>
-        </div>
+        {activePathName &&
+        activePathName !== 'NONE' &&
+        activePathName !== 'none' ? (
+          <div className="flex items-center space-x-2 bg-emerald-950/60 border border-emerald-700/50 px-3 py-1.5 rounded-full transition-all duration-300">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-glow-emerald"></span>
+            <span className="text-xs font-semibold tracking-wider font-mono text-emerald-300">
+              ONLINE • {activePathName.toUpperCase()} PRIMARY
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2 bg-rose-950/60 border border-rose-700/50 px-3 py-1.5 rounded-full transition-all duration-300">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <span className="text-xs font-semibold tracking-wider font-mono text-rose-300">
+              NO CONNECTION • NO USABLE PATH
+            </span>
+          </div>
+        )}
       </div>
     </header>
   );
