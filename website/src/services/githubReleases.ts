@@ -104,7 +104,6 @@ export async function fetchLiveReleases(
     const res = await fetch(url, {
       headers: {
         Accept: 'application/vnd.github.v3+json',
-        'Cache-Control': 'no-cache',
       },
     });
 
