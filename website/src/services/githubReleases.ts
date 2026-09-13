@@ -10,7 +10,7 @@ const REPO_OWNER = 'parikesitad-pm';
 const REPO_NAME = 'smart_auto_failover';
 const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases`;
 const FALLBACK_RELEASES_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases`;
-const CACHE_KEY = 'autofailover_release_cache_v6';
+const CACHE_KEY = 'autofailover_release_cache_v7';
 
 // Immediately purge stale legacy cache keys
 if (typeof window !== 'undefined') {
@@ -20,6 +20,7 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('autofailover_release_cache_v3');
     localStorage.removeItem('autofailover_release_cache_v4');
     localStorage.removeItem('autofailover_release_cache_v5');
+    localStorage.removeItem('autofailover_release_cache_v6');
   } catch {
     // ignore
   }
@@ -322,12 +323,12 @@ export function resolveReleaseFromList(
     },
   };
 
-  const titlePrefix = channel === 'BETA' ? 'AutoFailover 3.0 Beta' : 'AutoFailover';
+  const titlePrefix =
+    channel === 'BETA' ? 'AutoFailover 3.0 Beta' : 'AutoFailover';
 
   return {
     tagName: selected.tag_name,
-    releaseTitle:
-      selected.name || `${titlePrefix} (${selected.tag_name})`,
+    releaseTitle: selected.name || `${titlePrefix} (${selected.tag_name})`,
     channel,
     publishedAt: selected.published_at,
     htmlUrl: selected.html_url,
@@ -340,14 +341,14 @@ export function resolveReleaseFromList(
 }
 
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
-  const latestTag = 'v3.0.0-preview.23';
-  const ver = '3.0.0 Beta (preview.23)';
+  const latestTag = 'v3.0.0-preview.24';
+  const ver = '3.0.0 Beta (preview.24)';
   const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${latestTag}`;
   const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestTag}`;
 
   return {
     tagName: latestTag,
-    releaseTitle: 'AutoFailover 3.0 Beta Release (v3.0.0-preview.23)',
+    releaseTitle: 'AutoFailover 3.0.0 Beta Release (v3.0.0-preview.24)',
     channel: 'BETA',
     publishedAt: new Date().toISOString(),
     htmlUrl: releaseUrl,

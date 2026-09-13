@@ -48,11 +48,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <a
           href={
             release?.htmlUrl ||
-            `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.0-preview.23'}`
+            `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.0-preview.24'}`
           }
           target="_blank"
           rel="noopener noreferrer"
-          title={`View ${release ? release.tagName : 'v3.0.0-preview.23'} on GitHub Releases`}
+          title={`View ${release ? release.tagName : 'v3.0.0-preview.24'} on GitHub Releases`}
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/60 text-emerald-400 text-xs font-semibold tracking-wider uppercase mb-8 backdrop-blur-md transition-all group cursor-pointer"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -60,7 +60,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             AutoFailover 3.0 by Modula •{' '}
             <span className="text-cyan-300 font-semibold">Beta Release</span> •{' '}
             <strong className="underline decoration-emerald-500/50 underline-offset-2">
-              {release ? release.tagName : 'v3.0.0-preview.23'}
+              {release ? release.tagName : 'v3.0.0-preview.24'}
             </strong>
           </span>
           <ArrowRight className="w-3 h-3 text-emerald-400 group-hover:translate-x-1 transition-transform" />
@@ -126,7 +126,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
-            Download AutoFailover 3.0 Beta {release ? `(${release.tagName})` : ''}
+            Download AutoFailover 3.0 Beta{' '}
+            {release ? `(${release.tagName})` : ''}
           </button>
 
           <button
@@ -141,13 +142,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <a
             href={
               release?.htmlUrl ||
-              `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.0-preview.23'}`
+              `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.0-preview.24'}`
             }
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-950/60 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            GitHub Beta Release ({release ? release.tagName : 'v3.0.0-preview.23'})
+            GitHub Beta Release (
+            {release ? release.tagName : 'v3.0.0-preview.24'})
             <ArrowRight className="w-4 h-4 text-cyan-400" />
           </a>
         </div>

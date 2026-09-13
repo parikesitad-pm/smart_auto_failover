@@ -2,7 +2,7 @@
 
 > by Modula • _light seamless and usefull_
 >
-> 🚀 **Current Release: [AutoFailover 3.0 Beta (v3.0.0-preview.23)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.23)** — Multi-platform desktop packages verified and ready for testing.
+> 🚀 **Current Release: [AutoFailover 3.0 Beta (v3.0.0-preview.24)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.24)** — Multi-platform desktop packages verified and ready for testing.
 
 AutoFailover 3.0 protects active real-time workloads (Zoom, OBS Studio, Microsoft Teams, Google Meet, vMix) by autonomously detecting network path degradation and switching seamlessly to healthy backup paths.
 
@@ -30,23 +30,23 @@ Build:
 
 ## Download / How To Use
 
-Official packages from the [AutoFailover 3.0 Beta (v3.0.0-preview.23)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.23) release:
+Official packages from the [AutoFailover 3.0 Beta (v3.0.0-preview.24)](https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/v3.0.0-preview.24) release:
 
 ### Windows (x64)
 
-1. Download **[AutoFailover-3.0.0-Windows-x64.zip](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.23/AutoFailover-3.0.0-Windows-x64.zip)**.
+1. Download **[AutoFailover-3.0.0-Windows-x64.zip](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.24/AutoFailover-3.0.0-Windows-x64.zip)**.
 2. Extract the ZIP archive.
 3. Run `AutoFailover 3.0.exe`.
 
 ### Linux (x86_64)
 
-1. Download **[AutoFailover-3.0.0-Linux-x86_64.tar.gz](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.23/AutoFailover-3.0.0-Linux-x86_64.tar.gz)**.
+1. Download **[AutoFailover-3.0.0-Linux-x86_64.tar.gz](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.24/AutoFailover-3.0.0-Linux-x86_64.tar.gz)**.
 2. Extract: `tar -xzf AutoFailover-3.0.0-Linux-x86_64.tar.gz`
 3. Enter directory and run: `./AutoFailover\ 3.0`
 
 ### macOS (Apple Silicon arm64)
 
-1. Download **[AutoFailover-3.0.0-macOS-arm64.dmg](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.23/AutoFailover-3.0.0-macOS-arm64.dmg)**.
+1. Download **[AutoFailover-3.0.0-macOS-arm64.dmg](https://github.com/parikesitad-pm/smart_auto_failover/releases/download/v3.0.0-preview.24/AutoFailover-3.0.0-macOS-arm64.dmg)**.
 2. Open the DMG and drag or run `AutoFailover 3.0.app`.
 
 ## Run From Source
@@ -69,6 +69,7 @@ cd website && npm install && npm run dev
 Detailed version history and changes are documented in [CHANGELOG.md](CHANGELOG.md).
 
 ### Recent Highlights
+
 - **Modular Speedtest & Bulk Queue**: Dedicated 4-provider benchmarking suite (Cloudflare, FAST.com, Ookla, nPerf) with sequential non-blocking execution, RFC 3550 jitter calculation, and audit history table.
 - **Dynamic Release Discovery**: Real-time resolution of latest desktop artifacts from GitHub Releases across all website surfaces without hardcoded version tags.
 - **Windows Subprocess Fix**: Eliminated PowerShell/netsh popup windows during adapter polling with Win32 hidden window flags and `psutil` in-process resolution.

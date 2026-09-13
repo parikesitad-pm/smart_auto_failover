@@ -44,28 +44,12 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-24 bg-emerald-500/15 blur-3xl pointer-events-none" />
 
-        {/* Mockup Window Title Bar */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#05070a]/80 border-b border-slate-800 rounded-t-xl select-none">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-rose-500/80" />
-            <span className="w-3 h-3 rounded-full bg-amber-500/80" />
-            <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
-            <span className="ml-3 text-xs font-mono text-slate-400">
-              AutoFailover 3.0 by Modula
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            ONLINE • 5Hz TELEMETRY
-          </div>
-        </div>
-
-        {/* Real App Screenshot */}
-        <div className="relative overflow-hidden rounded-b-xl bg-[#080b10]">
+        {/* Real App Screenshot with Native Frame */}
+        <div className="relative overflow-hidden rounded-xl bg-[#080b10] border border-slate-800 shadow-2xl">
           <img
             src="/dashboard_app.png"
             alt="AutoFailover 3.0 Desktop Digital Network Cockpit"
-            className="w-full h-auto object-cover rounded-b-xl shadow-2xl transition-transform duration-700 group-hover:scale-[1.01]"
+            className="w-full h-auto object-cover rounded-xl shadow-2xl transition-transform duration-700 group-hover:scale-[1.005]"
           />
         </div>
       </div>
@@ -122,8 +106,7 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
           className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <Download className="w-4 h-4" />
-          Download AutoFailover 3.0 Beta{' '}
-          {release ? `(${release.tagName})` : ''}
+          Download AutoFailover 3.0 Beta {release ? `(${release.tagName})` : ''}
         </button>
 
         <a
