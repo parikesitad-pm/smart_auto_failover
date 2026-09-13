@@ -37,7 +37,9 @@ class FailoverOrchestrator:
     ):
         self.backend = platform_backend
         self.bus = event_bus or EventBus()
+        self.event_bus = self.bus
         self.config = config or PolicyConfig()
+
 
         self.probe_target_host = probe_target_host
         self.probe_interval_sec = probe_interval_sec

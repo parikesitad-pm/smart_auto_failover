@@ -48,7 +48,10 @@ class CockpitDashboard:
         self._build_bottom_status()
 
         # Subscribe to orchestrator event bus
-        self.orchestrator.event_bus.subscribe(self._on_bus_event)
+        bus = getattr(self.orchestrator, "event_bus", None) or getattr(self.orchestrator, "bus", None)
+        if bus:
+            bus.subscribe(self._on_bus_event)
+
 
         # Start periodic UI polling ticker (5 Hz)
         self._schedule_ui_tick()
