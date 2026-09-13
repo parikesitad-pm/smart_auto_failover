@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Clock, ShieldCheck, ExternalLink, FileText, AlertCircle, Sparkles } from 'lucide-react';
+import {
+  Download,
+  Clock,
+  ShieldCheck,
+  ExternalLink,
+  FileText,
+  AlertCircle,
+  Sparkles,
+} from 'lucide-react';
 import { getLatestAutoFailoverRelease } from '../../services/githubReleases';
 import { ResolvedRelease, PlatformReleaseInfo } from '../../types/releases';
 
@@ -18,18 +26,24 @@ export const DownloadHub: React.FC = () => {
     : [];
 
   return (
-    <section id="downloads" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/80">
+    <section
+      id="downloads"
+      className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/80"
+    >
       <div className="text-center max-w-3xl mx-auto mb-12">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold tracking-wider uppercase mb-4">
           <Sparkles className="w-3.5 h-3.5" />
-          {release?.channel === 'STABLE' ? 'Stable Production Release' : 'Live Preview Channel'}
+          {release?.channel === 'STABLE'
+            ? 'Stable Production Release'
+            : 'Live Preview Channel'}
         </div>
 
         <h2 className="text-3xl sm:text-5xl font-extrabold text-white mb-4 tracking-tight">
           Download AutoFailover 3.0
         </h2>
         <p className="text-slate-400 text-base sm:text-lg">
-          Native desktop packages built independently on native runners. Real-time dynamic discovery via GitHub Releases.
+          Native desktop packages built independently on native runners.
+          Real-time dynamic discovery via GitHub Releases.
         </p>
 
         {release && (
@@ -60,7 +74,9 @@ export const DownloadHub: React.FC = () => {
       {loading ? (
         <div className="text-center py-16">
           <div className="inline-block w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-slate-400 text-sm">Discovering latest builds from GitHub...</p>
+          <p className="text-slate-400 text-sm">
+            Discovering latest builds from GitHub...
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -147,16 +163,24 @@ export const DownloadHub: React.FC = () => {
         <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
           <div>
-            <strong className="text-slate-200 block mb-1">SHA-256 Checksum Verification</strong>
-            Every build produces an authoritative checksum file (`SHA256SUMS.txt`). Verify downloaded packages against the published cryptographic hash before installation.
+            <strong className="text-slate-200 block mb-1">
+              SHA-256 Checksum Verification
+            </strong>
+            Every build produces an authoritative checksum file
+            (`SHA256SUMS.txt`). Verify downloaded packages against the published
+            cryptographic hash before installation.
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <strong className="text-slate-200 block mb-1">Unsigned Preview Notice</strong>
-            Preview builds are not Authenticode or Apple Notarized. Operating systems may prompt standard unknown publisher alerts. Full code signing will accompany the stable release.
+            <strong className="text-slate-200 block mb-1">
+              Unsigned Preview Notice
+            </strong>
+            Preview builds are not Authenticode or Apple Notarized. Operating
+            systems may prompt standard unknown publisher alerts. Full code
+            signing will accompany the stable release.
           </div>
         </div>
       </div>

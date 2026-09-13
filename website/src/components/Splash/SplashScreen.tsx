@@ -572,14 +572,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           </div>
         )}
 
-        {/* BROWSER PREVIEW MODE BANNER */}
-        {!state.isTauriRuntime && !state.isFailed && (
+        {/* INTERACTIVE SIMULATOR MODE BANNER */}
+        {!state.isFailed && (
           <div className="w-full bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 mb-3 text-left font-mono text-[11px] flex items-center justify-between">
             <div className="flex items-center gap-2 text-slate-400">
               <span className="text-base">🌐</span>
               <span>
-                <strong className="text-slate-300">Browser Preview Mode</strong>{' '}
-                · Native OS networking requires Tauri desktop runtime.
+                <strong className="text-slate-300">Interactive Simulator Mode</strong>{' '}
+                · Simulating deterministic multi-path network engine.
               </span>
             </div>
             {onSkip && (

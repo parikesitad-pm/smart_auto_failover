@@ -1,19 +1,12 @@
 import React from 'react';
-import { tauriIpc } from '../../../services/tauriIpc';
 
 export const CockpitFooter: React.FC = () => {
-  const handleProfileClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    tauriIpc.openUrl('https://github.com/parikesitad-pm');
-  };
-
   return (
     <footer className="mt-4 pt-3 border-t border-slate-800/40 text-center select-none">
       <p className="text-[11px] font-mono text-slate-500 tracking-wide flex items-center justify-center gap-1.5">
         <span>Crafted with ♥ by</span>
         <a
           href="https://github.com/parikesitad-pm"
-          onClick={handleProfileClick}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-slate-400 hover:text-cyan-400 hover:underline transition-colors cursor-pointer"

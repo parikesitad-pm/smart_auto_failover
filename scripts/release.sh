@@ -28,7 +28,7 @@ python3 -m unittest discover -s desktop/tests
 echo "✅ Core characterization tests passed."
 
 echo "[2/4] Verifying Website Build..."
-npm --prefix frontend run build
+npm --prefix website run build
 echo "✅ Website production bundle compiled successfully."
 
 echo "[3/4] Validating Changelog Coverage..."

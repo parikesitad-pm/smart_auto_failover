@@ -13,16 +13,16 @@
 
 ### _"light seamless and usefull"_
 
-**Navigate Your Internet Pipeline to Keep You Online**
-**Through Video Conference & Livestreaming Production**
-_Windows • macOS (Apple Silicon & Intel) • Linux_
+**Navigate Your Internet Pipeline to Keep You Online**  
+**Through Video Conference & Livestreaming Production**  
+_Windows • macOS (Apple Silicon) • Linux_
 
-\*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
+*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)***
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Website-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://dist-jade-seven-59.vercel.app)
-[![Release](https://img.shields.io/badge/Release-v3.0.0-emerald?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm/smart_auto_failover/releases)
-[![Desktop](https://img.shields.io/badge/Desktop-Python%20%2B%20CustomTkinter-3776AB?style=for-the-badge&logo=python&logoColor=white)](desktop/)
-[![Website](https://img.shields.io/badge/Website-React%20%2B%20TS%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react)](website/)
+[![GitHub Release](https://img.shields.io/badge/Release-v3.0.0--preview-emerald?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm/smart_auto_failover/releases)
+[![Desktop Engine](https://img.shields.io/badge/Desktop-Python%203%20%2B%20CustomTkinter-3776AB?style=for-the-badge&logo=python&logoColor=white)](desktop/)
+[![Website Hub](https://img.shields.io/badge/Website-React%20%2B%20TS%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react)](website/)
 [![License](https://img.shields.io/badge/License-MIT%202026-gray?style=for-the-badge)](LICENSE)
 
 </div>
@@ -31,325 +31,177 @@ _Windows • macOS (Apple Silicon & Intel) • Linux_
 
 ## 🏗️ Arsitektur Dua Permukaan (Dual-Surface Architecture)
 
-AutoFailover 3.0 terdiri dari **DUA permukaan aplikasi mandiri** yang berbagi ekosistem produk yang sama:
+AutoFailover 3.0 terdiri dari **DUA permukaan aplikasi mandiri** yang terisolasi secara ketat:
 
-| Permukaan                   | Lokasi                   | Teknologi                                            | Tanggung Jawab Utama                                                                                                                                                       |
-| --------------------------- | ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A. Desktop Application**  | `desktop/`               | **Python 3**, **CustomTkinter**, Native OS HAL       | **Produk Asli**: Monitoring probing RFC 3550, scoring 5-state, anti-flap takeover margin, Layer-3 route switching, dan headless CLI engine.                                |
-| **B. Public Website & Hub** | `website/` / `frontend/` | **React**, **TypeScript**, **Vite**, **TailwindCSS** | **Marketing & Edukasi**: Hero dengan logo 3D hidup, Download Hub dengan status verifikasi jujur, dokumentasi, FAQ, dan simulator cockpit interaktif di browser via Vercel. |
+| Permukaan | Direktori | Stack Teknologi | Tanggung Jawab Utama |
+|---|---|---|---|
+| **A. Desktop Application** | `desktop/` | **Python 3**, **CustomTkinter**, Native OS Networking | **Produk Nyata**: Engine pengalihan rute Layer-3, monitoring socket RFC 3550 Jitter, scoring 5-state, anti-flap takeover margin, headless CLI ticker, dan Cockpit GUI desktop native. |
+| **B. Public Website & Cockpit Demo** | `website/` | **React**, **TypeScript**, **Vite**, **TailwindCSS** | **Portal Publik & Simulator**: Landing page resmi dengan logo Modula 3.0 hidup, Download Hub dengan deteksi rilis GitHub dinamis, dan simulator Cockpit interaktif dengan kontrol skenario deterministik di browser. |
 
 ---
 
-## 🖥️ Panduan Aplikasi Desktop Native Python (`desktop/`)
+## 🖥️ Permukaan A: Aplikasi Desktop Native (`desktop/`)
 
-### 1. Menjalankan Mode Headless Engine & Verifikasi Hardware
+Aplikasi desktop merupakan produk inti yang berjalan di workstation untuk mengamankan koneksi jaringan.
 
-Aplikasi desktop dapat dijalankan langsung di server, terminal, maupun workstation tanpa memerlukan display server atau GUI toolkit:
+### 1. Struktur Komponen Desktop
+
+```text
+desktop/
+  ├── autofailover.spec        # PyInstaller multi-platform packaging specification
+  ├── main.py                  # Entrypoint: CLI orchestrator, headless mode & GUI launcher
+  ├── requirements.txt         # Minimal production dependencies (customtkinter, pillow)
+  ├── VERSION                  # Single source of truth untuk versi rilis desktop
+  ├── core/                    # Pure domain logic, network-engine-agnostic
+  │     ├── models.py          # State types: NetworkInterface, TelemetryState, DeviceHealth
+  │     ├── probe.py           # RFC 3550 Jitter & Latency measurement engine
+  │     ├── health.py          # Exponential Weighted Moving Average (EWMA) scoring
+  │     ├── policy.py          # Anti-flap candidate selection (takeover_margin)
+  │     ├── failover.py        # Failover orchestrator & transition event emitter
+  │     └── recovery.py        # Link recovery stabilization arbiter
+  ├── platform/                # Native OS Network Abstraction Layer (HAL)
+  │     ├── base.py            # Platform backend contract interface
+  │     ├── linux.py           # Linux sysfs (/sys/class/net), /proc/net/route, iproute2
+  │     ├── windows.py         # Windows netsh & route table management
+  │     └── macos.py           # macOS scutil & networksetup integration
+  ├── ui/                      # CustomTkinter Desktop Cockpit GUI
+  │     ├── app.py             # Desktop root window & layout manager
+  │     ├── splash.py          # 9-stage splash initialization gate
+  │     ├── cockpit.py         # Automotive instrument cluster view
+  │     └── widgets.py         # Needle tachometers, status badges & metric strips
+  └── tests/                   # Python characterization & unit test suite
+        ├── test_probe.py      # RFC 3550 jitter calculation verification
+        ├── test_health.py     # Health scoring formula validation
+        ├── test_policy.py     # Takeover margin & preemption resistance tests
+        └── test_recovery.py   # Anti-flap stabilization tests
+```
+
+### 2. Menjalankan Aplikasi Desktop
+
+#### A. Mode Headless Engine & Terminal Monitor
+Dapat dijalankan langsung di server, terminal, atau workstation tanpa display server:
 
 ```bash
-# Jalankan mode headless monitor (ticker 1 Hz langsung ke console)
+# Monitor background continuous (ticker 1 Hz)
 python3 -m desktop.main --headless
 
-# Jalankan 5 tick evaluasi saja
-python3 -m desktop.main --headless --ticks 5
+# Menjalankan 10 siklus evaluasi lalu keluar
+python3 -m desktop.main --headless --ticks 10
 
-# Jalankan inspeksi hardware dan validasi model 5-state (ONLINE, READY, ALERT, OFFLINE, DISABLED)
+# Validasi antarmuka fisik dan model 5-state
 python3 -m desktop.main --acceptance
 ```
 
-### 2. Menjalankan Cockpit GUI (CustomTkinter)
-
-Jika display server dan modul `customtkinter` tersedia:
-
+#### B. Menjalankan Desktop Cockpit GUI (CustomTkinter)
 ```bash
-# Install dependensi desktop GUI
+# Instal dependensi desktop
 pip install -r desktop/requirements.txt
 
-# Luncurkan aplikasi GUI lengkap dengan 9-stage splash initialization gate
+# Luncurkan GUI desktop
 python3 -m desktop.main
 ```
 
-### 3. Menjalankan Pengujian Karakterisasi Unit Test
-
+#### C. Menjalankan Rangkaian Pengujian Unit Test
 ```bash
-# Jalankan seluruh rangkaian tes karakterisasi algoritma
 python3 -m unittest discover -s desktop/tests
 ```
 
+### 3. Pembuatan Paket Distribusi Mandiri (PyInstaller)
+Setiap platform dikompilasi secara independen menggunakan GitHub Actions native runners:
+
+```bash
+# Linux / macOS / Windows
+pyinstaller --noconfirm desktop/autofailover.spec
+```
+
 ---
 
-## 🧭 Ikhtisar & Posisi Produk
+## 🌐 Permukaan B: Public Website & Cockpit Demo (`website/`)
 
-AutoFailover 3.0 dirancang untuk melindungi aktivitas kerja berorientasi real-time seperti panggilan video conference (**Zoom, Microsoft Teams, Google Meet**) dan live broadcast (**OBS Studio, vMix, Wirecast, Streamlabs**) dari gangguan latensi tinggi, lonjakan jitter, maupun putusnya jalur fisik internet secara tiba-tiba.
+Portal publik yang dideploy ke Vercel untuk mendistribusikan installer rilis dan menyediakan simulator Cockpit interaktif bagi pengguna browser.
 
-Sistem memantau kondisi seluruh antarmuka jaringan fisik (Ethernet, Wi-Fi, USB Cellular Modem), mengevaluasi kualitas koneksi menggunakan metrik objektif (IETF RFC 3550 Jitter & Latensi), dan secara otomatis mengalihkan rute default level sistem operasi tanpa memerlukan intervensi manual yang rumit.
-
----
-
-## 🏎️ Panduan Penggunaan: Instrument Cluster AutoFailover 3.0
-
-**Instrument Cluster AutoFailover 3.0** (sebelumnya dikenal sebagai _Cockpit Widget_) adalah antarmuka visual terpadu beresolusi tinggi yang terinspirasi dari kluster instrumen mobil performa tinggi (_automotive digital instrument cluster_). Kluster ini dirancang agar pengguna dapat memahami kondisi seluruh pipa jaringan dalam waktu **kurang dari 2 detik**.
+### 1. Struktur Komponen Website
 
 ```text
-┌───────────────────────────────────────────────────────────────────────────┐
-│ [⚡] Instrument Cluster AutoFailover 3.0 by Modula           [● ONLINE]   │
-│      Navigate Your Internet Pipeline to Keep You Online                   │
-│      CPU: [██░░░░] 14%  •  RAM: [████░░] 38%  •  GPU: N/A                 │
-├─────────────────────────────────────┬─────────────────────────────────────┤
-│   DOWNLOAD GAUGE     UPLOAD GAUGE   │ ACTIVE ROUTE PATH: Ethernet 1       │
-│      187.6 Mbps        48.2 Mbps    │ Carrier: Connected • Gateway Valid  │
-│      [60 FPS Arc]     [60 FPS Arc]  │ Latency: 8.2ms • RFC 3550: 1.2ms    │
-├─────────────────────────────────────┴─────────────────────────────────────┤
-│ Standby NICs: Wi-Fi (wlp0s20f3 · READY)                                   │
-│ Pipeline Sim: [Nominal] [Jitter Spike] [Cable Unplug] [Cable Reconnect]   │
-└───────────────────────────────────────────────────────────────────────────┘
+website/
+  ├── src/
+  │    ├── components/
+  │    │     ├── Landing/          # HeroSection, DownloadHub, FeaturePillars, FaqAccordion
+  │    │     ├── Cockpit/          # Digital Cockpit, PerformanceGauges, InterfaceDeck
+  │    │     │     ├── DemoToolbar.tsx    # 7-Action deterministic scenario controller
+  │    │     │     ├── CockpitHeader/     # Title, status pill, and workload profile
+  │    │     │     ├── InterfaceDeck/     # Physical interface matrix cards
+  │    │     │     └── PerformanceGauges/ # 60 FPS client-side lerped SVG tachometers
+  │    │     └── Splash/           # Modula 3.0 enterprise splash gate
+  │    ├── hooks/
+  │    │     ├── useNetworkCockpit.ts  # Deterministic browser demo engine
+  │    │     └── useStartupSequence.ts # Realistic 9-stage initialization sequence
+  │    ├── services/
+  │    │     └── githubReleases.ts     # Dynamic GitHub release discovery & platform resolver
+  │    └── types/
+  │          ├── cockpit.types.ts      # Domain models
+  │          └── releases.ts           # GitHub release & asset types
+  ├── package.json
+  ├── tailwind.config.js
+  └── vite.config.ts
 ```
 
-### 4 Cara Menjalankan & Mengakses Instrument Cluster
-
-1. **Akses Online Live Demo (Vercel)**:
-   Akses instan melalui browser tanpa setup apa pun:
-   - **Production Cockpit Web**: [https://dist-jade-seven-59.vercel.app](https://dist-jade-seven-59.vercel.app)
-   - **Standalone Instrument Cluster**: [https://dist-jade-seven-59.vercel.app/instrument_cluster_autofailover_3_0.html](https://dist-jade-seven-59.vercel.app/instrument_cluster_autofailover_3_0.html)
-2. **Akses Langsung via Browser (Dev Server Lokal)**:
-   Saat aplikasi pengembangan dijalankan (`npm --prefix frontend run dev`), buka URL berikut di browser:
-   ```text
-   http://localhost:3000/instrument_cluster_autofailover_3_0.html
-   ```
-3. **Akses File HTML Mandiri (Zero Dependencies)**:
-   Buka file berikut langsung dengan klik dua kali di browser (Google Chrome, Firefox, Safari, Edge) tanpa perlu menyalakan server atau menginstal Node.js:
-   ```text
-   frontend/public/instrument_cluster_autofailover_3_0.html
-   ```
-4. **Melalui Aplikasi Native Desktop (Tauri Shell)**:
-   Jalankan binary desktop hasil kompilasi:
-   ```bash
-   ./target/debug/autofailover-app
-   # atau versi rilis
-   ./target/release/autofailover-app
-   ```
-
-### Anatomi & Elemen Pembacaan Kluster
-
-- **Dual Tachometers (Download & Upload)**: Mengukur kecepatan unduh dan unggah seketika dengan animasi jarum 60 FPS client-side tanpa membebani thread engine jaringan.
-- **Active Route Path Card**: Menampilkan adapter fisik yang sedang membawa trafik produksi, gateway aktif, latensi milidetik, jitter RFC 3550, dan nilai composite health score (0–100).
-- **Device Health Bar**: Indikator beban hardware pasif (CPU, RAM, GPU) dengan frekuensi rendah (~1 Hz) yang **terisolasi mutlak** dari keputusan failover jaringan.
-- **Standby Candidate Pool**: Memperlihatkan antarmuka cadangan yang siap siaga (`READY`), mengalami degradasi (`ALERT`), atau putus kabel (`OFFLINE`).
-- **Tombol Simulasi Pipeline Real-Time**:
-  - `[ Nominal ]`: Mengembalikan kondisi jaringan ke status Ethernet 1 normal dan prima (98.4 score).
-  - `[ Jitter Spike ]`: Mensimulasikan lonjakan variasi transmisi paket dan membuktikan proteksi policy anti-flapping.
-  - `[ Cable Unplug (OFFLINE) ]`: Mensimulasikan pelepasan kabel fisik LAN (`carrier == 0` / `operstate == down`), langsung mengalihkan rute default ke Wi-Fi (`ONLINE`), dan menandai kartu Ethernet dengan badge merah tegas `OFFLINE`.
-  - `[ Cable Reconnect (READY) ]`: Mensimulasikan pemasangan kembali kabel LAN. Antarmuka masuk ke cooldown stabilisasi `RecoveryArbiter` dan berstatus `READY` (tidak membajak jalur aktif tanpa pertimbangan policy).
-
----
-
-## 🚀 Panduan Penggunaan Lintas Sistem Operasi (Windows, macOS, Linux)
-
-AutoFailover 3.0 dibangun di atas arsitektur **Rust Core** (berotoritas penuh atas manipulasi jaringan) dan **Tauri Desktop Shell** (UI ultra-ringan berbasis WebKit/WebView2).
-
-### Kebutuhan Dasar (Prerequisites):
-
-- **Rust Toolchain**: `rustc` dan `cargo` versi 1.77 atau lebih baru (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`).
-- **Node.js**: Node.js versi 18+ LTS dan `npm` (atau `pnpm`).
-
----
-
-### 🐧 Panduan Linux (Ubuntu, Debian, Arch, Manjaro, Fedora)
-
-Pada Linux, backend berinteraksi langsung dengan `/sys/class/net`, `/proc/net/route`, dan utilitas `iproute2` (`ip route`, `ip link`).
-
-#### 1. Instalasi Dependensi Sistem:
-
-- **Debian / Ubuntu**:
-  ```bash
-  sudo apt-get update
-  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
-      libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev iproute2
-  ```
-- **Arch Linux / Manjaro**:
-  ```bash
-  sudo pacman -S --needed base-devel webkit2gtk-4.1 openssl iproute2
-  ```
-- **Fedora**:
-  ```bash
-  sudo dnf install webkit2gtk4.1-devel openssl-devel iproute
-  ```
-
-#### 2. Kompilasi & Menjalankan:
+### 2. Menjalankan Pengembangan Website
 
 ```bash
-# Clone repositori
-git clone https://github.com/parikesitad-pm/smart_auto_failover.git
-cd smart_auto_failover
+# Instal dependensi website
+npm --prefix website install
 
-# Instal dependensi frontend
-npm --prefix frontend install
+# Jalankan server pengembangan Vite
+npm --prefix website run dev
 
-# Jalankan dalam mode pengembangan (Desktop Shell + Vite Live Preview)
-npm --prefix frontend run dev &
-cargo run --bin autofailover-app
-```
+# Validasi TypeScript
+npm --prefix website run type-check
 
-#### 3. Izin Manipulasi Rute Default (Root / Capabilities):
-
-Mengubah default gateway di tabel routing Linux memerlukan hak akses jaringan:
-
-```bash
-# Opsi A (Rekomendasi - Berikan Capability tanpa root penuh):
-sudo setcap cap_net_admin,cap_net_raw+ep ./target/debug/autofailover-app
-
-# Opsi B (Jalankan via sudo):
-sudo ./target/debug/autofailover-app
+# Kompilasi bundel produksi untuk Vercel
+npm --prefix website run build
 ```
 
 ---
 
-### 🪟 Panduan Windows (Windows 10 & 11 x64 / ARM64)
+## 🎮 Simulator Cockpit Interaktif (Live Browser Demo)
 
-Pada Windows, backend menggunakan native Windows Network APIs (`IPHLPAPI.lib`, `SetIpForwardEntry2`, `GetIpForwardTable2`) dan socket option `IP_UNICAST_IF`.
+Cockpit pada website menyediakan simulator skenario deterministik lengkap dengan **7 Kontrol Skenario Real-Time**:
 
-#### 1. Kebutuhan Sistem:
-
-- **Visual Studio Build Tools**: Paket _Desktop development with C++_ (MSVC).
-- **WebView2 Runtime**: Bawaan Windows 10/11 (Evergreen Bootstrapper).
-
-#### 2. Kompilasi & Menjalankan:
-
-Buka terminal **PowerShell (Run as Administrator)**:
-
-```powershell
-# Clone repositori
-git clone https://github.com/parikesitad-pm/smart_auto_failover.git
-cd smart_auto_failover
-
-# Build aset frontend produksi (wajib sebelum compile binary desktop)
-cd frontend
-npm install
-npm run build
-cd ..
-
-# Build binary native release Windows
-cargo build --release --manifest-path src-tauri/Cargo.toml
-
-# Jalankan aplikasi native
-.\target\release\autofailover-app.exe
-```
-
-> **Catatan Izin Administrator**: Penyesuaian metrik Layer-3 pada tabel routing Windows membutuhkan hak administrator. Jalankan terminal PowerShell sebagai Administrator sebelum meluncurkan aplikasi.
+1. **Disconnect Ethernet**: Mensimulasikan terputusnya kabel LAN primer. Jalur Ethernet 1 seketika berstatus `OFFLINE`, memicu failover sub-detik yang mempromosikan Wi-Fi 6 ke `ONLINE`.
+2. **Reconnect Ethernet**: Mengembalikan kabel LAN fisik. Mesin memvalidasi stabilitas tautan melalui arbiter pemulihan anti-flap sebelum mengembalikannya sebagai jalur aktif utama.
+3. **Disable Wi-Fi**: Mensimulasikan penonaktifan adaptor nirkabel secara administratif (`DISABLED`).
+4. **Enable Wi-Fi**: Mengaktifkan kembali adaptor nirkabel ke status siaga (`READY`).
+5. **Degrade Connection**: Mensimulasikan lonjakan jitter RFC 3550 (18.2ms) dan peningkatan latensi pada tautan utama. Policy Engine mendeteksi penurunan kualitas lebih awal dan mengalihkan rute ke Wi-Fi sebelum koneksi terputus total.
+6. **Recover Connection**: Mengembalikan metrik latensi dan jitter ke kondisi prima (8.2ms latensi, 1.1ms jitter).
+7. **Reset Demo**: Mengembalikan topologi ke kondisi awal nominal dual-homed.
 
 ---
 
-### 🍎 Panduan macOS (Apple Silicon M1/M2/M3/M4 & Intel x64)
+## 🚦 Status Verifikasi Platform Rilis
 
-Pada macOS, backend memanfaatkan kerangka kerja bawaan `SystemConfiguration.framework` dan perintah manipulasi kernel routing BSD (`route replace default`).
+Sesuai dengan prinsip kejujuran teknis, rilis pratinjau diberi label transparan:
 
-#### 1. Kebutuhan Sistem:
+| Platform | Arsitektur | Format Paket | Status Verifikasi |
+|---|---|---|---|
+| **Linux** | x86_64 | `.tar.gz` | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
+| **Windows** | x64 | `.zip` (`AutoFailover 3.0.exe`) | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
+| **macOS** | Apple Silicon (ARM64) | `.dmg` | `IMPLEMENTATION / REAL-HOST VALIDATION PENDING` |
 
-- **Xcode Command Line Tools**:
-  ```bash
-  xcode-select --install
-  ```
-
-#### 2. Kompilasi & Menjalankan:
-
-```bash
-# Clone repositori
-git clone https://github.com/parikesitad-pm/smart_auto_failover.git
-cd smart_auto_failover
-
-# Instal dependensi frontend
-npm --prefix frontend install
-
-# Build binary native
-cargo build --release --bin autofailover-app
-
-# Menjalankan aplikasi
-sudo ./target/release/autofailover-app
-```
-
-> **Catatan Izin macOS**: Mengubah rute gateway default pada stack BSD kernel macOS memerlukan `sudo` atau hak administrasi sistem.
+> Setiap build pratinjau dilengkapi dengan file ringkasan checksum SHA-256 (`SHA256SUMS.txt`) untuk memverifikasi integritas unduhan.
 
 ---
 
-## 🎯 Filosofi & Prinsip Desain
+## 🛡️ Prinsip & Kebijakan Failover
 
-> **Core UX Principle:**
-> _"Kelihatan kompleks di dalam. Terasa sederhana di luar."_
-> _"Automation should be invisible until it matters."_
-
-### 6 Pertanyaan Kunci Layar Utama (< 2 Detik):
-
-1. **Jalur internet mana yang sedang dipakai?** (`ONLINE`)
-2. **Apakah koneksi dalam kondisi sehat?** (Status bar & health badge)
-3. **Berapa Latensi & Jitter saat ini?** (Readout standar IETF RFC 3550)
-4. **Bagaimana kondisi kecepatan Download / Upload?** (Dual precision gauges)
-5. **Jalur cadangan mana yang siap jika jalur aktif putus?** (`READY` / `ALERT` / `OFFLINE`)
-6. **Apakah MODULA baru saja melakukan pengalihan rute?** (Notifikasi transisi instan)
-
----
-
-## 🛡️ Session Continuity & Perlindungan Workload Aktif
-
-Tujuan utama diciptakannya MODULA adalah melindungi sesi kerja real-time yang sedang berlangsung (**Zoom, Microsoft Teams, Google Meet, OBS Studio, vMix, Wirecast, Streamlabs**) dari dampak degradasi jaringan dan putusnya koneksi.
-
-$$\text{DETECT EARLY} \longrightarrow \text{SELECT BETTER PATH} \longrightarrow \text{SWITCH FAST} \longrightarrow \text{MINIMIZE SESSION DISRUPTION}$$
-
-### Disiplin Teknis: Batasan Kontinuitas Koneksi
-
-- MODULA **TIDAK PERNAH mengklaim "garansi pasti zero socket drop untuk seluruh aplikasi"**. Pengalihan rute OS dapat mengubah IP sumber/antarmuka lokal, sehingga sebagian sesi TCP/UDP lama pada protokol tertentu mungkin memerlukan re-establishment.
-- **Tujuan Rekayasa Resmi**: _"Meminimalkan disrupsi dan memaksimalkan probabilitas kontinuitas sesi aktif"_, didukung pengujian empiris terukur per platform dan workload.
-- Pengalaman pengguna yang dihadirkan:
-  **"MODULA menyelesaikan masalah jaringan saya."**
-  _(Bukan: "MODULA mengubah-ubah konfigurasi jaringan saya tanpa alasan.")_
-
-### Aturan Tanpa Perpindahan Rute yang Tak Perlu (_No Unnecessary Switching_)
-
-Kontinuitas sesi kerja memiliki prioritas jauh lebih tinggi daripada mengejar perbedaan performa minor:
-
-- **DILARANG berpindah jalur** hanya karena selisih latensi beberapa milidetik, derau pengukuran sesaat, lonjakan jitter tunggal yang insignifikan, atau karena jalur prioritas fisik baru pulih.
-- Rumus anti-flapping margin ($\text{candidate\_score} \ge \text{active\_score} + \text{takeover\_margin}$) wajib dipenuhi sebelum promosi terjadi.
-
-### Prioritas Penanganan Gangguan (Failure Priority):
-
-1. Pertahankan jalur aktif yang masih sehat.
-2. Deteksi degradasi lebih awal sebelum terjadi pemutusan total.
-3. Hindari perpindahan jalur yang tidak perlu (_avoid flapping_).
-4. Jika jalur aktif benar-benar rusak/unusable, alihkan rute seketika (<2s).
-5. Pilih kandidat terbaik yang memenuhi syarat.
-6. Lanjutkan pemantauan pasif terhadap jalur yang sebelumnya bermasalah.
-7. Evaluasi pemulihan jalur (_recovery_) tanpa preemption agresif (`READY` terlebih dahulu).
-
----
-
-## 🏛️ UI / Core Ownership & Authority Model
-
-> **Prinsip Otoritas:**
-> _The UI reports what MODULA decided._
-> _The Policy Engine decides what should happen._
-> _The Failover Engine makes it happen._
-> _The Platform Backend talks to the operating system._
-
-```text
-React / TypeScript UI
-        ↓ (Perintah Atomik: enable_interface, get_interface_state)
-     Tauri IPC
-        ↓ (State Streams & Events)
-      Rust Core
-        ↓
-┌───────────────────────────────┐
-│ DiscoveryEngine               │
-│ ProbeEngine (RFC 3550 Jitter) │
-│ Health Scoring                │
-│ PolicyEngine (Route Decision) │
-│ FailoverEngine (Orchestrator) │
-│ RouteManager (L3 Metric)      │
-│ Recovery & Anti-Flap Arbiter  │
-│ WorkloadEngine (Passive App)  │
-│ QoS Orchestrator              │
-└───────────────┬───────────────┘
-                ↓
-        Native OS APIs
-```
+1. **Prioritas Kontinuitas Sesi**: Menjaga jalur aktif yang stabil lebih penting daripada mengejar perbedaan performa kecil.
+2. **Margin Anti-Flapping**:
+   $$\text{candidate\_score} \ge \text{active\_score} + \text{takeover\_margin}$$
+   Pengalihan rute hanya dieksekusi jika kandidat pengganti memiliki skor yang secara signifikan melampaui jalur aktif ditambah margin toleransi.
+3. **Deteksi Degradasi Awal (Early Degradation)**:
+   Menggunakan pengukuran variasi kedatangan paket (IETF RFC 3550 Interarrival Jitter) untuk mengantisipasi kegagalan jalur sebelum sesi video conference atau streaming macet.
+4. **Pemisahan Metrik Hardware**:
+   Beban perangkat keras (CPU, RAM, GPU) dipantau secara terisolasi dan **tidak pernah** memengaruhi skor pemilihan rute jaringan.
 
 ---
 

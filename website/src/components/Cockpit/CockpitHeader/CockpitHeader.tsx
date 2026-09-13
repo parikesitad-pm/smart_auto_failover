@@ -10,8 +10,6 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
   onForceReinit,
   onOpenStartupModal,
   onOpenDiagnostics,
-  isBrowserPreview,
-  isSimulationActive,
 }) => {
   const [isReinitSpinning, setIsReinitSpinning] = useState(false);
 
@@ -89,28 +87,26 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
 
       {/* Action Buttons & Master Status Pill */}
       <div className="flex items-center space-x-2">
-        {/* Manual Force Re-initialization Button (Native desktop runtime only) */}
-        {!isBrowserPreview && (
-          <button
-            type="button"
-            onClick={handleReinitClick}
-            className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm group"
-            title="Force manual Core re-initialization and hardware probe cycle (without startup presentation)"
+        {/* Manual Force Re-initialization Button */}
+        <button
+          type="button"
+          onClick={handleReinitClick}
+          className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm group cursor-pointer"
+          title="Force manual probe cycle and re-evaluate link quality scores"
+        >
+          <span
+            className={`inline-block transition-transform duration-300 ${isReinitSpinning ? 'animate-spin' : ''}`}
           >
-            <span
-              className={`inline-block transition-transform duration-300 ${isReinitSpinning ? 'animate-spin' : ''}`}
-            >
-              🔄
-            </span>
-            <span>Re-initialize Core</span>
-          </button>
-        )}
+            🔄
+          </span>
+          <span>Re-evaluate Links</span>
+        </button>
 
         {/* Startup Presentation Modal Trigger */}
         <button
           type="button"
           onClick={onOpenStartupModal}
-          className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm"
+          className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
           title="Configure minimum presentation duration and replay startup"
         >
           <span>⏱️</span>
@@ -121,33 +117,23 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
         <button
           type="button"
           onClick={onOpenDiagnostics}
-          className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-amber-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm"
+          className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-amber-300 text-xs font-mono border border-slate-700/80 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
           title="Open Policy Engine Diagnostics & Simulation modal (Shift+D)"
         >
           <span>🧪</span>
           <span>Diagnostics</span>
         </button>
 
-        {/* Environment Runtime Badge */}
-        {isBrowserPreview && (
-          <div
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono border transition-colors ${
-              isSimulationActive
-                ? 'bg-amber-950/60 border-amber-600/70 text-amber-300'
-                : 'bg-slate-900/80 border-slate-700 text-slate-400'
-            }`}
-            title={
-              isSimulationActive
-                ? 'Deterministic browser simulation mode'
-                : 'Running in browser without native Tauri Core access'
-            }
-          >
-            <span>{isSimulationActive ? '🧪' : '🌐'}</span>
-            <span className="font-semibold uppercase tracking-wider">
-              {isSimulationActive ? 'SIMULATION MODE' : 'BROWSER PREVIEW'}
-            </span>
-          </div>
-        )}
+        {/* Interactive Demo Mode Badge */}
+        <div
+          className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono border bg-cyan-950/40 border-cyan-700/60 text-cyan-300"
+          title="Interactive Deterministic Simulator"
+        >
+          <span>🧪</span>
+          <span className="font-semibold uppercase tracking-wider">
+            INTERACTIVE DEMO
+          </span>
+        </div>
 
         {/* Master Status Pill */}
         {activePathName &&

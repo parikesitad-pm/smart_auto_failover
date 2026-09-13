@@ -5,6 +5,7 @@ import { PerformanceGauges } from './PerformanceGauges';
 import { InterfaceDeck } from './InterfaceDeck';
 import { AdminConfirmationBubble } from './AdminConfirmationBubble';
 import { CockpitFooter } from './CockpitFooter';
+import { DemoToolbar } from './DemoToolbar';
 import { DiagnosticsModal } from '../Diagnostics';
 import { useNetworkCockpit } from '../../hooks/useNetworkCockpit';
 
@@ -53,6 +54,13 @@ export const Cockpit: React.FC<CockpitProps> = ({ onOpenStartupModal }) => {
     isSimulationActive,
     enableSimulation,
     disableSimulation,
+    disconnectEthernet,
+    reconnectEthernet,
+    disableWifi,
+    enableWifi,
+    degradeConnection,
+    recoverConnection,
+    resetDemo,
   } = useNetworkCockpit();
 
   const activeAdapter = adapters.find(
@@ -146,6 +154,17 @@ export const Cockpit: React.FC<CockpitProps> = ({ onOpenStartupModal }) => {
 
         {/* Mathematical Performance Gauges */}
         <PerformanceGauges telemetry={telemetry} />
+
+        {/* Interactive Scenario Controls (7 Core Demo Actions) */}
+        <DemoToolbar
+          onDisconnectEthernet={disconnectEthernet}
+          onReconnectEthernet={reconnectEthernet}
+          onDisableWifi={disableWifi}
+          onEnableWifi={enableWifi}
+          onDegradeConnection={degradeConnection}
+          onRecoverConnection={recoverConnection}
+          onResetDemo={resetDemo}
+        />
 
         {/* Physical Interface Matrix */}
         <InterfaceDeck

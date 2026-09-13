@@ -7,8 +7,5 @@
     "build": "npm --prefix website run build",
     "type-check": "npm --prefix website run type-check",
     "preview": "npm --prefix website run preview"
-  },
-  "dependencies": {
-    "@tauri-apps/api": "^2.11.1"
   }
 }

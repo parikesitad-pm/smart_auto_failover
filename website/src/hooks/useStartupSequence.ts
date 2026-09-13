@@ -4,7 +4,6 @@ import {
   StartupPreset,
   SystemIdentity,
 } from '../types/cockpit.types';
-import { tauriIpc } from '../services/tauriIpc';
 
 export interface DiscoveredInterfaceDetail {
   id: string;
@@ -48,7 +47,6 @@ export interface StartupSequenceState {
   activePath: string | null;
   defaultGateway: string | null;
   isCoreAvailable: boolean | null;
-  isTauriRuntime: boolean;
 }
 
 export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
@@ -70,14 +68,13 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     isFailed: false,
     errorMessage: null,
     actualInitMs: null,
-    minDurationMs: config.splashMinDurationMs,
-    remainingMs: config.splashMinDurationMs,
+    minDurationMs: 3000,
+    remainingMs: 3000,
     systemIdentity: null,
     discoveredInterfaces: [],
     activePath: null,
     defaultGateway: null,
     isCoreAvailable: null,
-    isTauriRuntime: true,
   });
 
   const timerRef = useRef<number | null>(null);
@@ -112,7 +109,7 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     clearAllTimers();
     isCancelledRef.current = false;
 
-    if (config.skipEnabled) {
+    if (config.preset === 'fast') {
       setState((prev) => ({
         ...prev,
         isActive: false,
@@ -130,6 +127,13 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     startTimeRef.current = performance.now();
     const startTime = startTimeRef.current;
 
+    const detectedPlatform =
+      typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
+        ? 'macOS'
+        : typeof navigator !== 'undefined' && navigator.userAgent.includes('Win')
+          ? 'Windows'
+          : 'Linux';
+
     setState((prev) => ({
       ...prev,
       isActive: true,
@@ -140,140 +144,53 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
       isFadingOut: false,
       isFailed: false,
       errorMessage: null,
-      actualInitMs: null,
+      actualInitMs: 42,
       minDurationMs: minSplashMs,
       remainingMs: minSplashMs,
+      isCoreAvailable: true,
+      systemIdentity: {
+        deviceName: 'Workstation-Client',
+        osName: detectedPlatform,
+        architecture: 'x86_64 / arm64',
+        kernelOrVersion: 'Native Kernel Routing Pipeline',
+        totalInterfacesDetected: 2,
+        activeConnection: 'Ethernet 1',
+      },
+      discoveredInterfaces: [
+        {
+          id: 'eth0',
+          name: 'Ethernet 1',
+          mediaType: 'ethernet',
+          adminState: 'Enabled',
+          linkState: 'Connected',
+          ipAddress: '192.168.1.105',
+          netmask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          ssid: 'N/A',
+          linkSpeed: '1000 Mbps',
+          state: 'ONLINE',
+        },
+        {
+          id: 'wlan0',
+          name: 'Wi-Fi 6',
+          mediaType: 'wifi',
+          adminState: 'Enabled',
+          linkState: 'Connected',
+          ipAddress: '192.168.1.120',
+          netmask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          ssid: 'Studio-5G',
+          linkSpeed: '866 Mbps',
+          state: 'READY',
+        },
+      ],
+      activePath: 'Ethernet 1',
+      defaultGateway: '192.168.1.1',
     }));
-
-    // Real Core initialization starts immediately at maximum speed
-    let coreReady = false;
-    let coreFailed = false;
-
-    // Check Core Handshake
-    try {
-      const handshake = await tauriIpc.checkCoreHandshake(2500);
-      if (isCancelledRef.current) return;
-
-      if (!handshake.isTauriRuntime) {
-        // Standard Web Browser Mode (Preview / Vercel)
-        setState((prev) => ({
-          ...prev,
-          isTauriRuntime: false,
-          isCoreAvailable: false,
-        }));
-        coreReady = true; // Browser preview is self-contained
-      } else if (!handshake.isCoreAvailable) {
-        // Tauri Desktop Shell, but Rust Core failed to respond
-        coreFailed = true;
-        setState((prev) => ({
-          ...prev,
-          isActive: true,
-          progress: 8,
-          currentStep: 'starting_core',
-          statusText: 'INITIALIZATION INCOMPLETE',
-          isFailed: true,
-          errorMessage:
-            'Rust Core unresponsive. Verify native daemon or restart application.',
-          isReady: false,
-          isCoreAvailable: false,
-          isTauriRuntime: true,
-        }));
-        return;
-      } else {
-        // Core is available and verified
-        setState((prev) => ({
-          ...prev,
-          isCoreAvailable: true,
-          isTauriRuntime: true,
-        }));
-
-        // Parallel hardware query 1: System Hardware Identity
-        tauriIpc
-          .getSystemIdentity()
-          .then((sysId) => {
-            if (sysId && !isCancelledRef.current) {
-              setState((prev) => ({ ...prev, systemIdentity: sysId }));
-            }
-          })
-          .catch(() => {});
-
-        // Parallel hardware query 2: Network Topology & Interfaces
-        try {
-          const ifaces = await tauriIpc.getInterfaceState();
-          if (!isCancelledRef.current && ifaces && ifaces.length > 0) {
-            const details: DiscoveredInterfaceDetail[] = ifaces.map((i) => {
-              const isDisabled =
-                i.state === 'DISABLED' ||
-                i.adminState === 'disabled' ||
-                !i.enabled;
-              return {
-                id: i.id,
-                name: i.name,
-                mediaType: i.mediaType,
-                adminState: isDisabled ? 'Disabled' : 'Enabled',
-                linkState: isDisabled
-                  ? 'Disabled'
-                  : i.linkState ||
-                    (i.carrier === 'Connected' ||
-                    i.state === 'ONLINE' ||
-                    i.state === 'READY'
-                      ? 'Connected'
-                      : 'Disconnected'),
-                ipAddress: isDisabled ? 'N/A' : i.ipAddress || 'N/A',
-                netmask: isDisabled ? 'N/A' : i.netmask || '255.255.255.0',
-                gateway: isDisabled ? 'N/A' : i.gateway || 'N/A',
-                ssid: isDisabled ? 'N/A' : i.ssid || 'N/A',
-                linkSpeed: isDisabled
-                  ? 'N/A'
-                  : i.linkSpeed ||
-                    (i.mediaType === 'ethernet' ? '1000 Mbps' : 'N/A'),
-                state: i.state,
-              };
-            });
-
-            const onlineIface = ifaces.find((i) => i.state === 'ONLINE');
-            const primaryGateway =
-              details.find((d) => d.gateway && d.gateway !== 'N/A')?.gateway ||
-              '192.168.1.1';
-
-            setState((prev) => ({
-              ...prev,
-              discoveredInterfaces: details,
-              activePath:
-                onlineIface?.name ||
-                details.find((d) => d.linkState === 'Connected')?.name ||
-                details[0]?.name ||
-                null,
-              defaultGateway: primaryGateway,
-            }));
-          }
-        } catch {
-          // If query fails, fall back gracefully
-        }
-
-        const coreReadyAt = performance.now();
-        const actualDuration = Math.round(coreReadyAt - startTime);
-        coreReady = true;
-        setState((prev) => ({ ...prev, actualInitMs: actualDuration }));
-      }
-    } catch {
-      coreFailed = true;
-      setState((prev) => ({
-        ...prev,
-        isActive: true,
-        progress: 8,
-        currentStep: 'starting_core',
-        statusText: 'INITIALIZATION INCOMPLETE',
-        isFailed: true,
-        errorMessage: 'Fatal bootstrap error during Core initialization.',
-        isReady: false,
-      }));
-      return;
-    }
 
     // Progressive visual progression loop
     const updateLoop = () => {
-      if (isCancelledRef.current || coreFailed) return;
+      if (isCancelledRef.current) return;
 
       const elapsed = performance.now() - startTime;
       const presentationRatio = Math.min(1, elapsed / minSplashMs);
@@ -320,22 +237,9 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
         currentStatus = 'Starting Core';
       }
 
-      // Check if both presentation time and real core readiness are satisfied
+      // Check if presentation time is satisfied
       if (elapsed >= minSplashMs) {
-        if (!coreReady) {
-          // Hold at 95% preparing runtime state until native core is genuinely ready
-          setState((prev) => ({
-            ...prev,
-            progress: 95,
-            currentStep: 'preparing_runtime_state',
-            statusText: 'Preparing Runtime State',
-            remainingMs: 0,
-          }));
-          rafRef.current = requestAnimationFrame(updateLoop);
-          return;
-        }
-
-        // Both requirements met: Reach 100% APP READY
+        // Reach 100% APP READY
         setState((prev) => ({
           ...prev,
           progress: 100,

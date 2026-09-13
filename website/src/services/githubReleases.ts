@@ -1,4 +1,10 @@
-import { PlatformId, GitHubRelease, GitHubAsset, PlatformReleaseInfo, ResolvedRelease } from '../types/releases';
+import {
+  PlatformId,
+  GitHubRelease,
+  GitHubAsset,
+  PlatformReleaseInfo,
+  ResolvedRelease,
+} from '../types/releases';
 
 const REPO_OWNER = 'parikesitad-pm';
 const REPO_NAME = 'smart_auto_failover';
@@ -101,7 +107,9 @@ function resolveReleaseFromList(
     selected = desktopReleases[0];
   }
 
-  const channel: 'STABLE' | 'PREVIEW' = selected.prerelease ? 'PREVIEW' : 'STABLE';
+  const channel: 'STABLE' | 'PREVIEW' = selected.prerelease
+    ? 'PREVIEW'
+    : 'STABLE';
   const assets: GitHubAsset[] = selected.assets || [];
 
   // Find Checksums asset
@@ -151,7 +159,8 @@ function resolveReleaseFromList(
       sizeFormatted: winAsset ? formatBytes(winAsset.size) : undefined,
       validationStatus: 'Available for Testing',
       isRecommended: detected === 'windows',
-      description: 'Native PowerShell NetTCPIP HAL. Downloadable for physical PC verification.',
+      description:
+        'Native PowerShell NetTCPIP HAL. Downloadable for physical PC verification.',
     },
     linux: {
       platformId: 'linux',
@@ -165,7 +174,8 @@ function resolveReleaseFromList(
       sizeFormatted: linuxAsset ? formatBytes(linuxAsset.size) : undefined,
       validationStatus: 'Real-Host Validated',
       isRecommended: detected === 'linux',
-      description: 'Native Linux Netlink & sysfs prober. Verified on physical workstation.',
+      description:
+        'Native Linux Netlink & sysfs prober. Verified on physical workstation.',
     },
     'macos-arm64': {
       platformId: 'macos-arm64',
@@ -179,7 +189,8 @@ function resolveReleaseFromList(
       sizeFormatted: macArmAsset ? formatBytes(macArmAsset.size) : undefined,
       validationStatus: 'Available for Testing',
       isRecommended: detected === 'macos-arm64',
-      description: 'Native BSD route & networksetup HAL. Unsigned preview build.',
+      description:
+        'Native BSD route & networksetup HAL. Unsigned preview build.',
     },
     'macos-x64': {
       platformId: 'macos-x64',
@@ -218,7 +229,8 @@ function createFallbackRelease(detected: PlatformId): ResolvedRelease {
     channel: 'PREVIEW',
     publishedAt: new Date().toISOString(),
     htmlUrl: FALLBACK_RELEASES_URL,
-    releaseNotes: 'Real-time release discovery via GitHub API is currently loading or rate-limited.',
+    releaseNotes:
+      'Real-time release discovery via GitHub API is currently loading or rate-limited.',
     isFallback: true,
     platforms: {
       windows: {

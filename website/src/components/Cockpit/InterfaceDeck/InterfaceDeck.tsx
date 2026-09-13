@@ -5,11 +5,6 @@ export const InterfaceDeck: React.FC<InterfaceDeckProps> = ({
   adapters,
   activePath,
   onToggleAdapter,
-  runtimeMode = 'native',
-  isCoreReachable,
-  isSimulationActive = false,
-  onEnableSimulation,
-  onDisableSimulation,
 }) => {
   return (
     <section aria-label="Physical Network Interfaces" className="mt-2 mb-3">
@@ -17,80 +12,21 @@ export const InterfaceDeck: React.FC<InterfaceDeckProps> = ({
         <span className="font-bold text-slate-300 flex items-center gap-1.5">
           <span>Physical Interface Matrix</span>
           <span className="text-[10px] font-normal text-slate-500">
-            {runtimeMode === 'browser_preview' && !isSimulationActive
-              ? '(Native Core Required)'
-              : isSimulationActive
-                ? '(Deterministic Simulation)'
-                : '(Dynamic Hotplug Detection)'}
+            (Multi-Path Active / Standby Routing)
           </span>
         </span>
-        <span className="text-[10px] text-slate-500">
-          {runtimeMode === 'browser_preview'
-            ? 'Browser Environment'
-            : 'Autonomous Carrier Scoring Engine'}
+        <span className="text-[10px] text-cyan-400/80">
+          Carrier Scoring Engine • Sub-second Failover
         </span>
       </div>
 
-      {isSimulationActive && (
-        <div className="mb-2.5 py-1.5 px-3 rounded-lg border border-amber-700/60 bg-amber-950/40 flex items-center justify-between text-xs font-mono text-amber-300">
-          <div className="flex items-center gap-2">
-            <span>⚠️</span>
-            <span className="font-semibold">
-              BROWSER SIMULATION ACTIVE — NOT REAL HARDWARE
-            </span>
-          </div>
-          {onDisableSimulation && (
-            <button
-              type="button"
-              onClick={onDisableSimulation}
-              className="text-[11px] underline text-amber-200 hover:text-white transition-colors"
-            >
-              Exit Simulation
-            </button>
-          )}
-        </div>
-      )}
-
       {adapters.length === 0 ? (
-        runtimeMode === 'browser_preview' || isCoreReachable === false ? (
-          <div className="py-8 px-6 rounded-xl border border-amber-800/60 bg-amber-950/20 text-center font-mono shadow-inner">
-            <div className="text-3xl mb-2">🌐</div>
-            <p className="text-sm text-amber-300 font-bold tracking-wider uppercase">
-              NATIVE CORE UNAVAILABLE
-            </p>
-            <p className="text-xs text-slate-200 mt-1 font-semibold">
-              Browser Preview Mode
-            </p>
-            <p className="text-[11px] text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
-              Real network interface discovery and kernel route manipulation
-              require the AutoFailover desktop runtime (Tauri + Rust Core).
-            </p>
-            {onEnableSimulation && (
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={onEnableSimulation}
-                  className="px-3.5 py-1.5 rounded-lg bg-amber-900/50 hover:bg-amber-800/80 text-amber-200 border border-amber-700/80 text-xs transition-colors shadow flex items-center gap-1.5"
-                >
-                  <span>🧪</span>
-                  <span>Enable Deterministic Simulation</span>
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="py-8 px-4 rounded-xl border border-slate-800/80 bg-slate-950/40 text-center font-mono">
-            <div className="inline-block animate-spin text-cyan-400 mb-2">
-              🔄
-            </div>
-            <p className="text-xs text-slate-300 font-bold">
-              Scanning hardware topology...
-            </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Physical network interface detection in progress
-            </p>
-          </div>
-        )
+        <div className="py-8 px-6 rounded-xl border border-slate-800 bg-slate-950/60 text-center font-mono">
+          <p className="text-xs text-slate-300 font-bold">No active network interfaces</p>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Click 'Reset Demo' or 'Reconnect Ethernet' above to restore adapter links.
+          </p>
+        </div>
       ) : (
         <div
           className={`grid grid-cols-1 sm:grid-cols-2 ${

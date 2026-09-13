@@ -63,7 +63,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             ref={logoCardRef}
             style={{
               transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${isHovered ? 1.05 : 1})`,
-              transition: isHovered ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
+              transition: isHovered
+                ? 'transform 0.08s ease-out'
+                : 'transform 0.5s ease-out',
               transformStyle: 'preserve-3d',
             }}
             className="relative w-40 h-40 sm:w-48 sm:h-48 rounded-3xl p-6 bg-gradient-to-b from-[#121c2d]/80 to-[#080b10]/90 border border-emerald-500/30 shadow-[0_0_50px_rgba(16,185,129,0.25)] flex items-center justify-center backdrop-blur-xl group"
@@ -89,8 +91,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Supporting Statement */}
         <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-          Engineered for <strong className="text-white font-semibold">Video Conference & Livestreaming Production</strong>.
-          Real-time RFC 3550 jitter evaluation, multi-factor scoring, and anti-flap arbitrated failover.
+          Engineered for{' '}
+          <strong className="text-white font-semibold">
+            Video Conference & Livestreaming Production
+          </strong>
+          . Real-time RFC 3550 jitter evaluation, multi-factor scoring, and
+          anti-flap arbitrated failover.
         </p>
 
         {/* Action Buttons */}
