@@ -20,6 +20,19 @@ from ..workload.watcher import WorkloadWatcher
 from ..telemetry.sampler import TelemetrySampler
 
 
+class PolicyEngineWrapper:
+    """Wrapper exposing policy engine methods and current runtime config."""
+
+    def __init__(self, config: PolicyConfig):
+        self.config = config
+
+    def evaluate_failover(self, *args, **kwargs):
+        return PolicyEngine.evaluate_failover(*args, **kwargs)
+
+    def compute_score(self, *args, **kwargs):
+        return PolicyEngine.compute_score(*args, **kwargs)
+
+
 class FailoverOrchestrator:
     """
     Main runtime engine driving interface monitoring, probe sampling,
@@ -39,7 +52,7 @@ class FailoverOrchestrator:
         self.bus = event_bus or EventBus()
         self.event_bus = self.bus
         self.config = config or PolicyConfig()
-
+        self.policy_engine = PolicyEngineWrapper(self.config)
 
         self.probe_target_host = probe_target_host
         self.probe_interval_sec = probe_interval_sec
@@ -71,6 +84,48 @@ class FailoverOrchestrator:
             if self._active_interface_id:
                 return self._interfaces.get(self._active_interface_id)
             return None
+
+    @property
+    def metrics(self) -> Dict[str, Any]:
+        """Provides map of interface metrics indexed by name and id."""
+        with self._lock:
+            m = {}
+            for iface in self._interfaces.values():
+                m[iface.name] = iface.metrics
+                m[iface.id] = iface.metrics
+            return m
+
+    @property
+    def latest_device_health(self) -> Any:
+        """Returns the latest passively sampled device health."""
+        return self.telemetry_sampler.sample()
+
+    def set_interface_admin_state(self, iface_id_or_name: str, enabled: bool) -> bool:
+        """Administratively enable or disable a network adapter."""
+        with self._lock:
+            target_iface = self._interfaces.get(iface_id_or_name)
+            if not target_iface:
+                for iface in self._interfaces.values():
+                    if iface.name == iface_id_or_name:
+                        target_iface = iface
+                        break
+            if not target_iface:
+                return False
+            success = self.backend.set_interface_state(target_iface.name, enabled)
+            if success:
+                target_iface.admin_enabled = enabled
+                if not enabled:
+                    target_iface.state = InterfaceState.DISABLED
+                else:
+                    target_iface.state = InterfaceState.READY
+                self.bus.publish(
+                    EventType.INTERFACE_STATE_CHANGED,
+                    f"Interface {target_iface.friendly_name} administratively {'enabled' if enabled else 'disabled'}",
+                    interface_id=target_iface.id,
+                    interface_name=target_iface.name,
+                )
+            return success
+
 
     def initialize(self) -> None:
         """Initial hardware discovery and registration gate."""

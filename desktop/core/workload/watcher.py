@@ -59,3 +59,10 @@ class WorkloadWatcher:
         except Exception:
             pass
         return found
+
+    def scan_active_processes(self) -> Set[str]:
+        """Returns the set of recognized active real-time workload application names."""
+        _, detected = self.detect_active_profile()
+        return detected
+
+

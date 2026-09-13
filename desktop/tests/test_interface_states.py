@@ -49,6 +49,42 @@ class TestInterfaceStates(unittest.TestCase):
         self.assertEqual(iface.metrics.packet_loss_pct, 100.0)
         self.assertEqual(iface.metrics.health_index, 0)
 
+    def test_orchestrator_ui_contract(self):
+        """Verify all properties and methods expected by the Cockpit UI are present on FailoverOrchestrator."""
+        from desktop.platform import get_platform_backend
+        from desktop.core.events.bus import EventBus
+        from desktop.core.failover.orchestrator import FailoverOrchestrator
+        from desktop.models.policy import WorkloadProfile
+
+        backend = get_platform_backend()
+        bus = EventBus()
+        orch = FailoverOrchestrator(platform_backend=backend, event_bus=bus)
+
+        # 1. Event bus access
+        self.assertIs(orch.event_bus, bus)
+
+        # 2. Policy engine config
+        orch.policy_engine.config.workload_profile = WorkloadProfile.BROADCAST
+        self.assertEqual(orch.config.workload_profile, WorkloadProfile.BROADCAST)
+
+        # 3. Workload watcher scan
+        apps = orch.workload_watcher.scan_active_processes()
+        self.assertIsInstance(apps, set)
+
+        # 4. Telemetry sampler
+        dh = orch.latest_device_health
+        self.assertIsNotNone(dh)
+        self.assertTrue(hasattr(dh, "cpu_percent"))
+
+        # 5. Metrics map
+        metrics = orch.metrics
+        self.assertIsInstance(metrics, dict)
+
+        # 6. Lifecycle start and stop
+        orch.start()
+        orch.stop()
+
 
 if __name__ == "__main__":
     unittest.main()
+
