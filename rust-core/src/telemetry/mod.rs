@@ -361,6 +361,7 @@ mod tests {
             is_physical: true,
             carrier_detected: true,
             metric_priority: 50,
+            ssid: None,
         };
         let standby = NetworkInterface {
             id: "wlan0".to_string(),
@@ -380,6 +381,7 @@ mod tests {
             is_physical: true,
             carrier_detected: true,
             metric_priority: 100,
+            ssid: None,
         };
 
         let interfaces = vec![active, standby];

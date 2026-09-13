@@ -132,26 +132,33 @@ export function useStartupSequence(initialConfig?: Partial<StartupConfig>) {
     // Step 2: Query actual network interface details & topology
     tauriIpc.getInterfaceState().then((ifaces) => {
       if (ifaces && ifaces.length > 0) {
-        const details: DiscoveredInterfaceDetail[] = ifaces.map((i) => ({
-          id: i.id,
-          name: i.name,
-          mediaType: i.mediaType,
-          adminState: i.adminState || (i.enabled ? 'Enabled' : 'Disabled'),
-          linkState:
-            i.linkState ||
-            (i.carrier === 'Connected' ||
-            i.state === 'ONLINE' ||
-            i.state === 'READY'
-              ? 'Connected'
-              : 'Disconnected'),
-          ipAddress: i.ipAddress || 'N/A',
-          netmask: i.netmask || '255.255.255.0',
-          gateway: i.gateway || 'N/A',
-          ssid: i.ssid || (i.mediaType === 'wifi' ? 'www.d-rvc.com' : 'N/A'),
-          linkSpeed:
-            i.linkSpeed || (i.mediaType === 'ethernet' ? '100 Mbps' : 'N/A'),
-          state: i.state,
-        }));
+        const details: DiscoveredInterfaceDetail[] = ifaces.map((i) => {
+          const isDisabled =
+            i.state === 'DISABLED' || i.adminState === 'disabled' || !i.enabled;
+          return {
+            id: i.id,
+            name: i.name,
+            mediaType: i.mediaType,
+            adminState: isDisabled ? 'Disabled' : 'Enabled',
+            linkState: isDisabled
+              ? 'Disabled'
+              : i.linkState ||
+                (i.carrier === 'Connected' ||
+                i.state === 'ONLINE' ||
+                i.state === 'READY'
+                  ? 'Connected'
+                  : 'Disconnected'),
+            ipAddress: isDisabled ? 'N/A' : i.ipAddress || 'N/A',
+            netmask: isDisabled ? 'N/A' : i.netmask || '255.255.255.0',
+            gateway: isDisabled ? 'N/A' : i.gateway || 'N/A',
+            ssid: isDisabled ? 'N/A' : i.ssid || 'N/A',
+            linkSpeed: isDisabled
+              ? 'N/A'
+              : i.linkSpeed ||
+                (i.mediaType === 'ethernet' ? '100 Mbps' : 'N/A'),
+            state: i.state,
+          };
+        });
         const onlineIface = ifaces.find((i) => i.state === 'ONLINE');
         setState((prev) => ({
           ...prev,

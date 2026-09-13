@@ -37,6 +37,17 @@ pub struct RawDiscoveredDevice {
     pub admin_up: bool,
     pub is_physical: bool,
     pub metric: u32,
+    pub ssid: Option<String>,
+}
+
+/// Dynamic runtime parameters of an interface polled every tick.
+#[derive(Debug, Clone, Default)]
+pub struct InterfaceDynamicDetails {
+    pub admin_up: bool,
+    pub carrier: bool,
+    pub ip_addresses: Vec<String>,
+    pub gateway: Option<String>,
+    pub ssid: Option<String>,
 }
 
 /// Platform-agnostic interface manipulation interface.
@@ -65,6 +76,21 @@ pub trait PlatformBackend: Send + Sync {
 
     /// Retrieve detailed network addressing and gateway info for a single interface.
     async fn get_interface_network_info(&self, name: &str) -> Result<Option<InterfaceNetworkInfo>, PlatformError>;
+
+    /// Re-query dynamic runtime parameters for an interface (administrative state, carrier, IP, gateway, SSID).
+    async fn query_dynamic_details(&self, name: &str, _kind: InterfaceKind) -> Result<InterfaceDynamicDetails, PlatformError> {
+        let carrier = self.check_carrier(name).await.unwrap_or(false);
+        let gateway = self.get_interface_gateway(name).await.unwrap_or(None);
+        let net_info = self.get_interface_network_info(name).await.unwrap_or(None);
+        let ip_addresses = net_info.map(|n| n.ip_addresses).unwrap_or_default();
+        Ok(InterfaceDynamicDetails {
+            admin_up: true,
+            carrier,
+            ip_addresses,
+            gateway,
+            ssid: None,
+        })
+    }
 }
 
 /// Factory creating the active OS platform backend.

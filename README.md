@@ -1,4 +1,4 @@
-# AutoFailover 3.0 by Modula
+44# AutoFailover 3.0 by Modula
 
 <div align="center">
 
@@ -13,11 +13,11 @@
 
 ### _"light seamless and usefull"_
 
-**Navigate Your Internet Pipeline to Keep You Online**  
-**Through Video Conference & Livestreaming Production**  
-*Windows • macOS (Apple Silicon & Intel) • Linux*
+**Navigate Your Internet Pipeline to Keep You Online**
+**Through Video Conference & Livestreaming Production**
+_Windows • macOS (Apple Silicon & Intel) • Linux_
 
-*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)***
+\*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
 [![Release](https://img.shields.io/badge/Release-v3.0.0--alpha-blue?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
 [![Core](https://img.shields.io/badge/Core-Rust-orange?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
@@ -39,7 +39,7 @@ Sistem memantau kondisi seluruh antarmuka jaringan fisik (Ethernet, Wi-Fi, USB C
 
 ## 🏎️ Panduan Penggunaan: Instrument Cluster AutoFailover 3.0
 
-**Instrument Cluster AutoFailover 3.0** (sebelumnya dikenal sebagai *Cockpit Widget*) adalah antarmuka visual terpadu beresolusi tinggi yang terinspirasi dari kluster instrumen mobil performa tinggi (*automotive digital instrument cluster*). Kluster ini dirancang agar pengguna dapat memahami kondisi seluruh pipa jaringan dalam waktu **kurang dari 2 detik**.
+**Instrument Cluster AutoFailover 3.0** (sebelumnya dikenal sebagai _Cockpit Widget_) adalah antarmuka visual terpadu beresolusi tinggi yang terinspirasi dari kluster instrumen mobil performa tinggi (_automotive digital instrument cluster_). Kluster ini dirancang agar pengguna dapat memahami kondisi seluruh pipa jaringan dalam waktu **kurang dari 2 detik**.
 
 ```text
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -95,6 +95,7 @@ Sistem memantau kondisi seluruh antarmuka jaringan fisik (Ethernet, Wi-Fi, USB C
 AutoFailover 3.0 dibangun di atas arsitektur **Rust Core** (berotoritas penuh atas manipulasi jaringan) dan **Tauri Desktop Shell** (UI ultra-ringan berbasis WebKit/WebView2).
 
 ### Kebutuhan Dasar (Prerequisites):
+
 - **Rust Toolchain**: `rustc` dan `cargo` versi 1.77 atau lebih baru (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`).
 - **Node.js**: Node.js versi 18+ LTS dan `npm` (atau `pnpm`).
 
@@ -105,6 +106,7 @@ AutoFailover 3.0 dibangun di atas arsitektur **Rust Core** (berotoritas penuh at
 Pada Linux, backend berinteraksi langsung dengan `/sys/class/net`, `/proc/net/route`, dan utilitas `iproute2` (`ip route`, `ip link`).
 
 #### 1. Instalasi Dependensi Sistem:
+
 - **Debian / Ubuntu**:
   ```bash
   sudo apt-get update
@@ -121,6 +123,7 @@ Pada Linux, backend berinteraksi langsung dengan `/sys/class/net`, `/proc/net/ro
   ```
 
 #### 2. Kompilasi & Menjalankan:
+
 ```bash
 # Clone repositori
 git clone https://github.com/parikesitad-pm/smart_auto_failover.git
@@ -135,7 +138,9 @@ cargo run --bin autofailover-app
 ```
 
 #### 3. Izin Manipulasi Rute Default (Root / Capabilities):
+
 Mengubah default gateway di tabel routing Linux memerlukan hak akses jaringan:
+
 ```bash
 # Opsi A (Rekomendasi - Berikan Capability tanpa root penuh):
 sudo setcap cap_net_admin,cap_net_raw+ep ./target/debug/autofailover-app
@@ -151,11 +156,14 @@ sudo ./target/debug/autofailover-app
 Pada Windows, backend menggunakan native Windows Network APIs (`IPHLPAPI.lib`, `SetIpForwardEntry2`, `GetIpForwardTable2`) dan socket option `IP_UNICAST_IF`.
 
 #### 1. Kebutuhan Sistem:
-- **Visual Studio Build Tools**: Paket *Desktop development with C++* (MSVC).
+
+- **Visual Studio Build Tools**: Paket _Desktop development with C++_ (MSVC).
 - **WebView2 Runtime**: Bawaan Windows 10/11 (Evergreen Bootstrapper).
 
 #### 2. Kompilasi & Menjalankan:
+
 Buka terminal **PowerShell (Run as Administrator)**:
+
 ```powershell
 # Clone repositori
 git clone https://github.com/parikesitad-pm/smart_auto_failover.git
@@ -180,12 +188,14 @@ cargo build --release --bin autofailover-app
 Pada macOS, backend memanfaatkan kerangka kerja bawaan `SystemConfiguration.framework` dan perintah manipulasi kernel routing BSD (`route replace default`).
 
 #### 1. Kebutuhan Sistem:
+
 - **Xcode Command Line Tools**:
   ```bash
   xcode-select --install
   ```
 
 #### 2. Kompilasi & Menjalankan:
+
 ```bash
 # Clone repositori
 git clone https://github.com/parikesitad-pm/smart_auto_failover.git
@@ -207,11 +217,12 @@ sudo ./target/release/autofailover-app
 
 ## 🎯 Filosofi & Prinsip Desain
 
-> **Core UX Principle:**  
-> *"Kelihatan kompleks di dalam. Terasa sederhana di luar."*  
-> *"Automation should be invisible until it matters."*
+> **Core UX Principle:**
+> _"Kelihatan kompleks di dalam. Terasa sederhana di luar."_
+> _"Automation should be invisible until it matters."_
 
 ### 6 Pertanyaan Kunci Layar Utama (< 2 Detik):
+
 1. **Jalur internet mana yang sedang dipakai?** (`ONLINE`)
 2. **Apakah koneksi dalam kondisi sehat?** (Status bar & health badge)
 3. **Berapa Latensi & Jitter saat ini?** (Readout standar IETF RFC 3550)
@@ -228,35 +239,39 @@ Tujuan utama diciptakannya MODULA adalah melindungi sesi kerja real-time yang se
 $$\text{DETECT EARLY} \longrightarrow \text{SELECT BETTER PATH} \longrightarrow \text{SWITCH FAST} \longrightarrow \text{MINIMIZE SESSION DISRUPTION}$$
 
 ### Disiplin Teknis: Batasan Kontinuitas Koneksi
-- MODULA **TIDAK PERNAH mengklaim "garansi pasti zero socket drop untuk seluruh aplikasi"**. Pengalihan rute OS dapat mengubah IP sumber/antarmuka lokal, sehingga sebagian sesi TCP/UDP lama pada protokol tertentu mungkin memerlukan re-establishment.
-- **Tujuan Rekayasa Resmi**: *"Meminimalkan disrupsi dan memaksimalkan probabilitas kontinuitas sesi aktif"*, didukung pengujian empiris terukur per platform dan workload.
-- Pengalaman pengguna yang dihadirkan:  
-  **"MODULA menyelesaikan masalah jaringan saya."**  
-  *(Bukan: "MODULA mengubah-ubah konfigurasi jaringan saya tanpa alasan.")*
 
-### Aturan Tanpa Perpindahan Rute yang Tak Perlu (*No Unnecessary Switching*)
+- MODULA **TIDAK PERNAH mengklaim "garansi pasti zero socket drop untuk seluruh aplikasi"**. Pengalihan rute OS dapat mengubah IP sumber/antarmuka lokal, sehingga sebagian sesi TCP/UDP lama pada protokol tertentu mungkin memerlukan re-establishment.
+- **Tujuan Rekayasa Resmi**: _"Meminimalkan disrupsi dan memaksimalkan probabilitas kontinuitas sesi aktif"_, didukung pengujian empiris terukur per platform dan workload.
+- Pengalaman pengguna yang dihadirkan:
+  **"MODULA menyelesaikan masalah jaringan saya."**
+  _(Bukan: "MODULA mengubah-ubah konfigurasi jaringan saya tanpa alasan.")_
+
+### Aturan Tanpa Perpindahan Rute yang Tak Perlu (_No Unnecessary Switching_)
+
 Kontinuitas sesi kerja memiliki prioritas jauh lebih tinggi daripada mengejar perbedaan performa minor:
+
 - **DILARANG berpindah jalur** hanya karena selisih latensi beberapa milidetik, derau pengukuran sesaat, lonjakan jitter tunggal yang insignifikan, atau karena jalur prioritas fisik baru pulih.
 - Rumus anti-flapping margin ($\text{candidate\_score} \ge \text{active\_score} + \text{takeover\_margin}$) wajib dipenuhi sebelum promosi terjadi.
 
 ### Prioritas Penanganan Gangguan (Failure Priority):
+
 1. Pertahankan jalur aktif yang masih sehat.
 2. Deteksi degradasi lebih awal sebelum terjadi pemutusan total.
-3. Hindari perpindahan jalur yang tidak perlu (*avoid flapping*).
+3. Hindari perpindahan jalur yang tidak perlu (_avoid flapping_).
 4. Jika jalur aktif benar-benar rusak/unusable, alihkan rute seketika (<2s).
 5. Pilih kandidat terbaik yang memenuhi syarat.
 6. Lanjutkan pemantauan pasif terhadap jalur yang sebelumnya bermasalah.
-7. Evaluasi pemulihan jalur (*recovery*) tanpa preemption agresif (`READY` terlebih dahulu).
+7. Evaluasi pemulihan jalur (_recovery_) tanpa preemption agresif (`READY` terlebih dahulu).
 
 ---
 
 ## 🏛️ UI / Core Ownership & Authority Model
 
-> **Prinsip Otoritas:**  
-> *The UI reports what MODULA decided.*  
-> *The Policy Engine decides what should happen.*  
-> *The Failover Engine makes it happen.*  
-> *The Platform Backend talks to the operating system.*
+> **Prinsip Otoritas:**
+> _The UI reports what MODULA decided._
+> _The Policy Engine decides what should happen._
+> _The Failover Engine makes it happen._
+> _The Platform Backend talks to the operating system._
 
 ```text
 React / TypeScript UI

@@ -32,9 +32,9 @@ const DEFAULT_DEVICE_HEALTH: DeviceHealth = {
 
 const BASELINE_LAPTOP_INTERFACES: NetworkInterface[] = [
   {
-    id: 'eth1',
-    name: 'Ethernet 1',
-    carrier: 'Active 1Gbps',
+    id: 'enp44s0',
+    name: 'Ethernet 1 (enp44s0)',
+    carrier: 'Active 100 Mbps',
     mediaType: 'ethernet',
     enabled: true,
     state: 'ONLINE',
@@ -44,57 +44,98 @@ const BASELINE_LAPTOP_INTERFACES: NetworkInterface[] = [
     bgProbingScore: 98.4,
   },
   {
-    id: 'wifi',
-    name: 'Wi-Fi 6',
-    carrier: 'SSID: Studio_5G',
+    id: 'wlp0s20f3',
+    name: 'Wi-Fi (wlp0s20f3)',
+    carrier: 'Disabled',
     mediaType: 'wifi',
-    enabled: true,
-    state: 'READY',
-    latency: 26.8,
-    jitter: 3.4,
-    score: 76.5,
-    bgProbingScore: 76.5,
+    enabled: false,
+    state: 'DISABLED',
+    latency: 0,
+    jitter: 0,
+    score: 0,
+    bgProbingScore: 0,
   },
 ];
 
 function normalizeAdapter(raw: any): NetworkInterface {
+  const isDisabled =
+    raw.state === 'DISABLED' ||
+    raw.is_admin_enabled === false ||
+    raw.enabled === false ||
+    raw.adminState === 'disabled';
+
+  const isCarrier =
+    !isDisabled &&
+    (typeof raw.carrier_detected === 'boolean'
+      ? raw.carrier_detected
+      : raw.carrier === 'Connected' ||
+        raw.linkState === 'connected' ||
+        (typeof raw.carrier === 'string' && raw.carrier.startsWith('Active')) ||
+        (typeof raw.carrier === 'string' && raw.carrier.startsWith('SSID:')));
+
+  const authoritativeState:
+    | 'ONLINE'
+    | 'READY'
+    | 'ALERT'
+    | 'OFFLINE'
+    | 'DISABLED' = isDisabled
+    ? 'DISABLED'
+    : raw.state
+      ? raw.state
+      : isCarrier
+        ? 'READY'
+        : 'OFFLINE';
+
   return {
     id: raw.id,
     name: raw.name,
-    carrier:
-      typeof raw.carrier === 'string'
+    carrier: isDisabled
+      ? 'Disabled'
+      : typeof raw.carrier === 'string'
         ? raw.carrier
-        : raw.carrier_detected
-          ? 'Connected'
+        : isCarrier
+          ? raw.ssid
+            ? `SSID: ${raw.ssid}`
+            : 'Connected'
           : 'Disconnected',
     mediaType: raw.mediaType ?? (raw.kind === 'wifi' ? 'wifi' : 'ethernet'),
-    enabled: raw.enabled ?? raw.is_admin_enabled ?? true,
-    state: raw.state ?? 'OFFLINE',
-    latency:
-      typeof raw.latency === 'number'
+    enabled: !isDisabled,
+    state: authoritativeState,
+    latency: isDisabled
+      ? 0
+      : typeof raw.latency === 'number'
         ? raw.latency
         : (raw.metrics?.latency_ms ?? 0),
-    jitter:
-      typeof raw.jitter === 'number'
+    jitter: isDisabled
+      ? 0
+      : typeof raw.jitter === 'number'
         ? raw.jitter
         : (raw.metrics?.jitter_ms ?? 0),
-    score:
-      typeof raw.score === 'number'
+    score: isDisabled
+      ? 0
+      : typeof raw.score === 'number'
         ? raw.score
         : (raw.metrics?.ewma_score ?? 100),
-    bgProbingScore:
-      typeof raw.bgProbingScore === 'number'
+    bgProbingScore: isDisabled
+      ? 0
+      : typeof raw.bgProbingScore === 'number'
         ? raw.bgProbingScore
         : (raw.metrics?.ewma_score ?? 100),
-    ipAddress: raw.ipAddress ?? raw.ip_addresses?.[0] ?? 'N/A',
+    ipAddress: isDisabled
+      ? 'N/A'
+      : (raw.ipAddress ?? raw.ip_addresses?.[0] ?? 'N/A'),
     netmask: raw.netmask ?? '255.255.255.0',
-    gateway: raw.gateway ?? 'N/A',
-    ssid: raw.ssid ?? (raw.kind === 'wifi' ? 'www.d-rvc.com' : 'N/A'),
-    linkSpeed: raw.linkSpeed ?? (raw.kind === 'ethernet' ? '100 Mbps' : 'N/A'),
-    adminState:
-      raw.adminState ?? (raw.is_admin_enabled ? 'enabled' : 'disabled'),
-    linkState:
-      raw.linkState ?? (raw.carrier_detected ? 'connected' : 'disconnected'),
+    gateway: isDisabled ? 'N/A' : (raw.gateway ?? 'N/A'),
+    ssid: isDisabled ? undefined : (raw.ssid ?? undefined),
+    linkSpeed: isDisabled
+      ? 'N/A'
+      : (raw.linkSpeed ?? (raw.kind === 'ethernet' ? '100 Mbps' : 'N/A')),
+    adminState: isDisabled ? 'disabled' : 'enabled',
+    linkState: isDisabled
+      ? 'disconnected'
+      : isCarrier
+        ? 'connected'
+        : 'disconnected',
   };
 }
 
@@ -102,7 +143,7 @@ export function useNetworkCockpit() {
   const [adapters, setAdapters] = useState<NetworkInterface[]>(
     BASELINE_LAPTOP_INTERFACES
   );
-  const [activePath, setActivePath] = useState<string>('eth1');
+  const [activePath, setActivePath] = useState<string>('enp44s0');
   const [workloadProfile, setWorkloadProfile] =
     useState<WorkloadProfile>('conference');
   const [smartBubbleTarget, setSmartBubbleTarget] = useState<string | null>(

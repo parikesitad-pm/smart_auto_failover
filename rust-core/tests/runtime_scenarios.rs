@@ -92,6 +92,7 @@ fn build_iface(id: &str, state: InterfaceState, ips: Vec<&str>, gw: Option<&str>
         is_physical: true,
         carrier_detected: carrier,
         metric_priority: 100,
+        ssid: None,
     }
 }
 
@@ -447,8 +448,13 @@ async fn test_real_linux_host_subsystems_report() {
         let prober = rust_core::probe::SocketProber::new(500, 1);
         let target = rust_core::probe::ProbeTarget::new("cloudflare", "1.1.1.1", 53);
         let probe_status = {
-            let net_info = core.get_interface_network_info("wlp0s20f3").await.ok().flatten();
-            if let Some(ip) = net_info.and_then(|i| i.ip_addresses.first().and_then(|s| s.parse::<std::net::Ipv4Addr>().ok())) {
+            let eth_info = core.get_interface_network_info("enp44s0").await.ok().flatten();
+            let wifi_info = core.get_interface_network_info("wlp0s20f3").await.ok().flatten();
+
+            let target_ip = eth_info.and_then(|i| i.ip_addresses.first().and_then(|s| s.parse::<std::net::Ipv4Addr>().ok()))
+                .or_else(|| wifi_info.and_then(|i| i.ip_addresses.first().and_then(|s| s.parse::<std::net::Ipv4Addr>().ok())));
+
+            if let Some(ip) = target_ip {
                 let sample = prober.probe_interface(ip, &target).await;
                 if sample.rtt_ms.is_some() {
                     "PASS"
@@ -464,15 +470,14 @@ async fn test_real_linux_host_subsystems_report() {
 
         // 3. Route Subsystem
         let route_status = {
-            let active = core.get_interface_network_info("wlp0s20f3").await.ok().flatten();
-            if let Some(info) = active {
-                if info.gateway.is_some() {
-                    "PASS"
-                } else {
-                    "BLOCKED"
-                }
+            let eth_info = core.get_interface_network_info("enp44s0").await.ok().flatten();
+            let wifi_info = core.get_interface_network_info("wlp0s20f3").await.ok().flatten();
+
+            let has_gw = eth_info.and_then(|i| i.gateway).is_some() || wifi_info.and_then(|i| i.gateway).is_some();
+            if has_gw {
+                "PASS"
             } else {
-                "FAIL"
+                "BLOCKED"
             }
         };
 
@@ -533,4 +538,70 @@ async fn test_real_linux_host_subsystems_report() {
     }).await;
 
     assert!(result.is_ok(), "Real Linux host subsystems report must complete within bounded timeout");
+}
+
+#[tokio::test]
+async fn test_five_state_distinction_and_disabled_wifi_behavior() {
+    // 1. Construct interfaces representing all 5 states:
+    // State 1: Disabled (admin down)
+    let mut disabled_wifi = build_iface("wlan0", InterfaceState::Disabled, vec![], None, false, false);
+    disabled_wifi.ssid = None;
+
+    // State 2: Offline (admin up, but carrier down)
+    let offline_eth = build_iface("eth1", InterfaceState::Offline, vec![], None, false, true);
+
+    // State 3: Alert (admin up, carrier up, degraded)
+    let mut alert_iface = build_iface("eth2", InterfaceState::Alert, vec!["192.168.2.50"], Some("192.168.2.1"), true, true);
+    alert_iface.metrics.latency_ms = 95.0; // Degraded
+
+    // State 4: Ready (admin up, carrier up, healthy standby candidate)
+    let ready_iface = build_iface("eth3", InterfaceState::Ready, vec!["192.168.3.50"], Some("192.168.3.1"), true, true);
+
+    // State 5: Online (active path)
+    let online_iface = build_iface("eth0", InterfaceState::Online, vec!["192.168.1.50"], Some("192.168.1.1"), true, true);
+
+    // Verify candidate eligibility
+    assert!(!disabled_wifi.state.is_eligible_candidate());
+    assert!(!offline_eth.state.is_eligible_candidate());
+    assert!(alert_iface.state.is_eligible_candidate());
+    assert!(ready_iface.state.is_eligible_candidate());
+    assert!(!online_iface.state.is_eligible_candidate()); // Online is active, not standby
+
+    // Verify PolicyEngine strictly excludes Disabled and Offline adapters from failover
+    let interfaces = vec![
+        disabled_wifi.clone(),
+        offline_eth.clone(),
+        ready_iface.clone(),
+        online_iface.clone(),
+    ];
+
+    let config = PolicyConfig::default();
+    // Case A: Online path is healthy -> no failover
+    let decision = PolicyEngine::evaluate_failover(&interfaces, Some("eth0"), &config, WorkloadProfile::VideoConference);
+    assert!(decision.is_none());
+
+    // Case B: Active path (eth0) becomes unusable/disabled -> must immediately select Ready candidate (eth3)
+    let mut bad_active = online_iface.clone();
+    bad_active.state = InterfaceState::Disabled;
+    bad_active.is_admin_enabled = false;
+    let failing_interfaces = vec![
+        disabled_wifi.clone(),
+        offline_eth.clone(),
+        ready_iface.clone(),
+        bad_active,
+    ];
+
+    let decision = PolicyEngine::evaluate_failover(&failing_interfaces, Some("eth0"), &config, WorkloadProfile::VideoConference);
+    assert!(decision.is_some());
+    let (target_id, reason) = decision.unwrap();
+    assert_eq!(target_id, "eth3");
+    assert!(reason.contains("Immediate takeover: active path is unusable/offline"));
+
+    // Case C: Only disabled and offline candidates remain -> no failover possible
+    let hopeless_interfaces = vec![
+        disabled_wifi,
+        offline_eth,
+    ];
+    let hopeless_decision = PolicyEngine::evaluate_failover(&hopeless_interfaces, None, &config, WorkloadProfile::VideoConference);
+    assert!(hopeless_decision.is_none());
 }

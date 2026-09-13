@@ -52,6 +52,7 @@ impl DiscoveryEngine {
                 is_physical: dev.is_physical,
                 carrier_detected: dev.carrier,
                 metric_priority: dev.metric,
+                ssid: dev.ssid,
             });
         }
 
@@ -126,6 +127,7 @@ mod tests {
                     admin_up: true,
                     is_physical: true,
                     metric: 100,
+                    ssid: None,
                 },
                 RawDiscoveredDevice {
                     name: "wlan0".to_string(),
@@ -137,6 +139,7 @@ mod tests {
                     admin_up: true,
                     is_physical: true,
                     metric: 600,
+                    ssid: None,
                 },
                 RawDiscoveredDevice {
                     name: "eth1".to_string(),
@@ -148,6 +151,7 @@ mod tests {
                     admin_up: false,
                     is_physical: true,
                     metric: 200,
+                    ssid: None,
                 },
             ],
         });

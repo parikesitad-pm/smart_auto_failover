@@ -109,6 +109,8 @@ impl PolicyEngine {
             None => true,
             Some(a) => {
                 a.state == InterfaceState::Offline
+                    || a.state == InterfaceState::Disabled
+                    || !a.is_admin_enabled
                     || !a.carrier_detected
                     || a.metrics.packet_loss_pct >= 100.0
             }
@@ -174,6 +176,7 @@ mod tests {
             is_physical: true,
             carrier_detected: true,
             metric_priority: 100,
+            ssid: None,
         }
     }
 

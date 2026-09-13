@@ -89,7 +89,15 @@ impl FailoverEngine {
             Ok(Ok(())) => {}
             Ok(Err(e)) => {
                 warn!("Route promotion error for '{}': {}", target_id, e);
-                return Err(format!("Route promotion failed for '{}': {}", target_id, e));
+                if matches!(e, crate::platform::PlatformError::PermissionDenied(_)) {
+                    if let Ok(true) = self.route_manager.verify_active_route(target_id).await {
+                        info!("Target interface '{}' is already active default route in kernel routing table", target_id);
+                    } else {
+                        return Err(format!("Route promotion failed for '{}': {}", target_id, e));
+                    }
+                } else {
+                    return Err(format!("Route promotion failed for '{}': {}", target_id, e));
+                }
             }
             Err(_) => {
                 return Err(format!(
@@ -218,6 +226,7 @@ mod tests {
             is_physical: true,
             carrier_detected: carrier,
             metric_priority: 100,
+            ssid: None,
         }
     }
 

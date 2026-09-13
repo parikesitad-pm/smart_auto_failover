@@ -52,25 +52,43 @@ export const tauriIpc = {
         const { invoke } = await import('@tauri-apps/api');
         const state = await invoke<any>('get_interface_state');
         if (state && state.interfaces) {
-          return state.interfaces.map((i: any) => ({
-            id: i.id,
-            name: i.name,
-            carrier: i.carrier_detected ? 'Connected' : 'Disconnected',
-            mediaType: i.kind === 'wifi' ? 'wifi' : 'ethernet',
-            enabled: i.is_admin_enabled,
-            state: i.state,
-            latency: i.metrics?.latency_ms ?? 0,
-            jitter: i.metrics?.jitter_ms ?? 0,
-            score: i.metrics?.ewma_score ?? 100,
-            bgProbingScore: i.metrics?.ewma_score ?? 100,
-            ipAddress: i.ip_addresses?.[0] ?? 'N/A',
-            netmask: '255.255.255.0',
-            gateway: i.gateway ?? 'N/A',
-            ssid: i.kind === 'wifi' ? 'www.d-rvc.com' : 'N/A',
-            linkSpeed: i.kind === 'wifi' ? 'N/A' : '100 Mbps',
-            adminState: i.is_admin_enabled ? 'enabled' : 'disabled',
-            linkState: i.carrier_detected ? 'connected' : 'disconnected',
-          }));
+          return state.interfaces.map((i: any) => {
+            const isDisabled =
+              i.state === 'DISABLED' || i.is_admin_enabled === false;
+            return {
+              id: i.id,
+              name: i.name,
+              carrier: isDisabled
+                ? 'Disabled'
+                : i.carrier_detected
+                  ? i.ssid
+                    ? `SSID: ${i.ssid}`
+                    : 'Connected'
+                  : 'Disconnected',
+              mediaType: i.kind === 'wifi' ? 'wifi' : 'ethernet',
+              enabled: !isDisabled,
+              state: i.state,
+              latency: isDisabled ? 0 : (i.metrics?.latency_ms ?? 0),
+              jitter: isDisabled ? 0 : (i.metrics?.jitter_ms ?? 0),
+              score: isDisabled ? 0 : (i.metrics?.ewma_score ?? 100),
+              bgProbingScore: isDisabled ? 0 : (i.metrics?.ewma_score ?? 100),
+              ipAddress: isDisabled ? 'N/A' : (i.ip_addresses?.[0] ?? 'N/A'),
+              netmask: '255.255.255.0',
+              gateway: isDisabled ? 'N/A' : (i.gateway ?? 'N/A'),
+              ssid: isDisabled ? undefined : (i.ssid ?? undefined),
+              linkSpeed: isDisabled
+                ? 'N/A'
+                : i.kind === 'wifi'
+                  ? 'N/A'
+                  : '100 Mbps',
+              adminState: isDisabled ? 'disabled' : 'enabled',
+              linkState: isDisabled
+                ? 'disconnected'
+                : i.carrier_detected
+                  ? 'connected'
+                  : 'disconnected',
+            };
+          });
         }
       } catch (err) {
         console.warn('[IPC] Failed to fetch interface state:', err);
@@ -98,21 +116,21 @@ export const tauriIpc = {
       {
         id: 'wlp0s20f3',
         name: 'Wi-Fi (wlp0s20f3)',
-        carrier: 'SSID: www.d-rvc.com',
+        carrier: 'Disabled',
         mediaType: 'wifi',
-        enabled: true,
-        state: 'READY',
-        latency: 26.4,
-        jitter: 2.8,
-        score: 78.2,
-        bgProbingScore: 78.2,
-        ipAddress: '192.168.50.4',
+        enabled: false,
+        state: 'DISABLED',
+        latency: 0,
+        jitter: 0,
+        score: 0,
+        bgProbingScore: 0,
+        ipAddress: 'N/A',
         netmask: '255.255.255.0',
-        gateway: '192.168.50.1',
-        ssid: 'www.d-rvc.com',
+        gateway: 'N/A',
+        ssid: undefined,
         linkSpeed: 'N/A',
-        adminState: 'enabled',
-        linkState: 'connected',
+        adminState: 'disabled',
+        linkState: 'disconnected',
       },
     ];
   },

@@ -6,46 +6,96 @@
     <title>Instrument Cluster AutoFailover 3.0 — by Modula</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      .gauge-needle { transform-origin: 50px 50px; transition: transform 0.08s ease-out; }
+      .gauge-needle {
+        transform-origin: 50px 50px;
+        transition: transform 0.08s ease-out;
+      }
       @keyframes pulse-emerald {
-        0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.6)); }
-        50% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.2)); }
+        0%,
+        100% {
+          opacity: 1;
+          filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.6));
+        }
+        50% {
+          opacity: 0.7;
+          filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.2));
+        }
       }
       @keyframes pulse-rose {
-        0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.6)); }
-        50% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(244, 63, 94, 0.2)); }
+        0%,
+        100% {
+          opacity: 1;
+          filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.6));
+        }
+        50% {
+          opacity: 0.7;
+          filter: drop-shadow(0 0 2px rgba(244, 63, 94, 0.2));
+        }
       }
-      .pulse-emerald { animation: pulse-emerald 2s infinite ease-in-out; }
-      .pulse-rose { animation: pulse-rose 1.5s infinite ease-in-out; }
+      .pulse-emerald {
+        animation: pulse-emerald 2s infinite ease-in-out;
+      }
+      .pulse-rose {
+        animation: pulse-rose 1.5s infinite ease-in-out;
+      }
     </style>
   </head>
-  <body class="bg-[#080b10] min-h-screen text-slate-100 antialiased p-4 font-sans select-none flex items-center justify-center">
-    <div class="w-full max-w-3xl bg-[#080b10] border border-slate-800/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col font-mono text-xs">
-      
+  <body
+    class="bg-[#080b10] min-h-screen text-slate-100 antialiased p-4 font-sans select-none flex items-center justify-center"
+  >
+    <div
+      class="w-full max-w-3xl bg-[#080b10] border border-slate-800/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col font-mono text-xs"
+    >
       <!-- Top Bezel & Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800/80 bg-slate-950/60">
+      <div
+        class="flex items-center justify-between px-4 py-3 border-b border-slate-800/80 bg-slate-950/60"
+      >
         <!-- Brand & Tagline -->
         <div class="flex items-center gap-2.5">
-          <div class="w-6 h-6 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-sm">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <div
+            class="w-6 h-6 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-sm"
+          >
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
             </svg>
           </div>
           <div>
-            <div class="font-bold text-white text-xs tracking-tight flex items-center gap-1.5">
+            <div
+              class="font-bold text-white text-xs tracking-tight flex items-center gap-1.5"
+            >
               <span>Instrument Cluster AutoFailover 3.0</span>
-              <span class="text-[10px] text-slate-500 font-normal">by Modula</span>
+              <span class="text-[10px] text-slate-500 font-normal"
+                >by Modula</span
+              >
             </div>
-            <div class="text-[9px] text-slate-300 font-sans tracking-tight">Navigate Your Internet Pipeline to Keep You Online</div>
+            <div class="text-[9px] text-slate-300 font-sans tracking-tight">
+              Navigate Your Internet Pipeline to Keep You Online
+            </div>
           </div>
         </div>
 
         <!-- Center: Compact Device Health Telemetry (~1 Hz) -->
-        <div class="flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-lg text-[10px]">
+        <div
+          class="flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-lg text-[10px]"
+        >
           <div class="flex items-center gap-1">
             <span class="text-slate-500 uppercase font-semibold">CPU</span>
             <div class="w-7 h-1 bg-slate-800 rounded-full overflow-hidden">
-              <div id="w-cpu-bar" class="h-full bg-cyan-400 rounded-full" style="width: 14%"></div>
+              <div
+                id="w-cpu-bar"
+                class="h-full bg-cyan-400 rounded-full"
+                style="width: 14%"
+              ></div>
             </div>
             <span id="w-cpu-val" class="font-bold text-slate-300">14%</span>
           </div>
@@ -53,7 +103,11 @@
           <div class="flex items-center gap-1">
             <span class="text-slate-500 uppercase font-semibold">RAM</span>
             <div class="w-7 h-1 bg-slate-800 rounded-full overflow-hidden">
-              <div id="w-ram-bar" class="h-full bg-cyan-400 rounded-full" style="width: 38%"></div>
+              <div
+                id="w-ram-bar"
+                class="h-full bg-cyan-400 rounded-full"
+                style="width: 38%"
+              ></div>
             </div>
             <span id="w-ram-val" class="font-bold text-slate-300">38%</span>
           </div>
@@ -65,7 +119,10 @@
         </div>
 
         <!-- Active Link Status Pill -->
-        <div id="w-status-badge" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/80 flex items-center gap-1.5 pulse-emerald">
+        <div
+          id="w-status-badge"
+          class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/80 flex items-center gap-1.5 pulse-emerald"
+        >
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
           <span id="w-status-text">ONLINE</span>
         </div>
@@ -73,110 +130,279 @@
 
       <!-- Main Instrument Cluster Body -->
       <div class="p-4 grid grid-cols-12 gap-3 items-center">
-        
         <!-- Left: Dual Precision Speed Gauges -->
-        <div class="col-span-12 sm:col-span-6 flex items-center justify-around bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/60">
+        <div
+          class="col-span-12 sm:col-span-6 flex items-center justify-around bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/60"
+        >
           <!-- Download Speedometer -->
           <div class="flex flex-col items-center">
-            <span class="text-[8px] text-slate-500 uppercase tracking-wider font-semibold mb-0.5">DOWNLOAD</span>
+            <span
+              class="text-[8px] text-slate-500 uppercase tracking-wider font-semibold mb-0.5"
+              >DOWNLOAD</span
+            >
             <div class="relative w-28 h-28">
               <svg class="w-full h-full" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="38" fill="none" stroke="#0f172a" stroke-width="6" stroke-dasharray="179" stroke-dashoffset="45" stroke-linecap="round" transform="rotate(135 50 50)" />
-                <circle id="w-dl-arc" cx="50" cy="50" r="38" fill="none" stroke="#06b6d4" stroke-width="6" stroke-dasharray="179" stroke-dashoffset="95" stroke-linecap="round" transform="rotate(135 50 50)" />
-                <line id="w-dl-needle" x1="50" y1="50" x2="50" y2="18" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" class="gauge-needle" transform="rotate(25 50 50)" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="#0f172a"
+                  stroke-width="6"
+                  stroke-dasharray="179"
+                  stroke-dashoffset="45"
+                  stroke-linecap="round"
+                  transform="rotate(135 50 50)"
+                />
+                <circle
+                  id="w-dl-arc"
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="#06b6d4"
+                  stroke-width="6"
+                  stroke-dasharray="179"
+                  stroke-dashoffset="95"
+                  stroke-linecap="round"
+                  transform="rotate(135 50 50)"
+                />
+                <line
+                  id="w-dl-needle"
+                  x1="50"
+                  y1="50"
+                  x2="50"
+                  y2="18"
+                  stroke="#38bdf8"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  class="gauge-needle"
+                  transform="rotate(25 50 50)"
+                />
                 <circle cx="50" cy="50" r="3.5" fill="#0284c7" />
               </svg>
-              <div class="absolute inset-0 flex flex-col items-center justify-center pt-3 pointer-events-none">
-                <span id="w-dl-num" class="text-lg font-black text-white tracking-tight">187.6</span>
-                <span class="text-[8px] text-cyan-400 uppercase font-semibold">Mbps</span>
+              <div
+                class="absolute inset-0 flex flex-col items-center justify-center pt-3 pointer-events-none"
+              >
+                <span
+                  id="w-dl-num"
+                  class="text-lg font-black text-white tracking-tight"
+                  >187.6</span
+                >
+                <span class="text-[8px] text-cyan-400 uppercase font-semibold"
+                  >Mbps</span
+                >
               </div>
             </div>
           </div>
 
           <!-- Upload Speedometer -->
           <div class="flex flex-col items-center">
-            <span class="text-[8px] text-slate-500 uppercase tracking-wider font-semibold mb-0.5">UPLOAD</span>
+            <span
+              class="text-[8px] text-slate-500 uppercase tracking-wider font-semibold mb-0.5"
+              >UPLOAD</span
+            >
             <div class="relative w-28 h-28">
               <svg class="w-full h-full" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="38" fill="none" stroke="#0f172a" stroke-width="6" stroke-dasharray="179" stroke-dashoffset="45" stroke-linecap="round" transform="rotate(135 50 50)" />
-                <circle id="w-ul-arc" cx="50" cy="50" r="38" fill="none" stroke="#6366f1" stroke-width="6" stroke-dasharray="179" stroke-dashoffset="130" stroke-linecap="round" transform="rotate(135 50 50)" />
-                <line id="w-ul-needle" x1="50" y1="50" x2="50" y2="18" stroke="#818cf8" stroke-width="2" stroke-linecap="round" class="gauge-needle" transform="rotate(-30 50 50)" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="#0f172a"
+                  stroke-width="6"
+                  stroke-dasharray="179"
+                  stroke-dashoffset="45"
+                  stroke-linecap="round"
+                  transform="rotate(135 50 50)"
+                />
+                <circle
+                  id="w-ul-arc"
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="none"
+                  stroke="#6366f1"
+                  stroke-width="6"
+                  stroke-dasharray="179"
+                  stroke-dashoffset="130"
+                  stroke-linecap="round"
+                  transform="rotate(135 50 50)"
+                />
+                <line
+                  id="w-ul-needle"
+                  x1="50"
+                  y1="50"
+                  x2="50"
+                  y2="18"
+                  stroke="#818cf8"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  class="gauge-needle"
+                  transform="rotate(-30 50 50)"
+                />
                 <circle cx="50" cy="50" r="3.5" fill="#4f46e5" />
               </svg>
-              <div class="absolute inset-0 flex flex-col items-center justify-center pt-3 pointer-events-none">
-                <span id="w-ul-num" class="text-lg font-black text-white tracking-tight">48.2</span>
-                <span class="text-[8px] text-indigo-400 uppercase font-semibold">Mbps</span>
+              <div
+                class="absolute inset-0 flex flex-col items-center justify-center pt-3 pointer-events-none"
+              >
+                <span
+                  id="w-ul-num"
+                  class="text-lg font-black text-white tracking-tight"
+                  >48.2</span
+                >
+                <span class="text-[8px] text-indigo-400 uppercase font-semibold"
+                  >Mbps</span
+                >
               </div>
             </div>
           </div>
         </div>
 
         <!-- Right: Active Connection Route Telemetry -->
-        <div class="col-span-12 sm:col-span-6 bg-slate-950/80 p-3 rounded-xl border border-cyan-500/30 flex flex-col justify-between">
+        <div
+          class="col-span-12 sm:col-span-6 bg-slate-950/80 p-3 rounded-xl border border-cyan-500/30 flex flex-col justify-between"
+        >
           <div class="flex items-center justify-between mb-1">
-            <span class="text-[9px] text-cyan-400 uppercase font-bold tracking-wide">Active Route Path</span>
-            <span id="w-badge-tag" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">ONLINE</span>
+            <span
+              class="text-[9px] text-cyan-400 uppercase font-bold tracking-wide"
+              >Active Route Path</span
+            >
+            <span
+              id="w-badge-tag"
+              class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800"
+              >ONLINE</span
+            >
           </div>
-          <div id="w-active-title" class="text-sm font-black text-white truncate">Ethernet 1 (enp44s0)</div>
-          <div id="w-active-sub" class="text-[10px] text-slate-400 truncate mb-2">Carrier: Connected · Gateway: 192.168.50.1</div>
+          <div
+            id="w-active-title"
+            class="text-sm font-black text-white truncate"
+          >
+            Ethernet 1 (enp44s0)
+          </div>
+          <div
+            id="w-active-sub"
+            class="text-[10px] text-slate-400 truncate mb-2"
+          >
+            Carrier: Connected · Gateway: 192.168.50.1
+          </div>
 
           <!-- Latency, Jitter, Composite Score Readout -->
-          <div class="grid grid-cols-3 gap-1 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center text-[10px]">
+          <div
+            class="grid grid-cols-3 gap-1 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center text-[10px]"
+          >
             <div>
               <div class="text-[7px] text-slate-500 uppercase">Latency</div>
-              <div class="font-bold text-slate-200"><span id="w-lat">8.2</span>ms</div>
+              <div class="font-bold text-slate-200">
+                <span id="w-lat">8.2</span>ms
+              </div>
             </div>
             <div class="border-x border-slate-800">
-              <div class="text-[7px] text-slate-500 uppercase">RFC 3550 Jitter</div>
-              <div class="font-bold text-slate-200"><span id="w-jit">1.2</span>ms</div>
+              <div class="text-[7px] text-slate-500 uppercase">
+                RFC 3550 Jitter
+              </div>
+              <div class="font-bold text-slate-200">
+                <span id="w-jit">1.2</span>ms
+              </div>
             </div>
             <div>
-              <div class="text-[7px] text-slate-500 uppercase">Health Score</div>
+              <div class="text-[7px] text-slate-500 uppercase">
+                Health Score
+              </div>
               <div id="w-score" class="font-bold text-emerald-400">98.4</div>
             </div>
           </div>
         </div>
-
       </div>
 
       <!-- Standby Candidate Interfaces & Real Pipeline Simulation Controls -->
-      <div class="px-4 pb-3 border-t border-slate-800/60 pt-2 flex flex-wrap items-center justify-between gap-2 text-[10px]">
+      <div
+        class="px-4 pb-3 border-t border-slate-800/60 pt-2 flex flex-wrap items-center justify-between gap-2 text-[10px]"
+      >
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-slate-500">Standby NICs:</span>
-          <span id="chip-wifi" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-300 font-medium">Wi-Fi (wlp0s20f3 · READY)</span>
-          <span id="chip-eth" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-medium hidden">Ethernet 1</span>
+          <span
+            id="chip-wifi"
+            class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-300 font-medium"
+            >Wi-Fi (wlp0s20f3 · READY)</span
+          >
+          <span
+            id="chip-eth"
+            class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-medium hidden"
+            >Ethernet 1</span
+          >
         </div>
 
         <!-- Quick Interactive Pipeline Simulation Triggers -->
         <div class="flex items-center gap-1 flex-wrap">
-          <button onclick="triggerSim('nominal')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 transition-colors">Nominal</button>
-          <button onclick="triggerSim('jitter')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 transition-colors">Jitter Spike</button>
-          <button onclick="triggerSim('disconnect')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-rose-300 transition-colors">Cable Unplug (OFFLINE)</button>
-          <button onclick="triggerSim('recovery')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition-colors">Cable Reconnect (READY)</button>
+          <button
+            onclick="triggerSim('nominal')"
+            class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 transition-colors"
+          >
+            Nominal
+          </button>
+          <button
+            onclick="triggerSim('jitter')"
+            class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 transition-colors"
+          >
+            Jitter Spike
+          </button>
+          <button
+            onclick="triggerSim('disconnect')"
+            class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-rose-300 transition-colors"
+          >
+            Cable Unplug (OFFLINE)
+          </button>
+          <button
+            onclick="triggerSim('recovery')"
+            class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition-colors"
+          >
+            Cable Reconnect (READY)
+          </button>
         </div>
       </div>
 
       <!-- Footer Bar with Direct Links -->
-      <div class="bg-slate-950 px-4 py-2 border-t border-slate-900 flex items-center justify-between text-[9px] text-slate-500">
+      <div
+        class="bg-slate-950 px-4 py-2 border-t border-slate-900 flex items-center justify-between text-[9px] text-slate-500"
+      >
         <div class="flex items-center gap-1.5">
           <span>Crafted with ♥ by</span>
-          <a href="https://github.com/parikesitad-pm" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-cyan-400 font-semibold inline-flex items-center gap-1 transition-colors">
-            <svg class="w-2.5 h-2.5 fill-current opacity-80" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          <a
+            href="https://github.com/parikesitad-pm"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-slate-400 hover:text-cyan-400 font-semibold inline-flex items-center gap-1 transition-colors"
+          >
+            <svg
+              class="w-2.5 h-2.5 fill-current opacity-80"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              />
+            </svg>
             <span>parikesitad-pm</span>
           </a>
           <span>· A Modula Project · © 2026</span>
         </div>
-        <a href="/" class="text-cyan-400 hover:underline flex items-center gap-1 font-semibold transition-colors">
+        <a
+          href="/"
+          class="text-cyan-400 hover:underline flex items-center gap-1 font-semibold transition-colors"
+        >
           <span>Open Full Cockpit (Port 3000)</span>
           <span>↗</span>
         </a>
       </div>
-
     </div>
 
     <script>
-      let curDl = 187.6, tgtDl = 187.6;
-      let curUl = 48.2, tgtUl = 48.2;
+      let curDl = 187.6,
+        tgtDl = 187.6;
+      let curUl = 48.2,
+        tgtUl = 48.2;
 
       function animLoop() {
         curDl += (tgtDl - curDl) * 0.15;
@@ -191,11 +417,19 @@
         const dlAngle = -135 + dlNorm * 270;
         const ulAngle = -135 + ulNorm * 270;
 
-        document.getElementById('w-dl-needle').setAttribute('transform', `rotate(${dlAngle} 50 50)`);
-        document.getElementById('w-ul-needle').setAttribute('transform', `rotate(${ulAngle} 50 50)`);
+        document
+          .getElementById('w-dl-needle')
+          .setAttribute('transform', `rotate(${dlAngle} 50 50)`);
+        document
+          .getElementById('w-ul-needle')
+          .setAttribute('transform', `rotate(${ulAngle} 50 50)`);
 
-        document.getElementById('w-dl-arc').setAttribute('stroke-dashoffset', 179 - dlNorm * 179);
-        document.getElementById('w-ul-arc').setAttribute('stroke-dashoffset', 179 - ulNorm * 179);
+        document
+          .getElementById('w-dl-arc')
+          .setAttribute('stroke-dashoffset', 179 - dlNorm * 179);
+        document
+          .getElementById('w-ul-arc')
+          .setAttribute('stroke-dashoffset', 179 - ulNorm * 179);
 
         requestAnimationFrame(animLoop);
       }
@@ -221,11 +455,14 @@
           score.textContent = '98.4';
           score.className = 'font-bold text-emerald-400';
           badge.textContent = 'ONLINE';
-          badge.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800';
-          statusBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/80 flex items-center gap-1.5 pulse-emerald';
+          badge.className =
+            'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800';
+          statusBadge.className =
+            'px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/80 flex items-center gap-1.5 pulse-emerald';
           statusText.textContent = 'ONLINE';
           chipWifi.textContent = 'Wi-Fi (wlp0s20f3 · READY · 26.8ms)';
-          chipWifi.className = 'px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-300 font-medium';
+          chipWifi.className =
+            'px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-300 font-medium';
           chipEth.className = 'hidden';
           tgtDl = 187.6;
           tgtUl = 48.2;
@@ -237,9 +474,11 @@
           score.textContent = '76.5';
           score.className = 'font-bold text-cyan-400';
           badge.textContent = 'ONLINE';
-          badge.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800';
+          badge.className =
+            'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800';
           chipWifi.textContent = 'Ethernet 1 (ALERT · Jitter Spike 42ms)';
-          chipWifi.className = 'px-2 py-0.5 rounded bg-amber-950 border border-amber-800 text-amber-300 font-medium';
+          chipWifi.className =
+            'px-2 py-0.5 rounded bg-amber-950 border border-amber-800 text-amber-300 font-medium';
           tgtDl = 112.4;
           tgtUl = 32.8;
         } else if (mode === 'disconnect') {
@@ -250,14 +489,17 @@
           score.textContent = '76.5';
           score.className = 'font-bold text-cyan-400';
           badge.textContent = 'ONLINE';
-          badge.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800';
+          badge.className =
+            'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800';
           chipWifi.textContent = 'Ethernet 1 (OFFLINE · Link Down)';
-          chipWifi.className = 'px-2 py-0.5 rounded bg-rose-950 border border-rose-800 text-rose-300 font-bold';
+          chipWifi.className =
+            'px-2 py-0.5 rounded bg-rose-950 border border-rose-800 text-rose-300 font-bold';
           tgtDl = 105.0;
           tgtUl = 28.4;
         } else if (mode === 'recovery') {
           chipWifi.textContent = 'Ethernet 1 (READY · Stabilized Standby)';
-          chipWifi.className = 'px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 font-medium';
+          chipWifi.className =
+            'px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 font-medium';
         }
       }
     </script>

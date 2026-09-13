@@ -76,6 +76,8 @@ pub struct NetworkInterface {
     pub is_physical: bool,
     pub carrier_detected: bool,
     pub metric_priority: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ssid: Option<String>,
 }
 
 /// Multi-metric scoring formula weights and takeover anti-flap thresholds.

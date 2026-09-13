@@ -408,7 +408,6 @@ impl AutoFailoverCore {
 
             for mut new_dev in discovered {
                 if let Some(existing) = current_state.interfaces.iter().find(|i| i.id == new_dev.id) {
-                    new_dev.is_admin_enabled = existing.is_admin_enabled;
                     new_dev.metrics = existing.metrics.clone();
                     new_dev.state = if !new_dev.is_admin_enabled {
                         InterfaceState::Disabled
@@ -480,26 +479,39 @@ impl AutoFailoverCore {
     /// Single evaluation cycle (called on periodic cadence 5–10 Hz).
     /// Assesses health, runs real UDP socket probes, evaluates recovery arbiter, runs Policy Engine, and executes failover.
     pub async fn tick_evaluation(&self) {
-        // Step 0: Synchronize physical carrier state directly from platform HAL
-        let mut carrier_changed = false;
+        // Step 0: Synchronize physical carrier, administrative state, and dynamic addressing from platform HAL
+        let mut hardware_changed = false;
         {
-            let iface_names: Vec<(String, String)> = {
+            let ifaces_snapshot: Vec<(String, String, models::InterfaceKind)> = {
                 let state = self.state.read().await;
-                state.interfaces.iter().map(|i| (i.id.clone(), i.name.clone())).collect()
+                state.interfaces.iter().map(|i| (i.id.clone(), i.name.clone(), i.kind)).collect()
             };
 
-            for (id, name) in iface_names {
-                if let Ok(current_carrier) = self.platform.check_carrier(&name).await {
+            for (id, name, kind) in ifaces_snapshot {
+                if let Ok(details) = self.platform.query_dynamic_details(&name, kind).await {
                     let mut state = self.state.write().await;
                     if let Some(iface) = state.interfaces.iter_mut().find(|i| i.id == id) {
-                        if iface.carrier_detected != current_carrier {
+                        if iface.is_admin_enabled != details.admin_up {
+                            info!(
+                                "Administrative state transition on {}: {} -> {}",
+                                name, iface.is_admin_enabled, details.admin_up
+                            );
+                            iface.is_admin_enabled = details.admin_up;
+                            hardware_changed = true;
+                        }
+
+                        if iface.carrier_detected != details.carrier {
                             info!(
                                 "Physical link carrier transition on {}: {} -> {}",
-                                name, iface.carrier_detected, current_carrier
+                                name, iface.carrier_detected, details.carrier
                             );
-                            iface.carrier_detected = current_carrier;
-                            carrier_changed = true;
+                            iface.carrier_detected = details.carrier;
+                            hardware_changed = true;
                         }
+
+                        iface.ip_addresses = details.ip_addresses;
+                        iface.gateway = details.gateway;
+                        iface.ssid = details.ssid;
                     }
                 }
             }
@@ -560,7 +572,7 @@ impl AutoFailoverCore {
         }
 
         // Step 3: Recovery Arbiter & State Transitions
-        let mut state_changed = carrier_changed;
+        let mut state_changed = hardware_changed;
         {
             let mut state = self.state.write().await;
             let mut arbiter = self.recovery_arbiter.write().await;
@@ -569,14 +581,24 @@ impl AutoFailoverCore {
             for iface in state.interfaces.iter_mut() {
                 let prev_state = iface.state;
                 if !iface.is_admin_enabled {
+                    arbiter.reset(&iface.id);
                     iface.state = InterfaceState::Disabled;
+                    iface.metrics = models::PathMetrics::default();
+                    iface.metrics.packet_loss_pct = 100.0;
+                    iface.ip_addresses.clear();
+                    iface.gateway = None;
+                    iface.ssid = None;
                 } else if !iface.carrier_detected {
                     arbiter.reset(&iface.id);
                     iface.state = InterfaceState::Offline;
+                    iface.metrics = models::PathMetrics::default();
                     iface.metrics.packet_loss_pct = 100.0;
+                    iface.ip_addresses.clear();
+                    iface.gateway = None;
+                    iface.ssid = None;
                 } else {
                     // Carrier is detected & admin enabled
-                    if iface.state == InterfaceState::Offline {
+                    if iface.state == InterfaceState::Offline || iface.state == InterfaceState::Disabled {
                         if arbiter.on_link_up(&iface.id) {
                             self.event_bus.publish(EngineEvent::RecoveryStarted {
                                 interface_id: iface.id.clone(),
@@ -691,10 +713,32 @@ impl AutoFailoverCore {
             state.timestamp_ms = Self::current_timestamp_ms();
             self.event_bus.publish(EngineEvent::StateUpdated(state.clone()));
             self.event_bus.publish(EngineEvent::StateChanged(state.clone()));
-        } else if state_changed {
-            let state = self.state.read().await.clone();
-            self.event_bus.publish(EngineEvent::StateUpdated(state.clone()));
-            self.event_bus.publish(EngineEvent::StateChanged(state));
+        } else {
+            let mut state = self.state.write().await;
+            if let Some(ref aid) = state.active_interface_id {
+                let active_unusable = state.interfaces.iter().any(|i| &i.id == aid && (i.state == InterfaceState::Disabled || i.state == InterfaceState::Offline));
+                if active_unusable {
+                    state.active_interface_id = None;
+                    state_changed = true;
+                }
+            }
+
+            let aid = state.active_interface_id.clone();
+            state.overall_health_index = if let Some(ref id) = aid {
+                state.interfaces.iter()
+                    .find(|i| &i.id == id)
+                    .map(|i| HealthEngine::calculate_health_index(&i.metrics))
+                    .unwrap_or(0)
+            } else {
+                0
+            };
+
+            if state_changed {
+                state.timestamp_ms = Self::current_timestamp_ms();
+                let state_clone = state.clone();
+                self.event_bus.publish(EngineEvent::StateUpdated(state_clone.clone()));
+                self.event_bus.publish(EngineEvent::StateChanged(state_clone));
+            }
         }
     }
 }
@@ -732,6 +776,7 @@ mod tests {
                     admin_up: true,
                     is_physical: true,
                     metric: 100,
+                    ssid: None,
                 },
                 platform::RawDiscoveredDevice {
                     name: "wlan0".to_string(),
@@ -743,8 +788,19 @@ mod tests {
                     admin_up: true,
                     is_physical: true,
                     metric: 600,
+                    ssid: None,
                 },
             ])
+        }
+        async fn query_dynamic_details(&self, name: &str, _kind: models::InterfaceKind) -> Result<platform::InterfaceDynamicDetails, platform::PlatformError> {
+            let carrier = self.check_carrier(name).await.unwrap_or(false);
+            Ok(platform::InterfaceDynamicDetails {
+                admin_up: true,
+                carrier,
+                ip_addresses: vec!["127.0.0.1".to_string()],
+                gateway: Some("192.168.1.1".to_string()),
+                ssid: None,
+            })
         }
         async fn set_interface_admin_state(&self, _name: &str, _up: bool) -> Result<(), platform::PlatformError> {
             Ok(())

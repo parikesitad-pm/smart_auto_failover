@@ -6,7 +6,7 @@ use std::path::Path;
 use std::process::Command;
 use tracing::{debug, warn};
 
-use super::{PlatformBackend, PlatformError, RawDiscoveredDevice};
+use super::{InterfaceDynamicDetails, PlatformBackend, PlatformError, RawDiscoveredDevice};
 use crate::models::{InterfaceKind, InterfaceNetworkInfo, SystemIdentity};
 
 #[derive(Debug, Clone)]
@@ -109,6 +109,46 @@ impl LinuxBackend {
 
         map
     }
+
+    /// Query connected Wi-Fi SSID for an interface via iw or nmcli.
+    fn query_wifi_ssid(name: &str) -> Option<String> {
+        // Try iw dev <name> link
+        if let Ok(output) = Command::new("iw").args(["dev", name, "link"]).output() {
+            if output.status.success() {
+                let text = String::from_utf8_lossy(&output.stdout);
+                for line in text.lines() {
+                    let trimmed = line.trim();
+                    if let Some(ssid) = trimmed.strip_prefix("SSID: ") {
+                        let ssid = ssid.trim();
+                        if !ssid.is_empty() {
+                            return Some(ssid.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: try nmcli dev
+        if let Ok(output) = Command::new("nmcli")
+            .args(["-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "dev"])
+            .output()
+        {
+            if output.status.success() {
+                let text = String::from_utf8_lossy(&output.stdout);
+                for line in text.lines() {
+                    let parts: Vec<&str> = line.split(':').collect();
+                    if parts.len() >= 4 && parts[0] == name && parts[1] == "wifi" && parts[2] == "connected" {
+                        let conn = parts[3].trim();
+                        if !conn.is_empty() {
+                            return Some(conn.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        None
+    }
 }
 
 impl Default for LinuxBackend {
@@ -169,10 +209,18 @@ impl PlatformBackend for LinuxBackend {
                 .filter(|m| !m.is_empty() && m != "00:00:00:00:00:00");
 
             let kind = Self::classify_interface(&name, is_physical);
-            let ip_addresses = ip_map.get(&name).cloned().unwrap_or_default();
+            let ip_addresses = if admin_up {
+                ip_map.get(&name).cloned().unwrap_or_default()
+            } else {
+                Vec::new()
+            };
 
             // Find default route gateway and metric for this interface if configured
-            let default_route = routes.iter().find(|r| r.iface == name && r.destination == "00000000");
+            let default_route = if admin_up {
+                routes.iter().find(|r| r.iface == name && r.destination == "00000000")
+            } else {
+                None
+            };
             let gateway = default_route.and_then(|r| {
                 if r.gateway == "0.0.0.0" {
                     None
@@ -181,6 +229,12 @@ impl PlatformBackend for LinuxBackend {
                 }
             });
             let metric = default_route.map(|r| r.metric).unwrap_or(100);
+
+            let ssid = if kind == InterfaceKind::WiFi && admin_up && carrier {
+                Self::query_wifi_ssid(&name)
+            } else {
+                None
+            };
 
             devices.push(RawDiscoveredDevice {
                 name,
@@ -192,6 +246,7 @@ impl PlatformBackend for LinuxBackend {
                 admin_up,
                 is_physical,
                 metric,
+                ssid,
             });
         }
 
@@ -277,7 +332,13 @@ impl PlatformBackend for LinuxBackend {
 
         default_routes.sort_by_key(|r| r.metric);
 
-        Ok(default_routes.first().map(|r| r.iface.clone()))
+        for r in default_routes {
+            if self.check_carrier(&r.iface).await.unwrap_or(false) {
+                return Ok(Some(r.iface.clone()));
+            }
+        }
+
+        Ok(None)
     }
 
     async fn get_interface_gateway(&self, name: &str) -> Result<Option<String>, PlatformError> {
@@ -364,5 +425,70 @@ impl PlatformBackend for LinuxBackend {
             gateway,
             metric,
         }))
+    }
+
+    async fn query_dynamic_details(
+        &self,
+        name: &str,
+        kind: InterfaceKind,
+    ) -> Result<InterfaceDynamicDetails, PlatformError> {
+        let iface_path = format!("/sys/class/net/{}", name);
+        if !Path::new(&iface_path).exists() {
+            return Ok(InterfaceDynamicDetails {
+                admin_up: false,
+                carrier: false,
+                ip_addresses: Vec::new(),
+                gateway: None,
+                ssid: None,
+            });
+        }
+
+        // Read administrative state from sysfs flags (bit 0x1 is IFF_UP)
+        let admin_up = fs::read_to_string(format!("{}/flags", iface_path))
+            .ok()
+            .and_then(|s| {
+                let hex_str = s.trim().trim_start_matches("0x");
+                u32::from_str_radix(hex_str, 16).ok()
+            })
+            .map(|flags| (flags & 0x1) != 0)
+            .unwrap_or(false);
+
+        if !admin_up {
+            return Ok(InterfaceDynamicDetails {
+                admin_up: false,
+                carrier: false,
+                ip_addresses: Vec::new(),
+                gateway: None,
+                ssid: None,
+            });
+        }
+
+        let carrier = self.check_carrier(name).await.unwrap_or(false);
+        if !carrier {
+            return Ok(InterfaceDynamicDetails {
+                admin_up: true,
+                carrier: false,
+                ip_addresses: Vec::new(),
+                gateway: None,
+                ssid: None,
+            });
+        }
+
+        let ip_map = Self::read_ipv4_addresses();
+        let ip_addresses = ip_map.get(name).cloned().unwrap_or_default();
+        let gateway = self.get_interface_gateway(name).await.unwrap_or(None);
+        let ssid = if kind == InterfaceKind::WiFi {
+            Self::query_wifi_ssid(name)
+        } else {
+            None
+        };
+
+        Ok(InterfaceDynamicDetails {
+            admin_up: true,
+            carrier: true,
+            ip_addresses,
+            gateway,
+            ssid,
+        })
     }
 }
