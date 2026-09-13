@@ -2,13 +2,13 @@ import React, { useRef, useState } from 'react';
 import { Shield, ArrowRight, Activity, Terminal, Download } from 'lucide-react';
 
 interface HeroSectionProps {
-  onLaunchSimulator: () => void;
   onScrollToDownloads: () => void;
+  onScrollToShowcase: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
-  onLaunchSimulator,
   onScrollToDownloads,
+  onScrollToShowcase,
 }) => {
   const logoCardRef = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
@@ -110,11 +110,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </button>
 
           <button
-            onClick={onLaunchSimulator}
+            onClick={onScrollToShowcase}
             className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg backdrop-blur-md group cursor-pointer"
           >
             <Activity className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
-            Launch Live Preview
+            Desktop Cockpit
             <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
           </button>
 

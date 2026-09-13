@@ -10,8 +10,54 @@ const REPO_OWNER = 'parikesitad-pm';
 const REPO_NAME = 'smart_auto_failover';
 const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases`;
 const FALLBACK_RELEASES_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases`;
-const CACHE_KEY = 'autofailover_release_cache';
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_KEY = 'autofailover_release_cache_v2';
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+export interface ParsedReleaseVersion {
+  major: number;
+  minor: number;
+  patch: number;
+  preview: number;
+  isPrerelease: boolean;
+  raw: string;
+}
+
+export function parseReleaseTag(tag: string): ParsedReleaseVersion | null {
+  if (!tag) return null;
+  const clean = tag.trim();
+  // Filter out any web-only or non-desktop releases
+  if (clean.startsWith('web-')) return null;
+
+  // Match: v3.0.0, 3.0.0, v3.0.0-preview.19, 3.0.0-preview.9
+  const match = clean.match(/^v?(\d+)\.(\d+)\.(\d+)(?:-preview\.(\d+))?$/i);
+  if (!match) return null;
+
+  return {
+    major: parseInt(match[1], 10),
+    minor: parseInt(match[2], 10),
+    patch: parseInt(match[3], 10),
+    preview: match[4] !== undefined ? parseInt(match[4], 10) : 0,
+    isPrerelease: match[4] !== undefined,
+    raw: clean,
+  };
+}
+
+export function compareReleaseVersions(
+  a: ParsedReleaseVersion,
+  b: ParsedReleaseVersion
+): number {
+  if (a.major !== b.major) return a.major - b.major;
+  if (a.minor !== b.minor) return a.minor - b.minor;
+  if (a.patch !== b.patch) return a.patch - b.patch;
+
+  // For same major.minor.patch:
+  // Stable releases rank higher than prereleases
+  if (!a.isPrerelease && b.isPrerelease) return 1;
+  if (a.isPrerelease && !b.isPrerelease) return -1;
+
+  // Numeric preview comparison (e.g. preview.19 > preview.9, preview.100 > preview.19)
+  return a.preview - b.preview;
+}
 
 export function detectUserPlatform(): PlatformId {
   if (typeof window === 'undefined') return 'linux';
@@ -22,7 +68,6 @@ export function detectUserPlatform(): PlatformId {
     return 'windows';
   }
   if (plat.includes('mac') || ua.includes('macintosh')) {
-    // Basic Apple Silicon heuristic
     return 'macos-arm64';
   }
   return 'linux';
@@ -36,20 +81,39 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+export function shouldInvalidateCache(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('refresh') || params.has('clear_cache') || params.has('nocache');
+  } catch {
+    return false;
+  }
+}
+
 export async function getLatestAutoFailoverRelease(): Promise<ResolvedRelease> {
   const detected = detectUserPlatform();
 
-  // 1. Try Cache
+  // Clean obsolete cache keys
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Date.now() - parsed.timestamp < CACHE_TTL_MS && parsed.data) {
-        return parsed.data;
-      }
-    }
+    localStorage.removeItem('autofailover_release_cache');
   } catch {
-    // ignore cache read errors
+    // ignore
+  }
+
+  // 1. Try Cache if not explicitly bypassed
+  if (!shouldInvalidateCache()) {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < CACHE_TTL_MS && parsed.data) {
+          return parsed.data;
+        }
+      }
+    } catch {
+      // ignore cache read errors
+    }
   }
 
   // 2. Fetch from GitHub API
@@ -83,30 +147,27 @@ export async function getLatestAutoFailoverRelease(): Promise<ResolvedRelease> {
   return createFallbackRelease(detected);
 }
 
-function resolveReleaseFromList(
+export function resolveReleaseFromList(
   releases: GitHubRelease[],
   detected: PlatformId
 ): ResolvedRelease | null {
-  // Filter out non-desktop releases (like web-*)
-  const desktopReleases = releases.filter(
-    (r) =>
-      r.tag_name &&
-      !r.tag_name.startsWith('web-') &&
-      (r.tag_name.startsWith('v3.') || r.tag_name.startsWith('3.'))
-  );
+  // Parse and validate version for each release
+  const parsedList = releases
+    .map((r) => ({
+      release: r,
+      parsed: parseReleaseTag(r.tag_name),
+    }))
+    .filter(
+      (item): item is { release: GitHubRelease; parsed: ParsedReleaseVersion } =>
+        item.parsed !== null
+    );
 
-  if (desktopReleases.length === 0) return null;
+  if (parsedList.length === 0) return null;
 
-  // 1. Check for latest stable release
-  let selected = desktopReleases.find(
-    (r) => !r.prerelease && /^v?3\.\d+\.\d+$/.test(r.tag_name)
-  );
+  // Sort descending: highest version first using numeric comparison
+  parsedList.sort((a, b) => compareReleaseVersions(b.parsed, a.parsed));
 
-  // 2. If no stable release, use latest preview release
-  if (!selected) {
-    selected = desktopReleases[0];
-  }
-
+  const selected = parsedList[0].release;
   const channel: 'STABLE' | 'PREVIEW' = selected.prerelease
     ? 'PREVIEW'
     : 'STABLE';
@@ -117,7 +178,7 @@ function resolveReleaseFromList(
     a.name.toLowerCase().includes('sha256')
   );
 
-  // Match assets
+  // Match platform assets
   const winAsset = assets.find(
     (a) =>
       (a.name.toLowerCase().includes('windows') || a.name.endsWith('.exe')) &&
@@ -224,8 +285,8 @@ function resolveReleaseFromList(
 
 function createFallbackRelease(detected: PlatformId): ResolvedRelease {
   return {
-    tagName: 'v3.0.0-preview',
-    releaseTitle: 'AutoFailover 3.0 Preview',
+    tagName: 'v3.0.0-preview.18',
+    releaseTitle: 'AutoFailover 3.0 Preview 18',
     channel: 'PREVIEW',
     publishedAt: new Date().toISOString(),
     htmlUrl: FALLBACK_RELEASES_URL,
@@ -238,7 +299,7 @@ function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         platformName: 'Windows',
         arch: 'x64 (Windows 10 / 11)',
         available: true,
-        version: 'AutoFailover 3.0 (Preview)',
+        version: 'AutoFailover 3.0 (preview.18)',
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-Windows-x64.zip',
         downloadUrl: FALLBACK_RELEASES_URL,
@@ -251,7 +312,7 @@ function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         platformName: 'Linux',
         arch: 'x86_64 / glibc 2.31+',
         available: true,
-        version: 'AutoFailover 3.0 (Preview)',
+        version: 'AutoFailover 3.0 (preview.18)',
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
         downloadUrl: FALLBACK_RELEASES_URL,
@@ -264,7 +325,7 @@ function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         platformName: 'macOS Apple Silicon',
         arch: 'arm64 (M1/M2/M3/M4)',
         available: false,
-        version: 'AutoFailover 3.0 (Preview)',
+        version: 'AutoFailover 3.0 (preview.18)',
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-macOS-arm64.dmg',
         downloadUrl: FALLBACK_RELEASES_URL,
@@ -277,7 +338,7 @@ function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         platformName: 'macOS Intel',
         arch: 'x64 (Intel Mac)',
         available: false,
-        version: 'AutoFailover 3.0 (Preview)',
+        version: 'AutoFailover 3.0 (preview.18)',
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-macOS-x64.dmg',
         downloadUrl: FALLBACK_RELEASES_URL,

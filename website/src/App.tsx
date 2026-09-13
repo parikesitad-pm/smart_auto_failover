@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { useStartupSequence } from './hooks/useStartupSequence';
-import { SplashScreen, SplashSettingsModal } from './components/Splash';
-import { Cockpit } from './components/Cockpit';
+import React from 'react';
 import {
   HeroSection,
+  DesktopShowcase,
   DownloadHub,
   FeaturePillars,
   WhyAutoFailover,
@@ -11,43 +9,11 @@ import {
   FaqAccordion,
   LandingFooter,
 } from './components/Landing';
-import { Globe, MonitorPlay, Download } from 'lucide-react';
-
-type ViewMode = 'landing' | 'cockpit';
+import { Download, ExternalLink } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('landing');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const {
-    state,
-    config,
-    skipStartup,
-    runStartup,
-    setPreset,
-    setCustomDuration,
-    setEngineSpeed,
-    setSkipEnabled,
-  } = useStartupSequence();
-
-  const handleLaunchSimulator = () => {
-    setViewMode('cockpit');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleScrollToDownloads = () => {
-    if (viewMode !== 'landing') {
-      setViewMode('landing');
-      setTimeout(() => {
-        document
-          .getElementById('downloads')
-          ?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      document
-        .getElementById('downloads')
-        ?.scrollIntoView({ behavior: 'smooth' });
-    }
+  const handleScrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -56,7 +22,7 @@ export const App: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#080b10]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-8 py-3 flex items-center justify-between">
         <div
           className="flex items-center gap-3 cursor-pointer select-none"
-          onClick={() => setViewMode('landing')}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <img
             src="/modula_3.0.png"
@@ -68,92 +34,84 @@ export const App: React.FC = () => {
               AUTO FAILOVER
             </span>
             <span className="ml-1.5 text-xs font-mono text-emerald-400 font-semibold">
-              3.0.0
+              3.0
+            </span>
+            <span className="hidden sm:inline-block ml-2 text-xs text-slate-400 font-medium">
+              by Modula
             </span>
           </div>
         </div>
 
-        {/* View Surface Switcher */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800">
+        {/* Navigation Links */}
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
           <button
-            onClick={() => setViewMode('landing')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'landing'
-                ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={() => handleScrollTo('showcase')}
+            className="hover:text-emerald-400 transition-colors cursor-pointer"
           >
-            <Globe className="w-3.5 h-3.5" />
-            Landing Page
+            Cockpit
           </button>
-
           <button
-            onClick={() => setViewMode('cockpit')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'cockpit'
-                ? 'bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={() => handleScrollTo('features')}
+            className="hover:text-emerald-400 transition-colors cursor-pointer"
           >
-            <MonitorPlay className="w-3.5 h-3.5" />
-            Live Preview
+            Features
           </button>
-        </div>
+          <button
+            onClick={() => handleScrollTo('how-it-works')}
+            className="hover:text-emerald-400 transition-colors cursor-pointer"
+          >
+            How It Works
+          </button>
+          <button
+            onClick={() => handleScrollTo('downloads')}
+            className="hover:text-emerald-400 transition-colors cursor-pointer"
+          >
+            Downloads
+          </button>
+          <a
+            href="https://github.com/parikesitad-pm/smart_auto_failover"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            GitHub
+            <ExternalLink className="w-3 h-3 text-slate-400" />
+          </a>
+        </nav>
 
         {/* Quick CTA */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <button
-            onClick={handleScrollToDownloads}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-700 cursor-pointer"
+            onClick={() => handleScrollTo('downloads')}
+            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            Download v3.0.0
+            <Download className="w-3.5 h-3.5" />
+            Download App
           </button>
         </div>
       </header>
 
-      {/* Main Surface Content */}
+      {/* Main Landing Surface */}
       <main className="flex-1">
-        {viewMode === 'landing' ? (
-          <div>
-            <HeroSection
-              onLaunchSimulator={handleLaunchSimulator}
-              onScrollToDownloads={handleScrollToDownloads}
-            />
-            <FeaturePillars />
-            <WhyAutoFailover />
-            <HowItWorks />
-            <DownloadHub />
-            <FaqAccordion />
-            <LandingFooter />
-          </div>
-        ) : (
-          <div className="p-3 sm:p-6 flex flex-col justify-center max-w-7xl mx-auto">
-            {/* Startup Splash Gate */}
-            <SplashScreen
-              state={state}
-              onRetry={runStartup}
-              onSkip={skipStartup}
-            />
-
-            {/* Digital Network Cockpit */}
-            {!state.isActive && (
-              <Cockpit onOpenStartupModal={() => setIsModalOpen(true)} />
-            )}
-
-            {/* Settings & Presentation Modal */}
-            <SplashSettingsModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              config={config}
-              onSetPreset={setPreset}
-              onSetCustomDuration={setCustomDuration}
-              onSetEngineSpeed={setEngineSpeed}
-              onSetSkipEnabled={setSkipEnabled}
-              onReplay={runStartup}
-            />
-          </div>
-        )}
+        <HeroSection
+          onScrollToDownloads={() => handleScrollTo('downloads')}
+          onScrollToShowcase={() => handleScrollTo('showcase')}
+        />
+        <div id="showcase">
+          <DesktopShowcase onScrollToDownloads={() => handleScrollTo('downloads')} />
+        </div>
+        <div id="features">
+          <FeaturePillars />
+        </div>
+        <WhyAutoFailover />
+        <div id="how-it-works">
+          <HowItWorks />
+        </div>
+        <div id="downloads">
+          <DownloadHub />
+        </div>
+        <FaqAccordion />
+        <LandingFooter />
       </main>
     </div>
   );

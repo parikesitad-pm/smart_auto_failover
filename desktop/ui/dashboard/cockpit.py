@@ -58,10 +58,28 @@ class CockpitDashboard:
         self.orchestrator = orchestrator
         self.logo_path = logo_path
         self.speedtest_runner = SpeedTestRunner()
-        self._interface_cards: Dict[str, Dict[str, Any]] = {}
-        self._placeholder_lbl: Optional[Any] = None
+
+        # Navigation and view state
+        self._current_tab = "overview"
+        self._tab_buttons: Dict[str, Any] = {}
+        self._tab_frames: Dict[str, Any] = {}
+
+        # Interface card registries
+        self._overview_interface_cards: Dict[str, Dict[str, Any]] = {}
+        self._full_interface_cards: Dict[str, Dict[str, Any]] = {}
+        self._placeholder_overview_lbl: Optional[Any] = None
+        self._placeholder_full_lbl: Optional[Any] = None
+        self._show_inactive = False
+
+        # State tracking for notification toasts
+        self._prev_interface_states: Dict[str, InterfaceState] = {}
+        self._notif_timer_id: Optional[str] = None
+
+        # Speed test & event state
         self._latest_speedtest: Optional[SpeedTestResult] = None
         self._last_health_breakdown: Dict[str, Any] = {}
+        self._all_events: List[FailoverEvent] = []
+        self._event_filter_severity = "ALL"
 
         if not HAS_CTK:
             return
@@ -70,9 +88,13 @@ class CockpitDashboard:
         self.root_frame.pack(fill="both", expand=True)
 
         self._build_top_bar()
-        self._build_kpi_cards()
-        self._build_main_split()
+        self._build_nav_bar()
+        self._build_notification_banner()
+        self._build_tab_views()
         self._build_bottom_status()
+
+        # Activate default view
+        self._switch_tab("overview")
 
         # Subscribe to orchestrator event bus and replay history
         bus = getattr(self.orchestrator, "event_bus", None) or getattr(self.orchestrator, "bus", None)
@@ -80,13 +102,17 @@ class CockpitDashboard:
             bus.subscribe(self._on_bus_event)
             if hasattr(bus, "get_history"):
                 for ev in bus.get_history(limit=30):
-                    self._render_event(ev)
+                    self._process_event(ev)
             elif hasattr(bus, "get_recent_events"):
                 for ev in reversed(bus.get_recent_events(limit=30)):
-                    self._render_event(ev)
+                    self._process_event(ev)
 
         # Start periodic UI polling ticker (5 Hz)
         self._schedule_ui_tick()
+
+    # =========================================================================
+    # TOP BAR & HEADER
+    # =========================================================================
 
     def _build_top_bar(self):
         self.top_bar = ctk.CTkFrame(
@@ -100,7 +126,7 @@ class CockpitDashboard:
         self.top_bar.pack(fill="x", padx=0, pady=0)
         self.top_bar.pack_propagate(False)
 
-        # Brand / Title (Section 1 & 6: AutoFailover 3.0 by Modula)
+        # Brand / Title (AutoFailover 3.0 by Modula)
         brand_frame = ctk.CTkFrame(self.top_bar, fg_color="transparent")
         brand_frame.pack(side="left", padx=20, pady=10)
 
@@ -134,7 +160,7 @@ class CockpitDashboard:
         )
         ver_lbl.pack(anchor="w")
 
-        # Current Active Connection Header (Section 13: visually distinct active path container)
+        # Current Active Connection Header
         self.active_box = ctk.CTkFrame(
             self.top_bar,
             fg_color=COCKPIT_THEME["bg_surface"],
@@ -176,7 +202,6 @@ class CockpitDashboard:
         )
         self.active_status_badge.pack(side="left", padx=(4, 8), pady=6)
 
-
         # Workload Profile Selector
         self.workload_menu = ctk.CTkOptionMenu(
             self.top_bar,
@@ -200,9 +225,243 @@ class CockpitDashboard:
         )
         workload_lbl.pack(side="right", padx=(0, 8), pady=14)
 
-    def _build_kpi_cards(self):
-        kpi_container = ctk.CTkFrame(self.root_frame, fg_color="transparent", height=100)
-        kpi_container.pack(fill="x", padx=20, pady=(16, 12))
+    # =========================================================================
+    # NAVIGATION BAR
+    # =========================================================================
+
+    def _build_nav_bar(self):
+        self.nav_bar = ctk.CTkFrame(self.root_frame, fg_color="transparent", height=42)
+        self.nav_bar.pack(fill="x", padx=20, pady=(10, 4))
+
+        tabs = [
+            ("overview", "Overview"),
+            ("interfaces", "Interfaces"),
+            ("speedtest", "Speed Test"),
+            ("events", "Events"),
+        ]
+
+        for tab_id, tab_label in tabs:
+            btn = ctk.CTkButton(
+                self.nav_bar,
+                text=tab_label,
+                font=("Segoe UI", 11, "bold"),
+                fg_color=COCKPIT_THEME["bg_card"],
+                hover_color=COCKPIT_THEME["border_highlight"],
+                text_color=COCKPIT_THEME["text_secondary"],
+                height=30,
+                width=100,
+                corner_radius=6,
+                command=lambda t=tab_id: self._switch_tab(t),
+            )
+            btn.pack(side="left", padx=(0, 8))
+            self._tab_buttons[tab_id] = btn
+
+    def _switch_tab(self, tab_name: str):
+        self._current_tab = tab_name
+        for t_name, btn in self._tab_buttons.items():
+            if t_name == tab_name:
+                btn.configure(
+                    fg_color=COCKPIT_THEME["cyan"],
+                    text_color="#080b10",
+                )
+                if t_name in self._tab_frames:
+                    self._tab_frames[t_name].pack(fill="both", expand=True, padx=20, pady=0)
+            else:
+                btn.configure(
+                    fg_color=COCKPIT_THEME["bg_card"],
+                    text_color=COCKPIT_THEME["text_secondary"],
+                )
+                if t_name in self._tab_frames:
+                    self._tab_frames[t_name].pack_forget()
+
+    # =========================================================================
+    # NOTIFICATION BANNER / TOAST
+    # =========================================================================
+
+    def _build_notification_banner(self):
+        self.notif_banner = ctk.CTkFrame(
+            self.root_frame,
+            fg_color=COCKPIT_THEME["bg_card"],
+            border_width=1,
+            border_color=COCKPIT_THEME["cyan"],
+            corner_radius=8,
+            height=40,
+        )
+        # Not packed initially
+
+        self.notif_icon = ctk.CTkLabel(
+            self.notif_banner,
+            text="ℹ️",
+            font=("Segoe UI", 12),
+        )
+        self.notif_icon.pack(side="left", padx=(14, 6), pady=6)
+
+        self.notif_text_lbl = ctk.CTkLabel(
+            self.notif_banner,
+            text="",
+            font=("Segoe UI", 11),
+            text_color=COCKPIT_THEME["text_primary"],
+        )
+        self.notif_text_lbl.pack(side="left", padx=4, pady=6)
+
+        self.notif_action_btn = ctk.CTkButton(
+            self.notif_banner,
+            text="View Interfaces →",
+            font=("Segoe UI", 10, "bold"),
+            fg_color=COCKPIT_THEME["bg_surface"],
+            hover_color=COCKPIT_THEME["border_highlight"],
+            text_color=COCKPIT_THEME["cyan"],
+            height=24,
+            width=120,
+            command=lambda: self._switch_tab("interfaces"),
+        )
+        self.notif_action_btn.pack(side="left", padx=10, pady=6)
+
+        self.notif_dismiss_btn = ctk.CTkButton(
+            self.notif_banner,
+            text="✕",
+            font=("Segoe UI", 10),
+            fg_color="transparent",
+            hover_color=COCKPIT_THEME["bg_surface"],
+            text_color=COCKPIT_THEME["text_muted"],
+            height=24,
+            width=24,
+            command=self._dismiss_notification,
+        )
+        self.notif_dismiss_btn.pack(side="right", padx=10, pady=6)
+
+    def _show_notification(self, message: str, is_alert: bool = False):
+        if not HAS_CTK:
+            return
+        border_color = COCKPIT_THEME["amber"] if is_alert else COCKPIT_THEME["cyan"]
+        self.notif_icon.configure(text="⚠️" if is_alert else "ℹ️")
+        self.notif_banner.configure(border_color=border_color)
+        self.notif_text_lbl.configure(text=message)
+        self.notif_banner.pack(fill="x", padx=20, pady=(2, 8), before=self.tab_container)
+
+        if self._notif_timer_id:
+            try:
+                self.parent.after_cancel(self._notif_timer_id)
+            except Exception:
+                pass
+        self._notif_timer_id = self.parent.after(9000, self._dismiss_notification)
+
+    def _dismiss_notification(self):
+        try:
+            self.notif_banner.pack_forget()
+        except Exception:
+            pass
+        self._notif_timer_id = None
+
+    # =========================================================================
+    # TAB VIEWS SETUP
+    # =========================================================================
+
+    def _build_tab_views(self):
+        self.tab_container = ctk.CTkFrame(self.root_frame, fg_color="transparent")
+        self.tab_container.pack(fill="both", expand=True, padx=0, pady=0)
+
+        # 1. Overview Tab
+        tab_overview = ctk.CTkFrame(self.tab_container, fg_color="transparent")
+        self._tab_frames["overview"] = tab_overview
+        self._build_overview_tab(tab_overview)
+
+        # 2. Interfaces Tab
+        tab_interfaces = ctk.CTkFrame(self.tab_container, fg_color="transparent")
+        self._tab_frames["interfaces"] = tab_interfaces
+        self._build_interfaces_tab(tab_interfaces)
+
+        # 3. Speed Test Tab
+        tab_speedtest = ctk.CTkFrame(self.tab_container, fg_color="transparent")
+        self._tab_frames["speedtest"] = tab_speedtest
+        self._build_speedtest_tab(tab_speedtest)
+
+        # 4. Events Tab
+        tab_events = ctk.CTkFrame(self.tab_container, fg_color="transparent")
+        self._tab_frames["events"] = tab_events
+        self._build_events_tab(tab_events)
+
+    # =========================================================================
+    # OVERVIEW TAB
+    # =========================================================================
+
+    def _build_overview_tab(self, parent: Any):
+        # 4 KPI Cards
+        self._build_kpi_cards(parent)
+
+        # Main Split
+        overview_split = ctk.CTkFrame(parent, fg_color="transparent")
+        overview_split.pack(fill="both", expand=True, padx=0, pady=0)
+
+        overview_split.columnconfigure(0, weight=3)
+        overview_split.columnconfigure(1, weight=2)
+        overview_split.rowconfigure(0, weight=1)
+
+        # Left Column: Active & Standby Interfaces Deck
+        left_frame = ctk.CTkFrame(
+            overview_split,
+            fg_color=COCKPIT_THEME["bg_card"],
+            corner_radius=8,
+            border_width=1,
+            border_color=COCKPIT_THEME["border"],
+        )
+        left_frame.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
+
+        # Deck Header with toggle
+        deck_header = ctk.CTkFrame(left_frame, fg_color="transparent")
+        deck_header.pack(fill="x", padx=16, pady=(12, 6))
+
+        deck_title = ctk.CTkLabel(
+            deck_header,
+            text="NETWORK INTERFACES DECK",
+            font=("Segoe UI", 12, "bold"),
+            text_color=COCKPIT_THEME["text_primary"],
+        )
+        deck_title.pack(side="left")
+
+        self.inactive_toggle = ctk.CTkCheckBox(
+            deck_header,
+            text="Show Inactive",
+            font=("Segoe UI", 10),
+            text_color=COCKPIT_THEME["text_muted"],
+            checkmark_color="#000000",
+            fg_color=COCKPIT_THEME["cyan"],
+            hover_color=COCKPIT_THEME["border_highlight"],
+            command=self._on_toggle_inactive,
+            height=20,
+        )
+        self.inactive_toggle.pack(side="right")
+
+        self.overview_interfaces_scroll = ctk.CTkScrollableFrame(
+            left_frame,
+            fg_color="transparent",
+            scrollbar_button_color=COCKPIT_THEME["border"],
+        )
+        self.overview_interfaces_scroll.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Right Column: Quick Speed Benchmark + Recent Activity
+        right_frame = ctk.CTkFrame(overview_split, fg_color="transparent")
+        right_frame.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
+
+        right_frame.rowconfigure(0, weight=2)
+        right_frame.rowconfigure(1, weight=3)
+        right_frame.columnconfigure(0, weight=1)
+
+        # 1. Quick Speed Benchmark Card
+        self._build_overview_speedtest_panel(right_frame)
+
+        # 2. Recent Activity Card
+        self._build_overview_events_panel(right_frame)
+
+    def _on_toggle_inactive(self):
+        self._show_inactive = bool(self.inactive_toggle.get())
+        snapshot = self.orchestrator.get_snapshot()
+        if snapshot:
+            self._render_overview_deck(snapshot)
+
+    def _build_kpi_cards(self, parent: Any):
+        kpi_container = ctk.CTkFrame(parent, fg_color="transparent", height=96)
+        kpi_container.pack(fill="x", padx=0, pady=(6, 12))
 
         for i in range(4):
             kpi_container.columnconfigure(i, weight=1, uniform="kpi")
@@ -243,7 +502,7 @@ class CockpitDashboard:
             border_color=COCKPIT_THEME["border"],
             height=90,
         )
-        frame.grid(row=0, column=col, padx=6, sticky="nsew")
+        frame.grid(row=0, column=col, padx=5, sticky="nsew")
         frame.pack_propagate(False)
 
         h_lbl = ctk.CTkLabel(
@@ -279,55 +538,7 @@ class CockpitDashboard:
 
         return {"frame": frame, "val": v_lbl, "sub": s_lbl}
 
-    def _build_main_split(self):
-        main_split = ctk.CTkFrame(self.root_frame, fg_color="transparent")
-        main_split.pack(fill="both", expand=True, padx=20, pady=0)
-
-        main_split.columnconfigure(0, weight=3)
-        main_split.columnconfigure(1, weight=2)
-        main_split.rowconfigure(0, weight=1)
-
-        # Left Column: Network Interfaces Deck
-        left_frame = ctk.CTkFrame(
-            main_split,
-            fg_color=COCKPIT_THEME["bg_card"],
-            corner_radius=8,
-            border_width=1,
-            border_color=COCKPIT_THEME["border"],
-        )
-        left_frame.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
-
-        deck_title = ctk.CTkLabel(
-            left_frame,
-            text="NETWORK INTERFACES DECK",
-            font=("Segoe UI", 12, "bold"),
-            text_color=COCKPIT_THEME["text_primary"],
-        )
-        deck_title.pack(anchor="w", padx=16, pady=(14, 8))
-
-        # Scrollable interfaces list
-        self.interfaces_scroll = ctk.CTkScrollableFrame(
-            left_frame,
-            fg_color="transparent",
-            scrollbar_button_color=COCKPIT_THEME["border"],
-        )
-        self.interfaces_scroll.pack(fill="both", expand=True, padx=10, pady=10)
-
-        # Right Column: Speed Test & Live Event Stream
-        right_frame = ctk.CTkFrame(main_split, fg_color="transparent")
-        right_frame.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
-
-        right_frame.rowconfigure(0, weight=1)
-        right_frame.rowconfigure(1, weight=1)
-        right_frame.columnconfigure(0, weight=1)
-
-        # Speed Test Card
-        self._build_speedtest_panel(right_frame)
-
-        # Real-time Events Card
-        self._build_events_panel(right_frame)
-
-    def _build_speedtest_panel(self, parent: Any):
+    def _build_overview_speedtest_panel(self, parent: Any):
         frame = ctk.CTkFrame(
             parent,
             fg_color=COCKPIT_THEME["bg_card"],
@@ -337,77 +548,68 @@ class CockpitDashboard:
         )
         frame.grid(row=0, column=0, pady=(0, 8), sticky="nsew")
 
+        top_row = ctk.CTkFrame(frame, fg_color="transparent")
+        top_row.pack(fill="x", padx=16, pady=(12, 4))
+
         st_title = ctk.CTkLabel(
-            frame,
-            text="BANDWIDTH & SPEED BENCHMARK",
+            top_row,
+            text="BANDWIDTH BENCHMARK",
             font=("Segoe UI", 12, "bold"),
             text_color=COCKPIT_THEME["text_primary"],
         )
-        st_title.pack(anchor="w", padx=16, pady=(12, 6))
+        st_title.pack(side="left")
 
-        # Controls row
-        ctrl_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        ctrl_frame.pack(fill="x", padx=16, pady=4)
-
-        self.provider_menu = ctk.CTkOptionMenu(
-            ctrl_frame,
-            values=["ookla", "fast_com", "cloudflare", "nperf"],
-            fg_color=COCKPIT_THEME["bg_surface"],
-            button_color=COCKPIT_THEME["border_highlight"],
+        btn_open = ctk.CTkButton(
+            top_row,
+            text="Open Speed Test View →",
+            command=lambda: self._switch_tab("speedtest"),
+            font=("Segoe UI", 10, "bold"),
+            fg_color="transparent",
+            hover_color=COCKPIT_THEME["bg_surface"],
             text_color=COCKPIT_THEME["cyan"],
-            font=("Segoe UI", 11),
-            width=110,
-            height=28,
+            height=22,
         )
-        self.provider_menu.set("cloudflare")
-        self.provider_menu.pack(side="left", padx=(0, 6))
+        btn_open.pack(side="right")
 
-        self.btn_run_test = ctk.CTkButton(
-            ctrl_frame,
-            text="Run Test",
-            command=self._start_speed_test,
-            font=("Segoe UI", 11, "bold"),
-            fg_color=COCKPIT_THEME["emerald"],
-            hover_color=COCKPIT_THEME["emerald_glow"],
-            height=28,
-            width=90,
-        )
-        self.btn_run_test.pack(side="left", padx=3)
-
-        self.btn_bulk_test = ctk.CTkButton(
-            ctrl_frame,
-            text="Bulk (All 4)",
-            command=self._start_bulk_test,
-            font=("Segoe UI", 11),
-            fg_color=COCKPIT_THEME["bg_surface"],
-            hover_color=COCKPIT_THEME["border_highlight"],
-            height=28,
-            width=80,
-        )
-        self.btn_bulk_test.pack(side="left", padx=3)
-
-        self.btn_detail_test = ctk.CTkButton(
-            ctrl_frame,
-            text="Details",
-            command=self._show_speedtest_detail_modal,
-            font=("Segoe UI", 11),
-            fg_color=COCKPIT_THEME["bg_surface"],
-            hover_color=COCKPIT_THEME["border_highlight"],
-            height=28,
-            width=70,
-        )
-        self.btn_detail_test.pack(side="left", padx=3)
-
-        # Speed readout
-        self.speed_readout_lbl = ctk.CTkLabel(
+        # Readout text
+        self.overview_speed_lbl = ctk.CTkLabel(
             frame,
-            text="Ready to benchmark active connection (does not affect failover)",
+            text="Ready to benchmark active connection (does not alter failover)",
             font=("Consolas", 10),
             text_color=COCKPIT_THEME["text_muted"],
+            anchor="w",
         )
-        self.speed_readout_lbl.pack(anchor="w", padx=16, pady=8)
+        self.overview_speed_lbl.pack(fill="x", padx=16, pady=(4, 6))
 
-    def _build_events_panel(self, parent: Any):
+        # Action bar
+        act_row = ctk.CTkFrame(frame, fg_color="transparent")
+        act_row.pack(fill="x", padx=16, pady=(2, 10))
+
+        self.btn_overview_test = ctk.CTkButton(
+            act_row,
+            text="Run Quick Test",
+            command=self._start_speed_test,
+            font=("Segoe UI", 10, "bold"),
+            fg_color=COCKPIT_THEME["emerald"],
+            hover_color=COCKPIT_THEME["emerald_glow"],
+            height=26,
+            width=110,
+        )
+        self.btn_overview_test.pack(side="left", padx=(0, 6))
+
+        self.btn_overview_details = ctk.CTkButton(
+            act_row,
+            text="Details",
+            command=self._show_speedtest_detail_modal,
+            font=("Segoe UI", 10),
+            fg_color=COCKPIT_THEME["bg_surface"],
+            hover_color=COCKPIT_THEME["border_highlight"],
+            height=26,
+            width=70,
+        )
+        self.btn_overview_details.pack(side="left")
+
+    def _build_overview_events_panel(self, parent: Any):
         frame = ctk.CTkFrame(
             parent,
             fg_color=COCKPIT_THEME["bg_card"],
@@ -417,20 +619,275 @@ class CockpitDashboard:
         )
         frame.grid(row=1, column=0, pady=(8, 0), sticky="nsew")
 
+        top_row = ctk.CTkFrame(frame, fg_color="transparent")
+        top_row.pack(fill="x", padx=16, pady=(12, 6))
+
         ev_title = ctk.CTkLabel(
-            frame,
-            text="SYSTEM & FAILOVER EVENTS",
+            top_row,
+            text="RECENT ACTIVITY",
             font=("Segoe UI", 12, "bold"),
             text_color=COCKPIT_THEME["text_primary"],
         )
-        ev_title.pack(anchor="w", padx=16, pady=(12, 6))
+        ev_title.pack(side="left")
 
-        self.events_scroll = ctk.CTkScrollableFrame(
+        btn_all_events = ctk.CTkButton(
+            top_row,
+            text="View All Events →",
+            command=lambda: self._switch_tab("events"),
+            font=("Segoe UI", 10, "bold"),
+            fg_color="transparent",
+            hover_color=COCKPIT_THEME["bg_surface"],
+            text_color=COCKPIT_THEME["cyan"],
+            height=22,
+        )
+        btn_all_events.pack(side="right")
+
+        self.overview_events_scroll = ctk.CTkScrollableFrame(
             frame,
             fg_color="transparent",
             scrollbar_button_color=COCKPIT_THEME["border"],
         )
-        self.events_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.overview_events_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+    # =========================================================================
+    # INTERFACES TAB (ALL HARDWARE)
+    # =========================================================================
+
+    def _build_interfaces_tab(self, parent: Any):
+        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        header_frame.pack(fill="x", padx=0, pady=(12, 8))
+
+        title = ctk.CTkLabel(
+            header_frame,
+            text="ALL NETWORK HARDWARE & ADAPTERS",
+            font=("Segoe UI", 14, "bold"),
+            text_color=COCKPIT_THEME["text_primary"],
+        )
+        title.pack(anchor="w")
+
+        subtitle = ctk.CTkLabel(
+            header_frame,
+            text="Operating system interface registry monitored by AutoFailover 3.0 runtime",
+            font=("Segoe UI", 11),
+            text_color=COCKPIT_THEME["text_muted"],
+        )
+        subtitle.pack(anchor="w")
+
+        self.full_interfaces_scroll = ctk.CTkScrollableFrame(
+            parent,
+            fg_color=COCKPIT_THEME["bg_card"],
+            corner_radius=8,
+            border_width=1,
+            border_color=COCKPIT_THEME["border"],
+            scrollbar_button_color=COCKPIT_THEME["border"],
+        )
+        self.full_interfaces_scroll.pack(fill="both", expand=True, padx=0, pady=6)
+
+    # =========================================================================
+    # SPEED TEST TAB
+    # =========================================================================
+
+    def _build_speedtest_tab(self, parent: Any):
+        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        header_frame.pack(fill="x", padx=0, pady=(12, 10))
+
+        title = ctk.CTkLabel(
+            header_frame,
+            text="BANDWIDTH & SPEED BENCHMARK",
+            font=("Segoe UI", 14, "bold"),
+            text_color=COCKPIT_THEME["text_primary"],
+        )
+        title.pack(anchor="w")
+
+        subtitle = ctk.CTkLabel(
+            header_frame,
+            text="Passive on-demand throughput measurement across real-time providers (does not impact failover)",
+            font=("Segoe UI", 11),
+            text_color=COCKPIT_THEME["text_muted"],
+        )
+        subtitle.pack(anchor="w")
+
+        card = ctk.CTkFrame(
+            parent,
+            fg_color=COCKPIT_THEME["bg_card"],
+            corner_radius=8,
+            border_width=1,
+            border_color=COCKPIT_THEME["border"],
+        )
+        card.pack(fill="both", expand=True, padx=0, pady=6)
+
+        # Control row
+        ctrl_frame = ctk.CTkFrame(card, fg_color="transparent")
+        ctrl_frame.pack(fill="x", padx=20, pady=16)
+
+        ctk.CTkLabel(
+            ctrl_frame,
+            text="Provider:",
+            font=("Segoe UI", 11, "bold"),
+            text_color=COCKPIT_THEME["text_muted"],
+        ).pack(side="left", padx=(0, 8))
+
+        self.provider_menu = ctk.CTkOptionMenu(
+            ctrl_frame,
+            values=["cloudflare", "fast_com", "ookla", "nperf"],
+            fg_color=COCKPIT_THEME["bg_surface"],
+            button_color=COCKPIT_THEME["border_highlight"],
+            text_color=COCKPIT_THEME["cyan"],
+            font=("Segoe UI", 11),
+            width=130,
+            height=30,
+        )
+        self.provider_menu.set("cloudflare")
+        self.provider_menu.pack(side="left", padx=(0, 10))
+
+        self.btn_run_test = ctk.CTkButton(
+            ctrl_frame,
+            text="Run Speed Test",
+            command=self._start_speed_test,
+            font=("Segoe UI", 11, "bold"),
+            fg_color=COCKPIT_THEME["emerald"],
+            hover_color=COCKPIT_THEME["emerald_glow"],
+            height=30,
+            width=120,
+        )
+        self.btn_run_test.pack(side="left", padx=4)
+
+        self.btn_bulk_test = ctk.CTkButton(
+            ctrl_frame,
+            text="Bulk Benchmark (All 4)",
+            command=self._start_bulk_test,
+            font=("Segoe UI", 11),
+            fg_color=COCKPIT_THEME["bg_surface"],
+            hover_color=COCKPIT_THEME["border_highlight"],
+            height=30,
+            width=160,
+        )
+        self.btn_bulk_test.pack(side="left", padx=4)
+
+        self.btn_detail_test = ctk.CTkButton(
+            ctrl_frame,
+            text="View Modal Details",
+            command=self._show_speedtest_detail_modal,
+            font=("Segoe UI", 11),
+            fg_color=COCKPIT_THEME["bg_surface"],
+            hover_color=COCKPIT_THEME["border_highlight"],
+            height=30,
+            width=140,
+        )
+        self.btn_detail_test.pack(side="left", padx=4)
+
+        # Big Metrics Gauges Frame
+        gauges_frame = ctk.CTkFrame(card, fg_color="transparent")
+        gauges_frame.pack(fill="x", padx=20, pady=10)
+
+        for col in range(3):
+            gauges_frame.columnconfigure(col, weight=1, uniform="gauges")
+
+        self.gauge_dl = self._create_card(gauges_frame, 0, "DOWNLOAD SPEED", "-- Mbps", "Ready")
+        self.gauge_ul = self._create_card(gauges_frame, 1, "UPLOAD SPEED", "-- Mbps", "Ready")
+        self.gauge_ping = self._create_card(gauges_frame, 2, "SERVER PING", "-- ms", "Ready")
+
+        # Full Readout Box
+        self.speed_readout_lbl = ctk.CTkLabel(
+            card,
+            text="Ready to benchmark active connection (does not alter failover)",
+            font=("Consolas", 11),
+            text_color=COCKPIT_THEME["text_secondary"],
+            fg_color=COCKPIT_THEME["bg_surface"],
+            corner_radius=6,
+            pady=12,
+        )
+        self.speed_readout_lbl.pack(fill="x", padx=20, pady=16)
+
+    # =========================================================================
+    # EVENTS TAB
+    # =========================================================================
+
+    def _build_events_tab(self, parent: Any):
+        header_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        header_frame.pack(fill="x", padx=0, pady=(12, 10))
+
+        title = ctk.CTkLabel(
+            header_frame,
+            text="SYSTEM & FAILOVER EVENTS",
+            font=("Segoe UI", 14, "bold"),
+            text_color=COCKPIT_THEME["text_primary"],
+        )
+        title.pack(anchor="w")
+
+        # Filter bar
+        filter_bar = ctk.CTkFrame(parent, fg_color="transparent")
+        filter_bar.pack(fill="x", padx=0, pady=(0, 10))
+
+        ctk.CTkLabel(
+            filter_bar,
+            text="Filter:",
+            font=("Segoe UI", 11, "bold"),
+            text_color=COCKPIT_THEME["text_muted"],
+        ).pack(side="left", padx=(0, 8))
+
+        self._filter_btns = {}
+        for sev in ["ALL", "CRITICAL", "WARNING", "INFO"]:
+            b = ctk.CTkButton(
+                filter_bar,
+                text=sev,
+                font=("Segoe UI", 10, "bold"),
+                fg_color=COCKPIT_THEME["cyan"] if sev == "ALL" else COCKPIT_THEME["bg_card"],
+                text_color="#080b10" if sev == "ALL" else COCKPIT_THEME["text_secondary"],
+                hover_color=COCKPIT_THEME["border_highlight"],
+                height=26,
+                width=65,
+                command=lambda s=sev: self._set_events_filter(s),
+            )
+            b.pack(side="left", padx=3)
+            self._filter_btns[sev] = b
+
+        self.btn_clear_events = ctk.CTkButton(
+            filter_bar,
+            text="Clear Log",
+            font=("Segoe UI", 10),
+            fg_color=COCKPIT_THEME["bg_surface"],
+            hover_color=COCKPIT_THEME["red"],
+            height=26,
+            width=80,
+            command=self._clear_events_log,
+        )
+        self.btn_clear_events.pack(side="right")
+
+        self.full_events_scroll = ctk.CTkScrollableFrame(
+            parent,
+            fg_color=COCKPIT_THEME["bg_card"],
+            corner_radius=8,
+            border_width=1,
+            border_color=COCKPIT_THEME["border"],
+            scrollbar_button_color=COCKPIT_THEME["border"],
+        )
+        self.full_events_scroll.pack(fill="both", expand=True, padx=0, pady=6)
+
+    def _set_events_filter(self, severity: str):
+        self._event_filter_severity = severity
+        for s, b in self._filter_btns.items():
+            if s == severity:
+                b.configure(fg_color=COCKPIT_THEME["cyan"], text_color="#080b10")
+            else:
+                b.configure(fg_color=COCKPIT_THEME["bg_card"], text_color=COCKPIT_THEME["text_secondary"])
+
+        # Re-render full events list
+        for child in self.full_events_scroll.winfo_children():
+            child.destroy()
+        for ev in self._all_events:
+            self._render_single_event_to_scroll(self.full_events_scroll, ev, check_filter=True)
+
+    def _clear_events_log(self):
+        self._all_events.clear()
+        for child in self.full_events_scroll.winfo_children():
+            child.destroy()
+        for child in self.overview_events_scroll.winfo_children():
+            child.destroy()
+
+    # =========================================================================
+    # BOTTOM STATUS BAR
+    # =========================================================================
 
     def _build_bottom_status(self):
         bottom_bar = ctk.CTkFrame(
@@ -453,7 +910,7 @@ class CockpitDashboard:
         )
         self.host_telemetry_lbl.pack(side="left", padx=20)
 
-        # Right Footer with clickable author attribution (Section 6)
+        # Right Footer with clickable author attribution
         footer_frame = ctk.CTkFrame(bottom_bar, fg_color="transparent")
         footer_frame.pack(side="right", padx=20)
 
@@ -483,6 +940,10 @@ class CockpitDashboard:
         except Exception:
             pass
 
+    # =========================================================================
+    # WORKLOAD & SPEED TEST LOGIC
+    # =========================================================================
+
     def _on_workload_change(self, choice: str):
         profile_map = {
             "VIDEO_CONFERENCE": WorkloadProfile.VIDEO_CONFERENCE,
@@ -495,8 +956,11 @@ class CockpitDashboard:
 
     def _start_speed_test(self):
         provider = self.provider_menu.get()
-        self.speed_readout_lbl.configure(text=f"Testing bandwidth via {provider.upper()}...")
+        msg = f"Testing bandwidth via {provider.upper()}..."
+        self.speed_readout_lbl.configure(text=msg)
+        self.overview_speed_lbl.configure(text=msg)
         self.btn_run_test.configure(state="disabled")
+        self.btn_overview_test.configure(state="disabled")
 
         def _worker():
             res = self.speedtest_runner.run_single_test(provider)
@@ -506,16 +970,34 @@ class CockpitDashboard:
 
     def _on_speed_test_done(self, res: SpeedTestResult):
         self.btn_run_test.configure(state="normal")
+        self.btn_overview_test.configure(state="normal")
         self._latest_speedtest = res
+
         if res.error:
-            self.speed_readout_lbl.configure(text=f"Test error: {res.error}")
+            txt = f"Test error: {res.error}"
+            self.speed_readout_lbl.configure(text=txt)
+            self.overview_speed_lbl.configure(text=txt)
         else:
-            self.speed_readout_lbl.configure(
-                text=f"Result ({res.provider}): DL: {res.download_mbps:.1f} Mbps | UL: {res.upload_mbps:.1f} Mbps | Ping: {res.latency_ms:.1f}ms"
+            txt = (
+                f"Result ({res.provider}): DL: {res.download_mbps:.1f} Mbps | "
+                f"UL: {res.upload_mbps:.1f} Mbps | Ping: {res.latency_ms:.1f}ms"
             )
+            self.speed_readout_lbl.configure(text=txt)
+            self.overview_speed_lbl.configure(text=txt)
+
+            self.gauge_dl["val"].configure(text=f"{res.download_mbps:.1f} Mbps")
+            self.gauge_dl["sub"].configure(text=f"Provider: {res.provider.upper()}")
+
+            self.gauge_ul["val"].configure(text=f"{res.upload_mbps:.1f} Mbps")
+            self.gauge_ul["sub"].configure(text=f"Provider: {res.provider.upper()}")
+
+            self.gauge_ping["val"].configure(text=f"{res.latency_ms:.1f} ms")
+            self.gauge_ping["sub"].configure(text="ICMP / Socket Ping")
 
     def _start_bulk_test(self):
-        self.speed_readout_lbl.configure(text="Running bulk benchmark across all 4 providers...")
+        msg = "Running bulk benchmark across all 4 providers..."
+        self.speed_readout_lbl.configure(text=msg)
+        self.overview_speed_lbl.configure(text=msg)
         self.btn_bulk_test.configure(state="disabled")
 
         def _worker():
@@ -527,20 +1009,50 @@ class CockpitDashboard:
 
     def _on_bulk_test_done(self, avg_dl: float, count: int):
         self.btn_bulk_test.configure(state="normal")
-        self.speed_readout_lbl.configure(text=f"Bulk Complete ({count} providers): Avg DL: {avg_dl:.1f} Mbps")
+        txt = f"Bulk Complete ({count} providers): Avg DL: {avg_dl:.1f} Mbps"
+        self.speed_readout_lbl.configure(text=txt)
+        self.overview_speed_lbl.configure(text=txt)
+        self.gauge_dl["val"].configure(text=f"{avg_dl:.1f} Mbps")
+        self.gauge_dl["sub"].configure(text="Bulk Average")
+
+    # =========================================================================
+    # EVENT DISPATCH & RENDERING
+    # =========================================================================
 
     def _on_bus_event(self, event: FailoverEvent):
         if HAS_CTK:
-            self.parent.after(0, lambda: self._render_event(event))
+            self.parent.after(0, lambda: self._process_event(event))
 
-    def _render_event(self, event: FailoverEvent):
-        # Prune older events if scroll frame exceeds 50 items
-        children = self.events_scroll.winfo_children()
-        if len(children) >= 50:
+    def _process_event(self, event: FailoverEvent):
+        self._all_events.append(event)
+        # Keep internal history bounded
+        if len(self._all_events) > 200:
+            self._all_events.pop(0)
+
+        # 1. Render to Overview Recent Activity
+        self._render_single_event_to_scroll(self.overview_events_scroll, event, max_items=6)
+
+        # 2. Render to Full Events Tab (if matches filter)
+        self._render_single_event_to_scroll(self.full_events_scroll, event, max_items=100, check_filter=True)
+
+    def _render_single_event_to_scroll(
+        self,
+        scroll_container: Any,
+        event: FailoverEvent,
+        max_items: int = 100,
+        check_filter: bool = False,
+    ):
+        severity = getattr(event, "severity", "INFO")
+
+        if check_filter and self._event_filter_severity != "ALL":
+            if severity != self._event_filter_severity:
+                return
+
+        children = scroll_container.winfo_children()
+        if len(children) >= max_items:
             children[0].destroy()
 
         color = COCKPIT_THEME["text_secondary"]
-        severity = getattr(event, "severity", "INFO")
         if severity == "WARNING":
             color = COCKPIT_THEME["amber"]
         elif severity == "CRITICAL":
@@ -551,15 +1063,19 @@ class CockpitDashboard:
         ts = time.strftime("%H:%M:%S", time.localtime(event.timestamp))
         msg = f"[{ts}]  {event.event_type.value:<20}  {event.message}"
         lbl = ctk.CTkLabel(
-            self.events_scroll,
+            scroll_container,
             text=msg,
             font=("Consolas", 10),
             text_color=color,
             justify="left",
             anchor="w",
-            wraplength=380,
+            wraplength=480,
         )
         lbl.pack(anchor="w", fill="x", pady=2)
+
+    # =========================================================================
+    # RUNTIME STATE REFRESH TICKER (5 HZ)
+    # =========================================================================
 
     def _schedule_ui_tick(self):
         self._refresh_state()
@@ -578,7 +1094,7 @@ class CockpitDashboard:
         standby_if = snapshot.standby_interface
         standby_name = standby_if.friendly_name if standby_if else "None"
 
-        # 1. Update Active Connection Header (Section 13)
+        # 1. Update Active Connection Header
         if active_if:
             media_icon = "📶" if active_if.media_type == InterfaceMediaType.WIFI else ("⚡" if active_if.media_type == InterfaceMediaType.ETHERNET else "🔌")
             if active_if.media_type == InterfaceMediaType.WIFI and active_if.ssid:
@@ -604,7 +1120,7 @@ class CockpitDashboard:
                 self.card_rtt["val"].configure(text=rtt_str)
                 self.card_rtt["sub"].configure(text=jit_str)
 
-                # Update KPI 2: Network Health Index (Section 11)
+                # Update KPI 2: Network Health Index
                 rating, rating_color = get_health_rating(health, True)
                 self.card_health["val"].configure(text=f"{health} / 100 • {rating}", text_color=rating_color)
                 self.card_health["sub"].configure(text=f"Active: {active_if.name} (Click for Details)")
@@ -626,7 +1142,7 @@ class CockpitDashboard:
                 self.card_health["val"].configure(text="-- / 100")
                 self.card_health["sub"].configure(text=f"State: {active_if.state.name}")
 
-            # Update KPI 4: Engine Status (Section 14: informative policy card)
+            # Update KPI 4: Engine Status
             margin = snapshot.takeover_margin
             self.card_engine["val"].configure(text="ACTIVE PATH STABLE")
             self.card_engine["sub"].configure(
@@ -643,11 +1159,10 @@ class CockpitDashboard:
             self.card_health["val"].configure(text="0 / 100 • NO CONNECTION", text_color=COCKPIT_THEME["red"])
             self.card_health["sub"].configure(text="Status: OFFLINE")
 
-            # Eliminate contradictory state
             self.card_engine["val"].configure(text="NO ELIGIBLE PATH")
             self.card_engine["sub"].configure(text="Waiting for usable interface")
 
-        # 2. Update KPI 3: Workload (From background snapshot — zero UI thread process scanning)
+        # 2. Update KPI 3: Workload
         active_apps = snapshot.workload_apps
         if active_apps:
             self.card_workload["val"].configure(text="SESSION PROTECTED")
@@ -656,7 +1171,7 @@ class CockpitDashboard:
             self.card_workload["val"].configure(text="PASSIVE MONITOR")
             self.card_workload["sub"].configure(text="Watching Zoom, OBS, Teams")
 
-        # 3. Update Decoupled Host Telemetry & Subprocess Instrumentation
+        # 3. Update Decoupled Host Telemetry
         device_health = snapshot.device_health
         ui_refresh_ms = (time.monotonic() - t0) * 1000.0
         if device_health:
@@ -665,26 +1180,88 @@ class CockpitDashboard:
                 text=f"Host Telemetry (Decoupled): CPU: {device_health.cpu_percent:.1f}% | RAM: {device_health.ram_percent:.1f}% | Pressure: {device_health.pressure.upper()}{sub_info}"
             )
 
-        # 4. Render Interfaces Deck from snapshot
-        self._render_interfaces_deck(snapshot)
+        # 4. Check interface state transitions for toast notifications
+        self._check_interface_state_changes(snapshot.interfaces)
 
+        # 5. Render Overview & Full Interface decks
+        self._render_overview_deck(snapshot)
+        self._render_full_deck(snapshot)
 
-    def _render_interfaces_deck(self, snapshot: RuntimeSnapshot):
+    # =========================================================================
+    # STATE TRANSITIONS & TOAST NOTIFICATION
+    # =========================================================================
+
+    def _check_interface_state_changes(self, interfaces: List[NetworkInterface]):
+        for iface in interfaces:
+            prev = self._prev_interface_states.get(iface.id)
+            curr = iface.state
+
+            if prev is not None and prev != curr:
+                # Connected / recovered
+                if curr in (InterfaceState.ONLINE, InterfaceState.READY) and prev in (InterfaceState.OFFLINE, InterfaceState.DISABLED):
+                    self._show_notification(
+                        f"Connection available: {iface.friendly_name} is now {curr.name} for automatic failover.",
+                        is_alert=False,
+                    )
+                # Disconnected / failed
+                elif curr == InterfaceState.OFFLINE and prev in (InterfaceState.ONLINE, InterfaceState.READY, InterfaceState.ALERT):
+                    self._show_notification(
+                        f"Connection lost: {iface.friendly_name} was disconnected.",
+                        is_alert=True,
+                    )
+                # Degraded
+                elif curr == InterfaceState.ALERT and prev in (InterfaceState.ONLINE, InterfaceState.READY):
+                    self._show_notification(
+                        f"Degradation detected: {iface.friendly_name} is experiencing packet loss / high jitter.",
+                        is_alert=True,
+                    )
+
+            self._prev_interface_states[iface.id] = curr
+
+    # =========================================================================
+    # INTERFACE DECK RENDERING
+    # =========================================================================
+
+    def _render_overview_deck(self, snapshot: RuntimeSnapshot):
         interfaces = snapshot.interfaces
-        if not interfaces:
-            if not self._placeholder_lbl:
-                self._placeholder_lbl = ctk.CTkLabel(
-                    self.interfaces_scroll,
-                    text="Scanning for network interfaces...",
-                    font=("Segoe UI", 11, "italic"),
-                    text_color=COCKPIT_THEME["text_muted"],
-                )
-                self._placeholder_lbl.pack(pady=20)
-            return
 
-        if self._placeholder_lbl:
-            self._placeholder_lbl.destroy()
-            self._placeholder_lbl = None
+        # Filter for Overview: show connected/active/ready/alert, or all if toggled
+        if self._show_inactive:
+            filtered = interfaces
+        else:
+            filtered = [
+                i for i in interfaces
+                if i.state in (InterfaceState.ONLINE, InterfaceState.READY, InterfaceState.ALERT)
+            ]
+            # If no connected interfaces, show whatever exists so it's not totally empty
+            if not filtered:
+                filtered = interfaces
+
+        self._render_deck_into_container(
+            container=self.overview_interfaces_scroll,
+            cards_map=self._overview_interface_cards,
+            interfaces=filtered,
+            snapshot=snapshot,
+        )
+
+    def _render_full_deck(self, snapshot: RuntimeSnapshot):
+        # Full deck shows all interfaces
+        self._render_deck_into_container(
+            container=self.full_interfaces_scroll,
+            cards_map=self._full_interface_cards,
+            interfaces=snapshot.interfaces,
+            snapshot=snapshot,
+        )
+
+    def _render_deck_into_container(
+        self,
+        container: Any,
+        cards_map: Dict[str, Dict[str, Any]],
+        interfaces: List[NetworkInterface],
+        snapshot: RuntimeSnapshot,
+    ):
+        if not interfaces:
+            return
 
         state_color_map = {
             InterfaceState.ONLINE: COCKPIT_THEME["state_online"],
@@ -704,13 +1281,16 @@ class CockpitDashboard:
 
         current_ids = {iface.id for iface in interfaces}
 
-        # Remove cards for vanished interfaces
-        for iface_id in list(self._interface_cards.keys()):
+        # Remove vanished cards
+        for iface_id in list(cards_map.keys()):
             if iface_id not in current_ids:
-                widgets = self._interface_cards.pop(iface_id)
-                widgets["card"].destroy()
+                widgets = cards_map.pop(iface_id)
+                try:
+                    widgets["card"].destroy()
+                except Exception:
+                    pass
 
-        # Update existing cards or create new ones
+        # Update or create cards
         for iface in interfaces:
             is_connected = iface.state in (InterfaceState.ONLINE, InterfaceState.READY, InterfaceState.ALERT)
             media_icon = "📶" if iface.media_type == InterfaceMediaType.WIFI else ("⚡" if iface.media_type == InterfaceMediaType.ETHERNET else "🔌")
@@ -735,8 +1315,8 @@ class CockpitDashboard:
             else:
                 offline_text = ""
 
-            if iface.id in self._interface_cards:
-                w = self._interface_cards[iface.id]
+            if iface.id in cards_map:
+                w = cards_map[iface.id]
                 w["card"].configure(border_color=border_color)
                 w["badge"].configure(text=iface.state.name, fg_color=badge_color)
                 w["role"].configure(text=role_title, text_color=role_color)
@@ -781,7 +1361,7 @@ class CockpitDashboard:
                     )
             else:
                 card = ctk.CTkFrame(
-                    self.interfaces_scroll,
+                    container,
                     fg_color=COCKPIT_THEME["bg_surface"],
                     corner_radius=8,
                     border_width=1,
@@ -951,7 +1531,7 @@ class CockpitDashboard:
 
                 card.bind("<Button-1>", lambda e, i=iface: self._show_interface_detail_modal(i))
 
-                self._interface_cards[iface.id] = {
+                cards_map[iface.id] = {
                     "card": card,
                     "top_row": top_row,
                     "badge": badge_lbl,
@@ -972,9 +1552,12 @@ class CockpitDashboard:
                     "details_btn": details_btn,
                 }
 
+    # =========================================================================
+    # MODALS & ADMINISTRATIVE ACTIONS
+    # =========================================================================
 
     def _show_health_detail_modal(self):
-        """Opens interactive Network Health breakdown modal (Section 12)."""
+        """Opens interactive Network Health breakdown modal."""
         if not HAS_CTK:
             return
         dialog = ctk.CTkToplevel(self.parent)
@@ -1040,7 +1623,7 @@ class CockpitDashboard:
         ).pack(pady=(0, 14))
 
     def _show_speedtest_detail_modal(self):
-        """Opens interactive Speed Benchmark detail modal (Section 10)."""
+        """Opens interactive Speed Benchmark detail modal."""
         if not HAS_CTK:
             return
         dialog = ctk.CTkToplevel(self.parent)
@@ -1108,7 +1691,7 @@ class CockpitDashboard:
         ).pack(pady=(0, 14))
 
     def _show_interface_detail_modal(self, iface: NetworkInterface):
-        """Opens comprehensive technical details modal (Section 10)."""
+        """Opens comprehensive technical details modal."""
         if not HAS_CTK:
             return
         dialog = ctk.CTkToplevel(self.parent)
@@ -1220,7 +1803,6 @@ class CockpitDashboard:
             width=90,
             height=28,
         ).pack(pady=(6, 12))
-
 
     def _confirm_enable_interface(self, iface_name: str):
         dialog = ctk.CTkToplevel(self.parent)

@@ -93,6 +93,12 @@ if not os.path.exists(ico_path) and os.path.exists(os.path.join(repo_root, 'asse
 elif not os.path.exists(ico_path):
     ico_path = None
 
+icns_path = os.path.join(desktop_dir, 'assets', 'modula_3.0.icns')
+if not os.path.exists(icns_path) and os.path.exists(os.path.join(repo_root, 'assets', 'modula_3.0.icns')):
+    icns_path = os.path.join(repo_root, 'assets', 'modula_3.0.icns')
+elif not os.path.exists(icns_path):
+    icns_path = None
+
 # 1. Primary Public Windowed Application (NO console/terminal window on Windows)
 exe = EXE(
     pyz,
@@ -150,6 +156,6 @@ if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
         name='AutoFailover 3.0.app',
-        icon=ico_path,
+        icon=icns_path or ico_path,
         bundle_identifier='com.modula.autofailover',
     )

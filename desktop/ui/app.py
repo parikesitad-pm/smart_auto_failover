@@ -41,6 +41,25 @@ class AutoFailoverApp:
         self.root.minsize(980, 640)
         self.root.configure(fg_color=COCKPIT_THEME["bg_dark"])
 
+        # Set cross-platform window icon (Linux iconphoto PNG, Windows iconbitmap ICO)
+        self._icon_photo_ref = None
+        try:
+            if sys.platform.startswith("win"):
+                ico_path = get_asset_path("modula_3.0.ico")
+                if ico_path and os.path.isfile(ico_path):
+                    try:
+                        self.root.iconbitmap(ico_path)
+                    except Exception:
+                        pass
+            png_path = get_asset_path("modula_3.0.png")
+            if png_path and os.path.isfile(png_path):
+                from PIL import Image, ImageTk
+                img = Image.open(png_path)
+                self._icon_photo_ref = ImageTk.PhotoImage(img)
+                self.root.iconphoto(True, self._icon_photo_ref)
+        except Exception:
+            pass
+
         # Determine logo path via centralized resource resolver
         self.logo_path = logo_path or get_asset_path("modula_3.0.png")
 

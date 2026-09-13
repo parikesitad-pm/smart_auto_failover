@@ -11,12 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Desktop Sub-Navigation & Tabbed Architecture (`desktop/ui/dashboard/cockpit.py`)**: Added dedicated navigation tabs (`Overview`, `Interfaces`, `Speed Test`, `Events`) with clean state isolation, custom segmented buttons, and seamless transition.
+- **Connection & Disconnection Notification Banners (`desktop/ui/dashboard/cockpit.py`)**: Added lightweight, non-intrusive toast notifications alerting users when network paths connect, disconnect, or experience degradation with direct "View Interfaces" jump action.
+- **Dedicated Speed Benchmark & Event Stream Views (`desktop/ui/dashboard/cockpit.py`)**: Moved full bandwidth benchmarking controls and comprehensive event history log with severity filtering (`ALL`, `CRITICAL`, `WARNING`, `INFO`) into dedicated tabs, keeping the Overview uncluttered.
+- **Real Desktop Application Showcase Section (`website/src/components/Landing/DesktopShowcase.tsx`)**: Added dedicated desktop hardware presentation on the landing page highlighting real cockpit features, RFC 3550 jitter evaluation, and direct download CTAs.
+- **Cross-Platform ICNS Asset (`assets/modula_3.0.icns`)**: Generated and bundled native macOS ICNS icon for application bundle discovery.
 - **Interactive Deterministic Cockpit Scenario Controller (`website/src/components/Cockpit/DemoToolbar.tsx`)**: Embedded 7 core demo actions (`Disconnect Ethernet`, `Reconnect Ethernet`, `Disable Wi-Fi`, `Enable Wi-Fi`, `Degrade Connection`, `Recover Connection`, `Reset Demo`) directly in the Live Preview with instant needle lerp animations and transition toasts.
 - **Standalone Deterministic Demo Engine (`website/src/hooks/useNetworkCockpit.ts`)**: Browser-native simulation with 60 FPS client-side tachometer lerping, passive device health monitoring, and RFC 3550 degradation behavior.
 - **Cockpit Interactive Modals (`desktop/ui/dashboard/cockpit.py`)**: Added dedicated modal dialogs for Network Health Index scoring breakdown, Network Interface deep inspection, and Speed Benchmark telemetry details.
 
 ### Changed
 
+- **Cross-Platform App Logo & Window Icon (`desktop/ui/app.py`, `desktop/autofailover.spec`)**: Configured native window icons across all operating systems using `root.iconbitmap` for Windows (`.ico`), `root.iconphoto` with garbage-collection retention for Linux/macOS (`.png`), and `BUNDLE` icon resolution for macOS (`.icns`).
+- **Filtered Overview Interface Deck (`desktop/ui/dashboard/cockpit.py`)**: Overview tab now prioritizes active, standby, and degraded paths, filtering out inactive/virtual adapters by default while providing an optional "Show Inactive" toggle.
+- **Refined Website Navigation (`website/src/App.tsx`)**: Removed the competing browser "Live Preview" mode from primary navigation and hero buttons in favor of directing users to the native desktop application as the true source of truth.
+- **Dynamic Release Discovery & Numerical Version Sorting (`website/src/services/githubReleases.ts`)**: Replaced lexicographical string comparison with numerical version parsing (`preview.19 > preview.9`, `preview.100 > preview.19`, stable > preview), filtered out `web-v*` tags, and added 10-minute cache TTL with invalidation support (`?refresh=1`).
 - **Rebuilt Network Interfaces Deck Using Responsive Interface Cards**: Replaced compressed single-line interface rows with modern card-based widgets displaying 2-column key-value metrics, clear state badges, active/standby roles, and dedicated Details modals.
 - **Added Active/Standby Roles, Interface Icons & Detailed View**: Enhanced interface cards and dashboard header with distinct technical icons (`⚡`, `📶`, `🔌`), visual role badges (`ACTIVE CONNECTION`, `FAILOVER STANDBY`, `DEGRADED`), and comprehensive 4-section inspector modal.
 - **Improved Cross-Platform Dashboard Readability**: Eliminated horizontal text clipping on Windows and Linux font scaling with responsive layout, prominent active path container, and decoupled telemetry.
