@@ -341,19 +341,19 @@ export function resolveReleaseFromList(
 }
 
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
-  const latestTag = 'v3.0.0-preview.26';
-  const ver = '3.0.0 Beta (preview.26)';
+  const latestTag = 'v3.0.1';
+  const ver = '3.0.1';
   const releaseUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/tag/${latestTag}`;
   const downloadBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestTag}`;
 
   return {
     tagName: latestTag,
-    releaseTitle: 'AutoFailover 3.0.0 Beta Release (v3.0.0-preview.26)',
-    channel: 'BETA',
+    releaseTitle: 'AutoFailover 3.0.1 Release (v3.0.1)',
+    channel: 'STABLE',
     publishedAt: new Date().toISOString(),
     htmlUrl: releaseUrl,
     releaseNotes:
-      'Official multi-platform desktop Beta release packages for AutoFailover 3.0 by Modula.',
+      'Official multi-platform desktop release packages for AutoFailover 3.0.1 by Modula with 5-case failover hierarchy and live workload protection.',
     isFallback: true,
     checksumsUrl: `${downloadBase}/SHA256SUMS.txt`,
     platforms: {
@@ -363,10 +363,10 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         arch: 'x64 (Windows 10 / 11)',
         available: true,
         version: `AutoFailover ${ver}`,
-        channel: 'BETA',
-        assetName: 'AutoFailover-3.0.0-Windows-x64.zip',
-        downloadUrl: `${downloadBase}/AutoFailover-3.0.0-Windows-x64.zip`,
-        validationStatus: 'Beta Release Ready',
+        channel: 'STABLE',
+        assetName: 'AutoFailover-3.0.1-Windows-x64.zip',
+        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-Windows-x64.zip`,
+        validationStatus: 'Release Ready',
         isRecommended: detected === 'windows',
         description: 'Native Windows executable package.',
       },
@@ -376,10 +376,10 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         arch: 'x86_64 / glibc 2.31+',
         available: true,
         version: `AutoFailover ${ver}`,
-        channel: 'BETA',
-        assetName: 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
-        downloadUrl: `${downloadBase}/AutoFailover-3.0.0-Linux-x86_64.tar.gz`,
-        validationStatus: 'Beta Release Ready (Real-Host Validated)',
+        channel: 'STABLE',
+        assetName: 'AutoFailover-3.0.1-Linux-x86_64.tar.gz',
+        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-Linux-x86_64.tar.gz`,
+        validationStatus: 'Release Ready (Real-Host Validated)',
         isRecommended: detected === 'linux',
         description: 'Native Linux standalone archive.',
       },
@@ -389,25 +389,25 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         arch: 'arm64 (M1/M2/M3/M4)',
         available: true,
         version: `AutoFailover ${ver}`,
-        channel: 'BETA',
-        assetName: 'AutoFailover-3.0.0-macOS-arm64.dmg',
-        downloadUrl: `${downloadBase}/AutoFailover-3.0.0-macOS-arm64.dmg`,
-        validationStatus: 'Beta Release Ready',
+        channel: 'STABLE',
+        assetName: 'AutoFailover-3.0.1-macOS-arm64.dmg',
+        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-macOS-arm64.dmg`,
+        validationStatus: 'Release Ready',
         isRecommended: detected === 'macos-arm64',
-        description: 'Native Apple Silicon DMG package.',
+        description: 'Native Apple Silicon disk image (.dmg).',
       },
       'macos-x64': {
         platformId: 'macos-x64',
         platformName: 'macOS Intel',
-        arch: 'x64 (Intel Mac)',
-        available: false,
+        arch: 'x64 (Intel)',
+        available: true,
         version: `AutoFailover ${ver}`,
-        channel: 'BETA',
-        assetName: 'AutoFailover-3.0.0-macOS-x64.dmg',
-        downloadUrl: releaseUrl,
-        validationStatus: 'Available for Testing',
-        isRecommended: false,
-        description: 'Native Intel Mac DMG package.',
+        channel: 'STABLE',
+        assetName: 'AutoFailover-3.0.1-macOS-x64.dmg',
+        downloadUrl: `${downloadBase}/AutoFailover-3.0.1-macOS-x64.dmg`,
+        validationStatus: 'Release Ready',
+        isRecommended: detected === 'macos-x64',
+        description: 'Native Intel macOS disk image (.dmg).',
       },
     },
   };

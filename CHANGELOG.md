@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [3.0.1] - 2026-09-14
+
+### Added
+
+- **5-Case Deterministic Interface Priority Hierarchy (`desktop/core/policy/engine.py`)**: Implemented rigorous multi-interface arbitration rules prioritizing physical Ethernet over Wi-Fi, establishing `eth0` as baseline primary (Case 5), prioritizing `eth0` over Wi-Fi when only two paths exist (Case 2), immediately failing over to `eth1` upon `eth0` degradation (Case 3), and executing emergency failover to Wi-Fi if all Ethernet paths degrade into ALERT/RTO (Case 4).
+- **Active Workload Continuity & Session Protection (Zoom, vMix, OBS Studio) (`desktop/core/policy/engine.py`)**: Protected active live broadcasts and video conferences by forbidding impulsive switching between healthy Ethernet paths. When `eth1` is active, the engine holds and preserves `eth1` unless it experiences degradation, RTO, or disconnection.
+
+### Changed
+
+- **Bumped Multi-Platform Version to 3.0.1**: Upgraded version across desktop core (`desktop/VERSION`, `desktop/__version__.py`), package manifests (`package.json`, `website/package.json`), documentation (`README.md`), and website services (`website/src/services/githubReleases.ts`).
+
+## [3.0.0] - 2026-09-13
 
 ### Added
 

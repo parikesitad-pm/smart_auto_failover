@@ -48,19 +48,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <a
           href={
             release?.htmlUrl ||
-            `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.0-preview.26'}`
+            `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.1'}`
           }
           target="_blank"
           rel="noopener noreferrer"
-          title={`View ${release ? release.tagName : 'v3.0.0-preview.26'} on GitHub Releases`}
+          title={`View ${release ? release.tagName : 'v3.0.1'} on GitHub Releases`}
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/60 text-emerald-400 text-xs font-semibold tracking-wider uppercase mb-8 backdrop-blur-md transition-all group cursor-pointer"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           <span>
-            AutoFailover 3.0 by Modula •{' '}
-            <span className="text-cyan-300 font-semibold">Beta Release</span> •{' '}
+            AutoFailover 3.0.1 by Modula •{' '}
+            <span className="text-cyan-300 font-semibold">Official Release</span> •{' '}
             <strong className="underline decoration-emerald-500/50 underline-offset-2">
-              {release ? release.tagName : 'v3.0.0-preview.26'}
+              {release ? release.tagName : 'v3.0.1'}
             </strong>
           </span>
           <ArrowRight className="w-3 h-3 text-emerald-400 group-hover:translate-x-1 transition-transform" />
@@ -142,14 +142,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <a
             href={
               release?.htmlUrl ||
-              `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.0-preview.26'}`
+              `https://github.com/parikesitad-pm/smart_auto_failover/releases/tag/${release?.tagName || 'v3.0.1'}`
             }
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-950/60 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            GitHub Beta Release (
-            {release ? release.tagName : 'v3.0.0-preview.26'})
+            GitHub Release (
+            {release ? release.tagName : 'v3.0.1'})
             <ArrowRight className="w-4 h-4 text-cyan-400" />
           </a>
         </div>

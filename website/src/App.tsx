@@ -81,7 +81,7 @@ export const App: React.FC = () => {
             className="hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
           >
             Releases (
-            {release ? `Beta: ${release.tagName}` : 'v3.0.0-preview.26'}
+            {release ? release.tagName : 'v3.0.1'}
             )
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </a>
