@@ -31,3 +31,11 @@ class PathMetrics(BaseModel):
         self.samples_count = 0
         self.health_index = 0
         self.last_probe_timestamp = time.time()
+
+    @property
+    def smoothed_rtt_ms(self) -> float:
+        return self.latency_ms
+
+    @property
+    def rfc3550_jitter_ms(self) -> float:
+        return self.jitter_ms

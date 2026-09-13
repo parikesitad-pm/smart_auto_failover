@@ -463,14 +463,17 @@ class CockpitDashboard:
             # Update KPI 1: RFC 3550 Latency / Jitter
             m = self.orchestrator.metrics.get(active_if.name)
             if m:
-                rtt_str = f"{m.smoothed_rtt_ms:.1f} ms" if m.smoothed_rtt_ms > 0 else "-- ms"
-                jit_str = f"RFC 3550 Jitter: {m.rfc3550_jitter_ms:.2f} ms"
+                rtt = getattr(m, "latency_ms", 0.0) or getattr(m, "smoothed_rtt_ms", 0.0)
+                jit = getattr(m, "jitter_ms", 0.0) or getattr(m, "rfc3550_jitter_ms", 0.0)
+                health = getattr(m, "health_index", 0)
+                rtt_str = f"{rtt:.1f} ms" if rtt > 0 else "-- ms"
+                jit_str = f"RFC 3550 Jitter: {jit:.2f} ms"
                 self.card_rtt["val"].configure(text=rtt_str)
                 self.card_rtt["sub"].configure(text=jit_str)
 
                 # Update KPI 2: Health Index
-                self.card_health["val"].configure(text=f"{m.health_index:.0f} / 100")
-                self.card_health["sub"].configure(text=f"State: {m.state.name}")
+                self.card_health["val"].configure(text=f"{health:.0f} / 100")
+                self.card_health["sub"].configure(text=f"State: {active_if.state.name}")
             else:
                 self.card_rtt["val"].configure(text="Probing...")
                 self.card_rtt["sub"].configure(text="Jitter: -- ms")

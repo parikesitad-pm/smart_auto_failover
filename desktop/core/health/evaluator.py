@@ -56,8 +56,8 @@ class HealthEngine:
         if current_state == InterfaceState.DISABLED:
             return InterfaceState.DISABLED
 
-        # Hard physical link disconnect or total packet loss
-        if not carrier_detected or metrics.packet_loss_pct >= 100.0:
+        # Hard physical link disconnect
+        if not carrier_detected:
             return InterfaceState.OFFLINE
 
         # Degradation conditions
