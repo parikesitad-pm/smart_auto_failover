@@ -19,14 +19,62 @@ _Windows • macOS (Apple Silicon & Intel) • Linux_
 
 \*Dibuat oleh: **[parikesitad-pm](https://github.com/parikesitad-pm)\***
 
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Demo-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://dist-jade-seven-59.vercel.app)
-[![Release](https://img.shields.io/badge/Release-v3.0.0--alpha-blue?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm)
-[![Core](https://img.shields.io/badge/Core-Rust-orange?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
-[![Shell](https://img.shields.io/badge/Shell-Tauri-24C8D8?style=for-the-badge&logo=tauri)](https://tauri.app/)
-[![UI](https://img.shields.io/badge/UI-React%20%2B%20TS-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-[![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Website-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://dist-jade-seven-59.vercel.app)
+[![Release](https://img.shields.io/badge/Release-v3.0.0-emerald?style=for-the-badge&logo=github)](https://github.com/parikesitad-pm/smart_auto_failover/releases)
+[![Desktop](https://img.shields.io/badge/Desktop-Python%20%2B%20CustomTkinter-3776AB?style=for-the-badge&logo=python&logoColor=white)](desktop/)
+[![Website](https://img.shields.io/badge/Website-React%20%2B%20TS%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react)](website/)
+[![License](https://img.shields.io/badge/License-MIT%202026-gray?style=for-the-badge)](LICENSE)
 
 </div>
+
+---
+
+## 🏗️ Arsitektur Dua Permukaan (Dual-Surface Architecture)
+
+AutoFailover 3.0 terdiri dari **DUA permukaan aplikasi mandiri** yang berbagi ekosistem produk yang sama:
+
+| Permukaan | Lokasi | Teknologi | Tanggung Jawab Utama |
+|---|---|---|---|
+| **A. Desktop Application** | `desktop/` | **Python 3**, **CustomTkinter**, Native OS HAL | **Produk Asli**: Monitoring probing RFC 3550, scoring 5-state, anti-flap takeover margin, Layer-3 route switching, dan headless CLI engine. |
+| **B. Public Website & Hub** | `website/` / `frontend/` | **React**, **TypeScript**, **Vite**, **TailwindCSS** | **Marketing & Edukasi**: Hero dengan logo 3D hidup, Download Hub dengan status verifikasi jujur, dokumentasi, FAQ, dan simulator cockpit interaktif di browser via Vercel. |
+
+---
+
+## 🖥️ Panduan Aplikasi Desktop Native Python (`desktop/`)
+
+### 1. Menjalankan Mode Headless Engine & Verifikasi Hardware
+
+Aplikasi desktop dapat dijalankan langsung di server, terminal, maupun workstation tanpa memerlukan display server atau GUI toolkit:
+
+```bash
+# Jalankan mode headless monitor (ticker 1 Hz langsung ke console)
+python3 -m desktop.main --headless
+
+# Jalankan 5 tick evaluasi saja
+python3 -m desktop.main --headless --ticks 5
+
+# Jalankan inspeksi hardware dan validasi model 5-state (ONLINE, READY, ALERT, OFFLINE, DISABLED)
+python3 -m desktop.main --acceptance
+```
+
+### 2. Menjalankan Cockpit GUI (CustomTkinter)
+
+Jika display server dan modul `customtkinter` tersedia:
+
+```bash
+# Install dependensi desktop GUI
+pip install -r desktop/requirements.txt
+
+# Luncurkan aplikasi GUI lengkap dengan 9-stage splash initialization gate
+python3 -m desktop.main
+```
+
+### 3. Menjalankan Pengujian Karakterisasi Unit Test
+
+```bash
+# Jalankan seluruh rangkaian tes karakterisasi algoritma
+python3 -m unittest discover -s desktop/tests
+```
 
 ---
 

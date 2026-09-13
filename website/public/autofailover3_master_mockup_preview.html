@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Failover 3.0.0 by Modula — Alive Animated Mockup & Live Dual-Surface Preview</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes breathingGlow {
+      0%, 100% {
+        filter: drop-shadow(0 0 25px rgba(16, 185, 129, 0.45))
+                drop-shadow(0 0 65px rgba(6, 182, 212, 0.25));
+        transform: scale(1);
+      }
+      50% {
+        filter: drop-shadow(0 0 45px rgba(16, 185, 129, 0.85))
+                drop-shadow(0 0 95px rgba(6, 182, 212, 0.5));
+        transform: scale(1.025);
+      }
+    }
+    @keyframes orbitRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes reverseOrbit {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+    @keyframes pulseEmerald {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.92); }
+    }
+    .alive-logo {
+      animation: breathingGlow 4s ease-in-out infinite;
+      transition: transform 0.15s ease-out;
+      transform-style: preserve-3d;
+      will-change: transform, filter;
+    }
+    .orbit-ring {
+      animation: orbitRotate 22s linear infinite;
+    }
+    .orbit-ring-rev {
+      animation: reverseOrbit 32s linear infinite;
+    }
+    .pulse-emerald {
+      animation: pulseEmerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .carbon-mesh {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
+      background-size: 16px 16px;
+    }
+    .customtkinter-window {
+      box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.09);
+    }
+    .glass-card {
+      background: rgba(11, 15, 23, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+  </style>
+</head>
+<body class="bg-[#05070a] text-slate-100 antialiased font-sans min-h-screen p-3 sm:p-6 select-none">
+
+  <!-- TOP DUAL-SURFACE SWITCHER & DOWNLOAD HUB BAR -->
+  <header class="max-w-6xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-3 rounded-2xl backdrop-blur-xl shadow-2xl sticky top-3 z-40">
+    <div class="flex items-center gap-3">
+      <div class="relative w-10 h-10 flex items-center justify-center">
+        <div class="absolute inset-0 bg-emerald-500/30 rounded-full blur-md animate-pulse"></div>
+        <img src="modula_3.0.png" alt="Modula 3.0" class="w-9 h-9 object-contain relative z-10 drop-shadow-[0_0_12px_rgba(16,185,129,0.6)]">
+      </div>
+      <div>
+        <h1 class="text-sm font-black tracking-tight text-white font-mono flex items-center gap-2">
+          AUTO FAILOVER 3.0.0
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-600/70 text-emerald-400 font-bold tracking-wider uppercase">OFFICIAL BUILD</span>
+        </h1>
+        <p class="text-[11px] text-slate-400">by Modula · Live Dual-Surface Architecture</p>
+      </div>
+    </div>
+
+    <!-- Surface Switch Tabs -->
+    <div class="flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+      <button id="tab-website-btn" onclick="switchSurface('website')" class="px-4 py-2 rounded-lg font-bold transition-all bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+        <span>🌐</span>
+        <span>Landing Page (Alive Logo)</span>
+      </button>
+      <button id="tab-desktop-btn" onclick="switchSurface('desktop')" class="px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2">
+        <span>🖥️</span>
+        <span>CustomTkinter App (v3.0.0)</span>
+      </button>
+    </div>
+
+    <!-- Quick Download Action -->
+    <div class="flex items-center gap-2">
+      <a href="#download-section" onclick="switchSurface('website'); setTimeout(() => document.getElementById('download-section').scrollIntoView({behavior:'smooth'}), 100);" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs font-mono flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 transition-all">
+        <span>⬇️</span>
+        <span>Download App</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==================================================================================== -->
+  <!-- SURFACE 1: PUBLIC WEBSITE & ALIVE ANIMATED HERO (React / Vercel) -->
+  <!-- ==================================================================================== -->
+  <section id="surface-website" class="max-w-6xl mx-auto space-y-12">
+
+    <div class="bg-[#05070a] border border-slate-800/90 rounded-3xl overflow-hidden shadow-2xl carbon-mesh relative">
+
+      <!-- Dynamic Ambient Particle Canvas -->
+      <canvas id="ambient-canvas" class="absolute inset-0 pointer-events-none z-0 opacity-60"></canvas>
+
+      <!-- Website Navbar -->
+      <nav class="border-b border-slate-800/80 px-6 py-4 flex items-center justify-between backdrop-blur-md relative z-10">
+        <div class="flex items-center gap-3">
+          <img src="modula_3.0.png" alt="Modula" class="w-8 h-8 object-contain">
+          <span class="font-mono font-black text-sm text-white tracking-widest uppercase">MODULA</span>
+        </div>
+        <div class="hidden md:flex items-center gap-7 text-xs font-mono text-slate-300">
+          <a href="#features" class="hover:text-emerald-400 transition-colors">Product</a>
+          <a href="#features" class="hover:text-emerald-400 transition-colors">Features</a>
+          <a href="#architecture" class="hover:text-emerald-400 transition-colors">How It Works</a>
+          <a href="#faq" class="hover:text-emerald-400 transition-colors">FAQ</a>
+          <a href="#download-section" class="hover:text-emerald-400 transition-colors">Download</a>
+        </div>
+        <div class="flex items-center gap-3 font-mono text-xs">
+          <a href="https://github.com/parikesitad-pm/smart_auto_failover" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            <span>GitHub</span>
+          </a>
+          <button onclick="document.getElementById('download-section').scrollIntoView({behavior:'smooth'})" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black shadow-lg shadow-emerald-500/25">
+            Get App v3.0.0
+          </button>
+        </div>
+      </nav>
+
+      <!-- HERO SECTION WITH REALISTIC ALIVE LOGO & 3D PARALLAX -->
+      <section id="hero-stage" class="py-16 px-6 text-center max-w-4xl mx-auto relative z-10">
+
+        <!-- Version Pill -->
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-[11px] font-mono text-emerald-400 mb-6 shadow-inner">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-emerald"></span>
+          <span>AUTO FAILOVER 3.0.0 RELEASE</span>
+          <span class="text-slate-500">•</span>
+          <span class="text-slate-400">Desktop + Realtime Engine</span>
+        </div>
+
+        <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-2">
+          Auto Failover 3.0.0<br>
+          <span class="text-slate-400 font-medium text-2xl sm:text-3xl">by Modula</span>
+        </h1>
+
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-200 mt-4 tracking-tight">
+          Navigate Your Internet Pipeline to Keep You Online
+        </h2>
+        <p class="text-sm text-slate-400 mt-1 max-w-xl mx-auto">
+          Through Video Conference &amp; Livestreaming Production
+        </p>
+
+        <p class="text-xs font-mono text-emerald-400/90 italic mt-3">
+          "light seamless and usefull"
+        </p>
+
+        <!-- ALIVE BREATHING & INTERACTIVE 3D LOGO CONTAINER -->
+        <div id="logo-interactive-box" class="my-10 flex flex-col items-center justify-center cursor-pointer group">
+          <div class="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center perspective-[1000px]">
+
+            <!-- Outer Ethereal Aurora Rings -->
+            <div class="absolute inset-0 rounded-full border border-emerald-500/20 orbit-ring scale-110 pointer-events-none">
+              <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_12px_#10b981]"></span>
+            </div>
+            <div class="absolute inset-4 rounded-full border border-dashed border-cyan-500/20 orbit-ring-rev pointer-events-none">
+              <span class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#06b6d4]"></span>
+            </div>
+
+            <!-- Deep Ambient Emerald Core Glow -->
+            <div class="absolute w-52 h-52 bg-gradient-to-tr from-emerald-500/35 via-teal-500/25 to-cyan-500/20 rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-700"></div>
+
+            <!-- The Realistic Alive Breathing Modula Logo -->
+            <img
+              id="alive-modula-logo"
+              src="modula_3.0.png"
+              alt="Modula 3.0 Alive Emblem"
+              class="alive-logo w-52 h-52 sm:w-64 sm:h-64 object-contain relative z-20"
+            >
+          </div>
+
+          <!-- Technical Sub-Indicator -->
+          <div class="flex items-center gap-3 font-mono text-[11px] tracking-[0.25em] text-slate-400 uppercase mt-4">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-emerald"></span>
+            <span>STABLE • SMART • ALWAYS ON</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 pulse-emerald"></span>
+          </div>
+          <span class="text-[10px] font-mono text-slate-500 mt-1">Move cursor over logo for 3D physics parallax</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center justify-center gap-3 font-mono text-xs">
+          <button onclick="document.getElementById('download-section').scrollIntoView({behavior:'smooth'})" class="px-7 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black shadow-xl shadow-emerald-500/30 flex items-center gap-2 transform hover:-translate-y-0.5 transition-all">
+            <span>⬇️</span>
+            <span>Download Auto Failover 3.0.0</span>
+          </button>
+          <button onclick="switchSurface('desktop')" class="px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center gap-2 shadow-lg transition-all">
+            <span>🖥️</span>
+            <span>Test Desktop Cockpit</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 5 CORE PILLARS (from mockup) -->
+      <section id="features" class="py-12 px-6 border-t border-slate-800/80 bg-slate-950/50 relative z-10">
+        <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-3 text-center font-mono">
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl hover:border-emerald-700/60 transition-colors">
+            <div class="text-2xl mb-2">⚡</div>
+            <div class="text-xs font-bold text-white mb-1">Automatic Failover</div>
+            <div class="text-[10px] text-slate-400">Stay connected seamlessly</div>
+          </div>
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl hover:border-emerald-700/60 transition-colors">
+            <div class="text-2xl mb-2">🔌</div>
+            <div class="text-xs font-bold text-white mb-1">Multi-Interface</div>
+            <div class="text-[10px] text-slate-400">Ethernet, Wi-Fi, USB</div>
+          </div>
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl hover:border-emerald-700/60 transition-colors">
+            <div class="text-2xl mb-2">🛡️</div>
+            <div class="text-xs font-bold text-white mb-1">Health Monitoring</div>
+            <div class="text-[10px] text-slate-400">Latency, jitter, loss</div>
+          </div>
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl hover:border-emerald-700/60 transition-colors">
+            <div class="text-2xl mb-2">🎥</div>
+            <div class="text-xs font-bold text-white mb-1">Production Ready</div>
+            <div class="text-[10px] text-slate-400">Zoom • OBS • vMix</div>
+          </div>
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl hover:border-emerald-700/60 transition-colors col-span-2 md:col-span-1">
+            <div class="text-2xl mb-2">💻</div>
+            <div class="text-xs font-bold text-white mb-1">Cross-Platform</div>
+            <div class="text-[10px] text-slate-400">Linux • Windows • macOS</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WHY AUTOFAILOVER EXISTS & HOW IT WORKS (from mockup) -->
+      <section id="architecture" class="py-12 px-6 border-t border-slate-800/80 relative z-10">
+        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- Card 1: The Problem -->
+          <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+            <div class="text-[10px] font-mono text-emerald-400 tracking-wider uppercase font-semibold">THE REAL WORLD PROBLEM</div>
+            <h3 class="text-xl font-bold text-white mt-1 mb-3">Why Auto Failover Exists</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              When you're in a high-stakes client conference. When you're live on broadcast with thousands of viewers. Your connection cannot drop. Auto Failover 3.0.0 monitors health at high frequency and executes seamless Layer-3 path failover before socket rupture.
+            </p>
+            <div class="flex items-center gap-4 mt-6 pt-4 border-t border-slate-800/70 text-xs font-mono text-slate-300">
+              <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800"><span class="text-base">📹</span> Zoom</span>
+              <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800"><span class="text-base">🎙️</span> OBS Studio</span>
+              <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800"><span class="text-base">🎛️</span> vMix</span>
+            </div>
+          </div>
+
+          <!-- Card 2: 5-Stage Smart Pipeline -->
+          <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <div class="text-[10px] font-mono text-cyan-400 tracking-wider uppercase font-semibold">A SIMPLE FLOW. A SMART ENGINE.</div>
+            <h3 class="text-xl font-bold text-white mt-1 mb-3">How It Works</h3>
+            <div class="grid grid-cols-5 gap-1.5 text-center font-mono text-[10px] mt-4">
+              <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
+                <div class="text-base mb-1">🔍</div>
+                <div class="font-bold text-slate-200">Discover</div>
+                <div class="text-slate-500 text-[8px] mt-0.5">Find interfaces</div>
+              </div>
+              <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
+                <div class="text-base mb-1">📊</div>
+                <div class="font-bold text-slate-200">Monitor</div>
+                <div class="text-slate-500 text-[8px] mt-0.5">RFC 3550 jitter</div>
+              </div>
+              <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
+                <div class="text-base mb-1">⚖️</div>
+                <div class="font-bold text-slate-200">Analyze</div>
+                <div class="text-slate-500 text-[8px] mt-0.5">Policy scoring</div>
+              </div>
+              <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
+                <div class="text-base mb-1">⚡</div>
+                <div class="font-bold text-slate-200">Switch</div>
+                <div class="text-slate-500 text-[8px] mt-0.5">When necessary</div>
+              </div>
+              <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
+                <div class="text-base mb-1">🛡️</div>
+                <div class="font-bold text-slate-200">Recover</div>
+                <div class="text-slate-500 text-[8px] mt-0.5">READY first</div>
+              </div>
+            </div>
+            <div class="mt-4 text-right">
+              <span class="text-xs font-mono text-emerald-400">Policy: Switch when necessary, not because you can.</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- OFFICIAL DOWNLOAD HUB SECTION (Requested: Downloadable from landingpage) -->
+      <section id="download-section" class="py-14 px-6 border-t border-slate-800/80 bg-gradient-to-b from-[#080c14] to-[#05070a] relative z-10">
+        <div class="max-w-4xl mx-auto text-center font-mono">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/60 text-emerald-400 text-xs mb-3">
+            <span>📦</span>
+            <span>OFFICIAL BUILDS &amp; RELEASES</span>
+          </div>
+          <h3 class="text-2xl sm:text-3xl font-black text-white">Download Auto Failover 3.0.0</h3>
+          <p class="text-xs text-slate-400 mt-1 max-w-lg mx-auto font-sans">
+            Ultra-light, seamless, and powerful desktop network path guardian. Select your operating system below to download the latest production build.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left mt-8">
+            <!-- Linux Build -->
+            <div class="p-4 bg-slate-900/80 border border-slate-800 rounded-2xl hover:border-emerald-700/70 transition-all flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-lg">🐧</span>
+                  <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 text-[10px] font-bold border border-emerald-700/60">REAL-HOST VALIDATED</span>
+                </div>
+                <div class="font-bold text-white text-sm">Linux x86_64</div>
+                <div class="text-[10px] text-slate-400 mt-1">AutoFailover-3.0.0-linux-x86_64.tar.gz</div>
+                <div class="text-[9px] text-emerald-400 font-mono mt-0.5">Status: Validated on physical interfaces</div>
+              </div>
+              <a href="https://github.com/parikesitad-pm/smart_auto_failover/releases/latest" target="_blank" class="mt-4 w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl text-center shadow transition-colors flex items-center justify-center gap-1.5">
+                <span>⬇️</span>
+                <span>Download Linux (.tar.gz)</span>
+              </a>
+            </div>
+
+            <!-- Windows Build -->
+            <div class="p-4 bg-slate-900/80 border border-slate-800 rounded-2xl hover:border-cyan-700/70 transition-all flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-lg">🪟</span>
+                  <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] font-bold border border-amber-700/60">VALIDATION PENDING</span>
+                </div>
+                <div class="font-bold text-white text-sm">Windows 64-bit</div>
+                <div class="text-[10px] text-slate-400 mt-1">AutoFailover-3.0.0-windows-x86_64.zip</div>
+                <div class="text-[9px] text-amber-400/90 font-mono mt-0.5">Status: Build available · Hardware check pending</div>
+              </div>
+              <a href="https://github.com/parikesitad-pm/smart_auto_failover/releases/latest" target="_blank" class="mt-4 w-full py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-800/80 font-black text-xs rounded-xl text-center shadow transition-colors flex items-center justify-center gap-1.5">
+                <span>⬇️</span>
+                <span>Download Windows (.zip)</span>
+              </a>
+            </div>
+
+            <!-- macOS Build -->
+            <div class="p-4 bg-slate-900/40 border border-slate-800/60 rounded-2xl flex flex-col justify-between opacity-80">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-lg">🍎</span>
+                  <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold border border-slate-700">COMING SOON</span>
+                </div>
+                <div class="font-bold text-slate-300 text-sm">macOS Universal</div>
+                <div class="text-[10px] text-slate-500 mt-1">Packaging in progress</div>
+                <div class="text-[9px] text-slate-500 font-mono mt-0.5">Status: Validation Pending (No fake artifact)</div>
+              </div>
+              <button disabled class="mt-4 w-full py-2 bg-slate-900 text-slate-500 border border-slate-800 font-bold text-xs rounded-xl text-center cursor-not-allowed flex items-center justify-center gap-1.5">
+                <span>⏳</span>
+                <span>Coming Soon</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 text-[11px] text-slate-500 flex items-center justify-center gap-2">
+            <span>🔒 SHA-256 Checksums verified on release tags</span>
+            <span>•</span>
+            <a href="https://github.com/parikesitad-pm/smart_auto_failover" target="_blank" class="text-emerald-400 hover:underline">View Source on GitHub</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ ACCORDION -->
+      <section id="faq" class="py-12 px-6 border-t border-slate-800/80 bg-slate-950/40 relative z-10">
+        <div class="max-w-3xl mx-auto">
+          <div class="text-center mb-6">
+            <span class="text-[10px] font-mono text-emerald-400 tracking-wider uppercase font-semibold">FREQUENTLY ASKED QUESTIONS</span>
+            <h3 class="text-2xl font-bold text-white mt-1 font-mono">Answers from the Engineering Team</h3>
+          </div>
+
+          <div class="space-y-2 font-mono text-xs">
+            <details class="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 cursor-pointer">
+              <summary class="font-bold text-slate-200">Does Auto Failover guarantee zero dropped calls?</summary>
+              <p class="text-slate-400 mt-2 font-sans text-xs leading-relaxed">
+                No system can guarantee 100% unconditional zero socket drop when changing Layer-3 network routes. Auto Failover optimizes early degradation detection and ultra-fast path switching to minimize disruption and maximize session continuity across Zoom, OBS, and Teams.
+              </p>
+            </details>
+            <details class="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 cursor-pointer">
+              <summary class="font-bold text-slate-200">Why doesn't the preferred Ethernet immediately take over when restored?</summary>
+              <p class="text-slate-400 mt-2 font-sans text-xs leading-relaxed">
+                To prevent route flapping. A restored link enters READY first during a stabilization cooldown. Takeover requires candidate_score >= active_score + takeover_margin.
+              </p>
+            </details>
+            <details class="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 cursor-pointer">
+              <summary class="font-bold text-slate-200">Is the desktop app separate from this website?</summary>
+              <p class="text-slate-400 mt-2 font-sans text-xs leading-relaxed">
+                Yes! The desktop app is the real Python + CustomTkinter production runtime performing actual native OS network routing. This website serves documentation, product marketing, and release downloads.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="py-8 px-6 border-t border-slate-800/80 text-center font-mono text-xs text-slate-500 relative z-10">
+        <p>Crafted with ♥ by <a href="https://github.com/parikesitad-pm" target="_blank" class="text-emerald-400 hover:underline">parikesitad-pm</a> · A Modula Project · © 2026</p>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ==================================================================================== -->
+  <!-- SURFACE 2: DESKTOP APPLICATION MOCKUP (CustomTkinter Auto Failover 3.0.0) -->
+  <!-- ==================================================================================== -->
+  <section id="surface-desktop" class="max-w-6xl mx-auto space-y-6 hidden">
+
+    <!-- Interactive Desktop Simulator Toolbar -->
+    <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono backdrop-blur-md">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-slate-400 font-bold">⚡ Test Desktop Failover Scenarios:</span>
+        <button onclick="setScenario('nominal')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-semibold transition-all">1. Nominal (ETH1)</button>
+        <button onclick="setScenario('unplug_eth1')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-semibold transition-all">2. Unplug ETH1 → Takeover Wi-Fi</button>
+        <button onclick="setScenario('recover_eth1')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-semibold transition-all">3. Restore ETH1 (READY First)</button>
+        <button onclick="setScenario('zero_conn')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 font-semibold transition-all">4. Zero Connection</button>
+      </div>
+      <button onclick="toggleSplashModal(true)" class="px-3.5 py-1.5 rounded-lg bg-emerald-950 border border-emerald-600/80 text-emerald-300 hover:bg-emerald-900 flex items-center gap-1.5 font-semibold">
+        <span>🚀</span>
+        <span>Preview Startup Splash</span>
+      </button>
+    </div>
+
+    <!-- CUSTOMTKINTER WINDOW CONTAINER -->
+    <div class="customtkinter-window bg-[#080b10] border border-slate-800/90 rounded-2xl overflow-hidden shadow-2xl">
+      <!-- Titlebar -->
+      <div class="bg-[#05070a] px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-rose-500/90 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500/90 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500/90 inline-block"></span>
+          </div>
+          <span class="text-slate-400 font-bold ml-2">Auto Failover 3.0.0</span>
+          <span class="text-slate-600">|</span>
+          <span class="text-slate-500 text-[10px]">Python 3.14 · CustomTkinter</span>
+        </div>
+        <div class="text-[10px] text-emerald-400/90 flex items-center gap-1.5 font-bold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-emerald"></span>
+          <span>CORE RUNNING (10 Hz)</span>
+        </div>
+      </div>
+
+      <!-- Main Body -->
+      <div class="flex flex-col md:flex-row min-h-[580px]">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-52 bg-[#06080d] border-r border-slate-800/80 p-4 flex flex-col justify-between">
+          <div>
+            <!-- Brand -->
+            <div class="flex items-center gap-2.5 pb-4 mb-4 border-b border-slate-800/70">
+              <img src="modula_3.0.png" alt="Modula" class="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]">
+              <div>
+                <div class="font-mono font-black text-xs text-white tracking-wider">MODULA</div>
+                <div class="font-mono text-[9px] text-emerald-400 tracking-widest font-semibold">AUTOFAILOVER</div>
+              </div>
+            </div>
+
+            <!-- Menu -->
+            <nav class="space-y-1 font-mono text-xs">
+              <a href="javascript:void(0)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-emerald-950/60 border border-emerald-700/60 text-emerald-300 font-bold shadow-sm">
+                <span>🏠</span>
+                <span>Overview</span>
+              </a>
+              <a href="javascript:void(0)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-colors">
+                <span>🔌</span>
+                <span>Interfaces</span>
+              </a>
+              <a href="javascript:void(0)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-colors">
+                <span>⚡</span>
+                <span>Failover Policy</span>
+              </a>
+              <a href="javascript:void(0)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-colors">
+                <span>🩺</span>
+                <span>Health &amp; Probes</span>
+              </a>
+              <a href="javascript:void(0)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-colors">
+                <span>📋</span>
+                <span>Logs &amp; Events</span>
+              </a>
+              <a href="javascript:void(0)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-colors">
+                <span>⚙️</span>
+                <span>Settings</span>
+              </a>
+            </nav>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800/80 text-[10px] font-mono text-slate-500">
+            <div>Workload: <span class="text-slate-300">Conferencing</span></div>
+            <div>Platform: <span class="text-emerald-400">Linux / Netlink</span></div>
+          </div>
+        </aside>
+
+        <!-- Main Cockpit Area -->
+        <main class="flex-1 p-5 carbon-mesh space-y-5">
+
+          <!-- Header -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/70">
+            <div>
+              <h2 class="text-lg font-black tracking-tight text-white font-mono">
+                Auto Failover 3.0.0
+                <span class="text-xs font-normal text-slate-400 ml-1">by Modula</span>
+              </h2>
+              <p class="text-[11px] font-mono text-slate-400">ALWAYS ON. BEYOND DOWNTIME.</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <span id="active-workload-badge" class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-cyan-300">
+                📹 Zoom + OBS + vMix Active
+              </span>
+            </div>
+          </div>
+
+          <!-- 4 KPIs (from mockup) -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono">
+            <div class="bg-[#0b0f17] border border-slate-800 rounded-xl p-3 shadow-lg">
+              <div class="flex items-center justify-between text-[10px] text-slate-400 uppercase font-semibold">
+                <span>Active Link</span>
+                <span id="active-link-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse-emerald"></span>
+              </div>
+              <div id="active-link-val" class="text-lg font-black text-white mt-1">ETH1</div>
+              <div id="active-link-sub" class="text-[11px] text-emerald-400">Online • Primary</div>
+            </div>
+
+            <div class="bg-[#0b0f17] border border-slate-800 rounded-xl p-3 shadow-lg">
+              <div class="flex items-center justify-between text-[10px] text-slate-400 uppercase font-semibold">
+                <span>Failover Status</span>
+                <span>🛡️</span>
+              </div>
+              <div id="failover-status-val" class="text-lg font-black text-emerald-400 mt-1">Protected</div>
+              <div id="failover-status-sub" class="text-[11px] text-slate-400">Auto-switch ready</div>
+            </div>
+
+            <div class="bg-[#0b0f17] border border-slate-800 rounded-xl p-3 shadow-lg">
+              <div class="flex items-center justify-between text-[10px] text-slate-400 uppercase font-semibold">
+                <span>Network Health</span>
+                <span>📈</span>
+              </div>
+              <div id="network-health-val" class="text-lg font-black text-white mt-1">98%</div>
+              <div id="network-health-sub" class="text-[11px] text-slate-400">All systems operational</div>
+            </div>
+
+            <div class="bg-[#0b0f17] border border-slate-800 rounded-xl p-3 shadow-lg">
+              <div class="flex items-center justify-between text-[10px] text-slate-400 uppercase font-semibold">
+                <span>Pipeline Uptime</span>
+                <span>⏱️</span>
+              </div>
+              <div class="text-lg font-black text-white mt-1">12d 6h 24m</div>
+              <div class="text-[11px] text-slate-400">0 dropped frames</div>
+            </div>
+          </div>
+
+          <!-- Split: Interface Deck + Device Health & Events -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            <!-- Interfaces (7 Cols) -->
+            <div class="lg:col-span-7 bg-[#0b0f17] border border-slate-800 rounded-xl p-4 shadow-lg font-mono">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  Network Interfaces
+                </span>
+                <span class="text-[10px] text-slate-500">Real-Time Routing Table</span>
+              </div>
+              <div id="interfaces-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Device Health & Events (5 Cols) -->
+            <div class="lg:col-span-5 space-y-4 font-mono">
+              <div class="bg-[#0b0f17] border border-slate-800 rounded-xl p-4 shadow-lg">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span>💻</span>
+                    Device Health (1 Hz)
+                  </span>
+                  <span class="text-[10px] text-slate-500">Passive Sampling</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
+                    <div class="text-emerald-400 font-bold text-lg">24%</div>
+                    <div class="text-[9px] text-slate-400 uppercase mt-0.5">CPU</div>
+                  </div>
+                  <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
+                    <div class="text-cyan-400 font-bold text-lg">36%</div>
+                    <div class="text-[9px] text-slate-400 uppercase mt-0.5">RAM</div>
+                  </div>
+                  <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
+                    <div class="text-emerald-400 font-bold text-lg">12%</div>
+                    <div class="text-[9px] text-slate-400 uppercase mt-0.5">GPU</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Events -->
+              <div class="bg-[#0b0f17] border border-slate-800 rounded-xl p-4 shadow-lg">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span>📋</span>
+                    Recent Events
+                  </span>
+                  <span class="text-[10px] text-slate-500">Meaningful Only</span>
+                </div>
+                <div id="recent-events-list" class="space-y-1.5 text-[11px]"></div>
+              </div>
+            </div>
+
+          </div>
+
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPLASH SCREEN MODAL -->
+  <div id="splash-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="max-w-md w-full bg-[#080c14] border border-slate-800 rounded-2xl p-6 text-center font-mono relative shadow-2xl">
+      <button onclick="toggleSplashModal(false)" class="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
+      <img src="modula_3.0.png" alt="Modula" class="w-20 h-20 object-contain mx-auto mb-3 drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+      <h3 class="text-base font-black text-white">AUTO FAILOVER 3.0.0</h3>
+      <div class="text-[10px] text-emerald-400 uppercase tracking-widest -mt-0.5 mb-4">by Modula</div>
+
+      <div class="text-left space-y-1.5 text-[11px] bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4">
+        <div class="text-emerald-400 flex items-center gap-2">✓ Detecting device information</div>
+        <div class="text-emerald-400 flex items-center gap-2">✓ Discovering network interfaces</div>
+        <div class="text-emerald-400 flex items-center gap-2">✓ Reading IP configuration</div>
+        <div class="text-emerald-400 flex items-center gap-2">✓ Initializing network probes (RFC 3550)</div>
+        <div class="text-emerald-400 flex items-center gap-2">✓ Evaluating network health</div>
+        <div class="text-emerald-400 flex items-center gap-2">✓ Preparing runtime environment</div>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-300 mb-1">
+        <span>Initializing network engine...</span>
+        <span class="text-emerald-400 font-bold">100% APP READY</span>
+      </div>
+      <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800 mb-4">
+        <div class="h-full bg-emerald-500 w-full shadow-[0_0_12px_rgba(16,185,129,0.8)]"></div>
+      </div>
+
+      <button onclick="toggleSplashModal(false)" class="w-full py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">
+        Enter Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE LOGIC & 3D MOUSE PARALLAX SCRIPT -->
+  <script>
+    function switchSurface(surface) {
+      const desktopSec = document.getElementById('surface-desktop');
+      const websiteSec = document.getElementById('surface-website');
+      const deskBtn = document.getElementById('tab-desktop-btn');
+      const webBtn = document.getElementById('tab-website-btn');
+
+      if (surface === 'desktop') {
+        desktopSec.classList.remove('hidden');
+        websiteSec.classList.add('hidden');
+        deskBtn.className = "px-4 py-2 rounded-lg font-bold transition-all bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 flex items-center gap-2";
+        webBtn.className = "px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2";
+      } else {
+        desktopSec.classList.add('hidden');
+        websiteSec.classList.remove('hidden');
+        webBtn.className = "px-4 py-2 rounded-lg font-bold transition-all bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 flex items-center gap-2";
+        deskBtn.className = "px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2";
+      }
+    }
+
+    function toggleSplashModal(open) {
+      document.getElementById('splash-modal').classList.toggle('hidden', !open);
+    }
+
+    // 3D Parallax Tilt Effect for the Alive Modula Logo
+    const logoBox = document.getElementById('logo-interactive-box');
+    const aliveLogo = document.getElementById('alive-modula-logo');
+
+    if (logoBox && aliveLogo) {
+      logoBox.addEventListener('mousemove', (e) => {
+        const rect = logoBox.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        const rotateX = (-y / rect.height) * 32;
+        const rotateY = (x / rect.width) * 32;
+
+        aliveLogo.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.06, 1.06, 1.06)`;
+      });
+
+      logoBox.addEventListener('mouseleave', () => {
+        aliveLogo.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+      });
+    }
+
+    // Ambient Ethereal Particle Canvas
+    const canvas = document.getElementById('ambient-canvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+
+      function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < 35; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.8 + 0.5,
+          color: Math.random() > 0.4 ? 'rgba(16, 185, 129,' : 'rgba(6, 182, 212,',
+          alpha: Math.random() * 0.5 + 0.2,
+          speedY: -(Math.random() * 0.4 + 0.1),
+          speedX: (Math.random() - 0.5) * 0.3
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.y += p.speedY;
+          p.x += p.speedX;
+          if (p.y < 0) p.y = canvas.height;
+          if (p.x < 0) p.x = canvas.width;
+          if (p.x > canvas.width) p.x = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color + p.alpha + ')';
+          ctx.shadowColor = p.color + '0.8)';
+          ctx.shadowBlur = 6;
+          ctx.fill();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    // Desktop Scenarios Data
+    const scenarios = {
+      nominal: {
+        activeLink: 'ETH1',
+        activeLinkSub: 'Online • Primary',
+        failoverStatus: 'Protected',
+        failoverSub: 'Auto-switch ready',
+        healthVal: '98%',
+        healthSub: 'All systems operational',
+        dotColor: 'bg-emerald-400',
+        interfaces: [
+          { name: 'ETH1', role: 'Primary', state: 'ONLINE', latency: '12 ms', ip: '192.168.1.10', type: 'ethernet' },
+          { name: 'ETH2', role: 'Secondary', state: 'READY', latency: '28 ms', ip: '192.168.2.15', type: 'ethernet' },
+          { name: 'Wi-Fi', role: 'Tertiary', state: 'READY', latency: '32 ms', ip: '192.168.50.4', type: 'wifi' },
+          { name: 'USB Modem', role: 'Backup', state: 'DISABLED', latency: '—', ip: '—', type: 'cellular' }
+        ],
+        events: [
+          { time: '14:27', text: 'Switched to ETH1 (recovered)', color: 'text-emerald-400' },
+          { time: '14:23', text: 'Failover to Wi-Fi', color: 'text-cyan-400' },
+          { time: '14:22', text: 'ETH1 link degradation', color: 'text-rose-400' },
+          { time: '09:11', text: 'Switched to ETH1 (recovered)', color: 'text-emerald-400' }
+        ]
+      },
+      unplug_eth1: {
+        activeLink: 'Wi-Fi',
+        activeLinkSub: 'Online • Takeover',
+        failoverStatus: 'Failover Active',
+        failoverSub: 'Protected by ETH2',
+        healthVal: '89%',
+        healthSub: 'Operating on backup path',
+        dotColor: 'bg-cyan-400',
+        interfaces: [
+          { name: 'ETH1', role: 'Primary', state: 'OFFLINE', latency: '—', ip: '—', type: 'ethernet' },
+          { name: 'ETH2', role: 'Secondary', state: 'READY', latency: '28 ms', ip: '192.168.2.15', type: 'ethernet' },
+          { name: 'Wi-Fi', role: 'Tertiary', state: 'ONLINE', latency: '32 ms', ip: '192.168.50.4', type: 'wifi' },
+          { name: 'USB Modem', role: 'Backup', state: 'DISABLED', latency: '—', ip: '—', type: 'cellular' }
+        ],
+        events: [
+          { time: 'Just now', text: 'Failover: Took over to Wi-Fi in 24ms', color: 'text-cyan-400' },
+          { time: '1s ago', text: 'ETH1 carrier disconnected (OFFLINE)', color: 'text-rose-400' },
+          { time: '14:27', text: 'Switched to ETH1 (recovered)', color: 'text-emerald-400' },
+          { time: '14:23', text: 'Failover to Wi-Fi', color: 'text-cyan-400' }
+        ]
+      },
+      recover_eth1: {
+        activeLink: 'Wi-Fi',
+        activeLinkSub: 'Online • Stable',
+        failoverStatus: 'Evaluating',
+        failoverSub: 'ETH1 in READY cooldown',
+        healthVal: '95%',
+        healthSub: 'ETH1 stabilized',
+        dotColor: 'bg-cyan-400',
+        interfaces: [
+          { name: 'ETH1', role: 'Primary', state: 'READY', latency: '12 ms', ip: '192.168.1.10', type: 'ethernet' },
+          { name: 'ETH2', role: 'Secondary', state: 'READY', latency: '28 ms', ip: '192.168.2.15', type: 'ethernet' },
+          { name: 'Wi-Fi', role: 'Tertiary', state: 'ONLINE', latency: '32 ms', ip: '192.168.50.4', type: 'wifi' },
+          { name: 'USB Modem', role: 'Backup', state: 'DISABLED', latency: '—', ip: '—', type: 'cellular' }
+        ],
+        events: [
+          { time: 'Just now', text: 'ETH1 link restored: Entered READY (no flap)', color: 'text-amber-400' },
+          { time: '12s ago', text: 'Failover to Wi-Fi', color: 'text-cyan-400' },
+          { time: '14:27', text: 'Switched to ETH1 (recovered)', color: 'text-emerald-400' }
+        ]
+      },
+      zero_conn: {
+        activeLink: 'NONE',
+        activeLinkSub: 'No Active Path',
+        failoverStatus: 'NO PATH',
+        failoverSub: 'Zero usable connections',
+        healthVal: '0%',
+        healthSub: 'NO CONNECTION',
+        dotColor: 'bg-rose-500',
+        interfaces: [
+          { name: 'ETH1', role: 'Primary', state: 'OFFLINE', latency: '—', ip: '—', type: 'ethernet' },
+          { name: 'ETH2', role: 'Secondary', state: 'OFFLINE', latency: '—', ip: '—', type: 'ethernet' },
+          { name: 'Wi-Fi', role: 'Tertiary', state: 'DISABLED', latency: '—', ip: '—', type: 'wifi' },
+          { name: 'USB Modem', role: 'Backup', state: 'DISABLED', latency: '—', ip: '—', type: 'cellular' }
+        ],
+        events: [
+          { time: 'Critical', text: 'All paths unavailable: Pipeline offline', color: 'text-rose-500' },
+          { time: '1s ago', text: 'Wi-Fi administratively disabled', color: 'text-slate-400' }
+        ]
+      }
+    };
+
+    function renderSimulator(data) {
+      document.getElementById('active-link-val').innerText = data.activeLink;
+      document.getElementById('active-link-sub').innerText = data.activeLinkSub;
+      document.getElementById('active-link-dot').className = `w-2 h-2 rounded-full ${data.dotColor} pulse-emerald`;
+
+      document.getElementById('failover-status-val').innerText = data.failoverStatus;
+      document.getElementById('failover-status-sub').innerText = data.failoverSub;
+
+      document.getElementById('network-health-val').innerText = data.healthVal;
+      document.getElementById('network-health-sub').innerText = data.healthSub;
+
+      const ifaceContainer = document.getElementById('interfaces-list');
+      ifaceContainer.innerHTML = data.interfaces.map(i => {
+        const isOnline = i.state === 'ONLINE';
+        const isReady = i.state === 'READY';
+        const isAlert = i.state === 'ALERT';
+        const isOffline = i.state === 'OFFLINE';
+
+        const badgeClass = isOnline
+          ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/80'
+          : isReady
+            ? 'bg-slate-800 text-cyan-300 border-slate-700'
+            : isAlert
+              ? 'bg-amber-950 text-amber-300 border-amber-700'
+              : isOffline
+                ? 'bg-rose-950/80 text-rose-300 border-rose-800'
+                : 'bg-slate-900 text-slate-500 border-slate-800';
+
+        return `
+          <div class="p-2.5 rounded-lg border transition-all ${isOnline ? 'bg-emerald-950/20 border-emerald-800/70' : 'bg-slate-900/60 border-slate-800/60'} flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base">${i.type === 'ethernet' ? '🖧' : i.type === 'wifi' ? '📶' : '🔌'}</span>
+              <div>
+                <div class="font-bold text-slate-200 flex items-center gap-1.5">
+                  <span>${i.name}</span>
+                  <span class="text-[10px] text-slate-500 font-normal">(${i.role})</span>
+                </div>
+                <div class="text-[9px] text-slate-400">IP: ${i.ip}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-slate-400 font-mono text-[11px]">${i.latency}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">
+                ${i.state}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const eventContainer = document.getElementById('recent-events-list');
+      eventContainer.innerHTML = data.events.map(e => `
+        <div class="flex items-center gap-2 p-1.5 rounded bg-slate-900/40 border border-slate-800/50">
+          <span class="text-[10px] text-slate-500">${e.time}</span>
+          <span class="${e.color}">${e.text}</span>
+        </div>
+      `).join('');
+    }
+
+    function setScenario(key) {
+      renderSimulator(scenarios[key]);
+    }
+
+    // Default to Landing Page on initial view
+    switchSurface('website');
+    setScenario('nominal');
+  </script>
+</body>
+</html>

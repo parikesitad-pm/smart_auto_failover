@@ -1,0 +1,139 @@
+name: Desktop Native Release Matrix
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux Native Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Install Build Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller customtkinter pillow
+          if [ -f desktop/requirements.txt ]; then pip install -r desktop/requirements.txt; fi
+
+      - name: Run Core Verification Tests
+        run: |
+          python -m unittest discover -s desktop/tests
+
+      - name: Build Standalone Binary with PyInstaller
+        run: |
+          pyinstaller --noconfirm --onedir --windowed \
+            --name "AutoFailover" \
+            --add-data "desktop/assets:desktop/assets" \
+            --add-data "desktop/VERSION:desktop" \
+            desktop/main.py
+
+      - name: Package Linux Archive
+        run: |
+          VERSION=$(cat desktop/VERSION)
+          PACKAGE_NAME="Auto-Failover-${VERSION}-linux-x86_64"
+          mv dist/AutoFailover dist/${PACKAGE_NAME}
+          tar -czvf "dist/${PACKAGE_NAME}.tar.gz" -C dist "${PACKAGE_NAME}"
+          sha256sum "dist/${PACKAGE_NAME}.tar.gz" > "dist/${PACKAGE_NAME}.tar.gz.sha256"
+          echo "ARTIFACT_PATH=dist/${PACKAGE_NAME}.tar.gz" >> $GITHUB_ENV
+          echo "CHECKSUM_PATH=dist/${PACKAGE_NAME}.tar.gz.sha256" >> $GITHUB_ENV
+
+      - name: Upload Linux Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+
+  build-windows:
+    name: Build Windows Native Artifact
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Build Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller customtkinter pillow
+          if (Test-Path desktop/requirements.txt) { pip install -r desktop/requirements.txt }
+
+      - name: Run Core Verification Tests
+        run: |
+          python -m unittest discover -s desktop/tests
+
+      - name: Build Standalone Executable with PyInstaller
+        run: |
+          pyinstaller --noconfirm --onedir --windowed `
+            --name "AutoFailover" `
+            --add-data "desktop/assets;desktop/assets" `
+            --add-data "desktop/VERSION;desktop" `
+            desktop/main.py
+
+      - name: Package Windows Archive
+        run: |
+          $VERSION = Get-Content desktop/VERSION -Raw
+          $VERSION = $VERSION.Trim()
+          $PACKAGE_NAME = "Auto-Failover-$VERSION-windows-x64"
+          Rename-Item -Path "dist/AutoFailover" -NewName $PACKAGE_NAME
+          Compress-Archive -Path "dist/$PACKAGE_NAME" -DestinationPath "dist/$PACKAGE_NAME.zip"
+          $hash = (Get-FileHash -Path "dist/$PACKAGE_NAME.zip" -Algorithm SHA256).Hash
+          "$hash *$PACKAGE_NAME.zip" | Out-File -FilePath "dist/$PACKAGE_NAME.zip.sha256" -Encoding ascii
+
+      - name: Upload Windows Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: |
+            dist/*.zip
+            dist/*.sha256
+
+  create-release:
+    name: Publish GitHub Release
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Extract Changelog Section
+        id: changelog
+        run: |
+          python scripts/extract_changelog.py desktop/VERSION CHANGELOG.md > RELEASE_NOTES.md || echo "AutoFailover 3.0 Release" > RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            release-artifacts/linux-binaries/*
+            release-artifacts/windows-binaries/*
