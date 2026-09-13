@@ -47,72 +47,6 @@
     opacity: 1;
   }
 }
-
-@keyframes tuyulSuspensionIdle {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-3px) rotate(-0.5deg);
-  }
-}
-
-@keyframes headlightIgnite {
-  0% {
-    opacity: 0.2;
-    filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.2));
-  }
-  100% {
-    opacity: 1;
-    filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.95))
-      drop-shadow(0 0 35px rgba(6, 182, 212, 0.6));
-  }
-}
-
-@keyframes exhaustJetFire {
-  0%,
-  100% {
-    transform: scaleX(1);
-    opacity: 0.95;
-  }
-  50% {
-    transform: scaleX(0.7) scaleY(0.9);
-    opacity: 0.6;
-  }
-}
-
-@keyframes carAccelerateAway {
-  0% {
-    transform: translateX(0) scaleX(1);
-    opacity: 1;
-  }
-  18% {
-    transform: translateX(-16px) scaleY(0.95);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(950px) scaleX(1.18) scaleY(0.92);
-    opacity: 0;
-  }
-}
-
-@keyframes motionStreak {
-  0% {
-    width: 0;
-    opacity: 0;
-  }
-  35% {
-    width: 220px;
-    opacity: 0.85;
-  }
-  100% {
-    width: 550px;
-    opacity: 0;
-    transform: translateX(-160px);
-  }
-}
-
 .pulse-glow-emerald {
   animation: pulse-emerald 2s infinite ease-in-out;
 }
@@ -124,19 +58,6 @@
 }
 .bubble-anim {
   animation: popBubble 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.tuyul-idle {
-  animation: tuyulSuspensionIdle 1.8s ease-in-out infinite;
-}
-.headlight-on {
-  animation: headlightIgnite 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-.car-departing {
-  animation: carAccelerateAway 0.85s cubic-bezier(0.35, 0, 0.15, 1) forwards;
-}
-.streak-active {
-  animation: motionStreak 0.85s cubic-bezier(0.35, 0, 0.15, 1) forwards;
 }
 .exhaust-active {
   animation: exhaustJetFire 0.15s ease-in-out infinite;

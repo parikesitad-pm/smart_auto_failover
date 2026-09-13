@@ -7,6 +7,7 @@ export const App: React.FC = () => {
   const {
     state,
     config,
+    skipStartup,
     runStartup,
     setPreset,
     setCustomDuration,
@@ -19,7 +20,11 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#05070a] text-slate-100 antialiased p-3 font-sans selection:bg-cyan-500 selection:text-black flex flex-col justify-center">
       {/* Intentional Startup Splash Presentation (Establishes initial authoritative network topology) */}
-      <SplashScreen state={state} />
+      <SplashScreen
+        state={state}
+        onRetry={runStartup}
+        onSkip={skipStartup}
+      />
 
       {/* Main Digital Network Cockpit — Revealed only after initial topology is established */}
       {!state.isActive && (

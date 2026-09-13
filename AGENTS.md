@@ -229,48 +229,33 @@ IPC commands must represent atomic intentions:
 
 ---
 
-## 7. Splash Minimum Display Delay & Tuyul Sport Car Departure
+## 7. Enterprise Splash / Initialization Experience
 
 ### Core Principle
 
-- **Network initialization**: _FAST AS POSSIBLE_
-- **Visual startup**: _INTENTIONAL_
-- _"Engine boleh ngebut. Cockpit masuk dengan gaya."_
+- **Official Modula 3.0 Identity**: Centered, prominent Modula logo (`assets/modula_3.0.png`) with technical emerald glow. No mascots, no cartoon animations, no sports cars.
+- **Network initialization**: _FAST AS POSSIBLE_ (measured directly via native APIs).
+- **Decoupled Timing**: Real Core initialization runs immediately at maximum speed; presentation respects minimum splash duration (`splash_min_duration_ms`, default 3000ms).
+- **Initialization Gate**: Dashboard never opens before Core is genuinely ready in Native mode.
+- **Failure Handling**: If Core is unresponsive, hold cleanly with `INITIALIZATION INCOMPLETE` and offer `[ Retry Initialization ]`.
 
-### Architecture Flow
+### Exact Stage Mapping (0% – 100%)
 
-Initialization completion and visual completion are decoupled:
+- `0% – 10%`: Starting Core
+- `10% – 20%`: Reading System Information
+- `20% – 40%`: Discovering Network Interfaces
+- `40% – 55%`: Reading IP Configuration
+- `55% – 70%`: Validating Interface State
+- `70% – 85%`: Initializing Network Probes (RFC 3550)
+- `85% – 95%`: Evaluating Network Health
+- `95% – 100%`: Preparing Runtime State
+- `100%`: APP READY
 
-```text
-initialize network immediately
-        +
-measure actual initialization (start_time -> core_ready_at)
-        +
-minimum visual duration: max(actual_initialization_time, splash_min_duration)
-        ↓
-Core reaches 100% (honest progress, no fake increments)
-        ↓
-Status: "NETWORK READY"
-        ↓
-Tuyul Mascot enters Sport Car departure animation during remaining splash window
-        ↓
-Cockpit transition
-```
+### Progressive Technical Disclosure
 
-### Delay Mechanics & Configuration
-
-- **Config**: `splash_min_duration_ms` (Default: `3000ms`).
-- **Presets**: `Fast` (1500ms), `Normal` (3000ms), `Cinematic` (5000ms).
-- **Custom Range**: `1000ms – 10000ms`.
-- **Skip Delay**: `Hold Shift to skip startup presentation` or setting `Skip startup presentation` (Default: OFF).
-- **UI Clarification**: _"Controls minimum splash display time. Does not affect network initialization."_
-- **Absolute Rule**: NEVER use `setTimeout` before or during network initialization. The Core starts and finishes at maximum hardware speed.
-
-### Tuyul Sport Car Animation Concept
-
-- **During Initialization**: Tuyul mascot displays subtle idle suspension bobbing / movement.
-- **At 100% Core Ready**: Tuyul jumps into mini sleek performance sport car, engine lights ignite with subtle glow, and accelerates off-screen into the cockpit.
-- **Aesthetic**: Premium dark cockpit styling, thin vector geometry, subtle motion blur, never exaggerated slapstick.
+- **SYSTEM**: Device Model / Hostname, Operating System, Native Architecture.
+- **NETWORK**: Ethernet (State / IP / Speed), Wi-Fi (State / IP / SSID), Gateway / Route State, Designated Outbound Path.
+- **Completion Transition**: At 100% APP READY, the logo glow settles into solid emerald, holding cleanly before a short, calm 350ms fade transition into the Dashboard.
 
 ---
 

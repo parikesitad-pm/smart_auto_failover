@@ -25,20 +25,12 @@ export const CockpitHeader: React.FC<CockpitHeaderProps> = ({
     <header className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800/60">
       {/* Brand & Subtitle */}
       <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-lg">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
+        <div className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700/80 p-1 flex items-center justify-center shadow-lg">
+          <img
+            src="/modula_3.0.png"
+            alt="Modula 3.0 Logo"
+            className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(16,185,129,0.35)]"
+          />
         </div>
         <div>
           <div className="flex items-center space-x-2">
