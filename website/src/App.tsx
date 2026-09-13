@@ -98,7 +98,9 @@ export const App: React.FC = () => {
           onScrollToShowcase={() => handleScrollTo('showcase')}
         />
         <div id="showcase">
-          <DesktopShowcase onScrollToDownloads={() => handleScrollTo('downloads')} />
+          <DesktopShowcase
+            onScrollToDownloads={() => handleScrollTo('downloads')}
+          />
         </div>
         <div id="features">
           <FeaturePillars />

@@ -1,5 +1,12 @@
 import React from 'react';
-import { Monitor, Cpu, Activity, ShieldCheck, Download, ExternalLink } from 'lucide-react';
+import {
+  Monitor,
+  Cpu,
+  Activity,
+  ShieldCheck,
+  Download,
+  ExternalLink,
+} from 'lucide-react';
 
 interface DesktopShowcaseProps {
   onScrollToDownloads: () => void;
@@ -22,8 +29,9 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
           </span>
         </h2>
         <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
-          Inspired by automotive digital instrument clusters. Real-time RFC 3550 jitter readouts,
-          dynamic multi-factor network health scoring, and failover arbitration without dashboard clutter.
+          Inspired by automotive digital instrument clusters. Real-time RFC 3550
+          jitter readouts, dynamic multi-factor network health scoring, and
+          failover arbitration without dashboard clutter.
         </p>
       </div>
 
@@ -64,9 +72,13 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4">
             <Activity className="w-5 h-5" />
           </div>
-          <h3 className="text-white font-bold text-base mb-2">RFC 3550 Real-Time Jitter</h3>
+          <h3 className="text-white font-bold text-base mb-2">
+            RFC 3550 Real-Time Jitter
+          </h3>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Continuous packet inter-arrival jitter evaluation calculated directly according to RFC 3550, detecting subtle connection degradation before total packet drop.
+            Continuous packet inter-arrival jitter evaluation calculated
+            directly according to RFC 3550, detecting subtle connection
+            degradation before total packet drop.
           </p>
         </div>
 
@@ -74,9 +86,13 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
           <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4">
             <ShieldCheck className="w-5 h-5" />
           </div>
-          <h3 className="text-white font-bold text-base mb-2">Anti-Flap Policy Engine</h3>
+          <h3 className="text-white font-bold text-base mb-2">
+            Anti-Flap Policy Engine
+          </h3>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Hysteresis scoring margin prevents erratic flip-flopping between Ethernet and Wi-Fi, keeping critical Zoom, Teams, and OBS sessions steady.
+            Hysteresis scoring margin prevents erratic flip-flopping between
+            Ethernet and Wi-Fi, keeping critical Zoom, Teams, and OBS sessions
+            steady.
           </p>
         </div>
 
@@ -84,9 +100,13 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
           <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 mb-4">
             <Cpu className="w-5 h-5" />
           </div>
-          <h3 className="text-white font-bold text-base mb-2">Decoupled Architecture</h3>
+          <h3 className="text-white font-bold text-base mb-2">
+            Decoupled Architecture
+          </h3>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Core network failover engine runs independently in background threads. Device CPU/RAM telemetry is strictly separated from network path decisions.
+            Core network failover engine runs independently in background
+            threads. Device CPU/RAM telemetry is strictly separated from network
+            path decisions.
           </p>
         </div>
       </div>

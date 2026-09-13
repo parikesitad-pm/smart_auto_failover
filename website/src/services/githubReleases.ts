@@ -85,7 +85,11 @@ export function shouldInvalidateCache(): boolean {
   if (typeof window === 'undefined') return false;
   try {
     const params = new URLSearchParams(window.location.search);
-    return params.has('refresh') || params.has('clear_cache') || params.has('nocache');
+    return (
+      params.has('refresh') ||
+      params.has('clear_cache') ||
+      params.has('nocache')
+    );
   } catch {
     return false;
   }
@@ -158,7 +162,9 @@ export function resolveReleaseFromList(
       parsed: parseReleaseTag(r.tag_name),
     }))
     .filter(
-      (item): item is { release: GitHubRelease; parsed: ParsedReleaseVersion } =>
+      (
+        item
+      ): item is { release: GitHubRelease; parsed: ParsedReleaseVersion } =>
         item.parsed !== null
     );
 
