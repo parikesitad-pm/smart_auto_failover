@@ -19,7 +19,7 @@ class MacOSPlatformBackend(PlatformBackend):
 
     def discover_interfaces(self) -> List[NetworkInterface]:
         interfaces: List[NetworkInterface] = []
-        
+
         # Read hardware ports via networksetup -listallhardwareports
         port_map: Dict[str, Dict[str, str]] = {}
         try:

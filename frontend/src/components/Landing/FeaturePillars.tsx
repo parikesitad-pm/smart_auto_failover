@@ -52,7 +52,8 @@ export const FeaturePillars: React.FC = () => {
           Engineered for Zero Disruption
         </h2>
         <p className="text-slate-400 text-base sm:text-lg">
-          Five core algorithmic innovations ensuring seamless internet pipeline failover.
+          Five core algorithmic innovations ensuring seamless internet pipeline
+          failover.
         </p>
       </div>
 
@@ -69,14 +70,20 @@ export const FeaturePillars: React.FC = () => {
                   <div className={`p-3 rounded-xl border ${pillar.accent}`}>
                     <IconComponent className="w-6 h-6" />
                   </div>
-                  <span className="text-xs font-mono text-slate-500">0{idx + 1}</span>
+                  <span className="text-xs font-mono text-slate-500">
+                    0{idx + 1}
+                  </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-2">{pillar.title}</h3>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  {pillar.title}
+                </h3>
                 <div className="inline-block px-2.5 py-1 rounded bg-black/40 text-[11px] font-mono text-emerald-400 border border-slate-800 mb-4">
                   {pillar.formula}
                 </div>
-                <p className="text-sm text-slate-400 leading-relaxed">{pillar.description}</p>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  {pillar.description}
+                </p>
               </div>
             </div>
           );

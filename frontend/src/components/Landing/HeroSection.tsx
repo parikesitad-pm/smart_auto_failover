@@ -94,23 +94,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </p>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <button
             onClick={onScrollToDownloads}
-            className="w-full sm:w-auto px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-base shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
+            <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
             Download AutoFailover 3.0
           </button>
 
           <button
             onClick={onLaunchSimulator}
-            className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 text-white font-semibold text-base transition-all flex items-center justify-center gap-2 shadow-lg backdrop-blur-md group cursor-pointer"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg backdrop-blur-md group cursor-pointer"
           >
-            <Activity className="w-5 h-5 text-cyan-400 group-hover:rotate-12 transition-transform" />
+            <Activity className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
             Launch Cockpit Simulator
             <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
           </button>
+
+          <a
+            href="https://github.com/parikesitad-pm/smart_auto_failover"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-950/60 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            GitHub
+          </a>
         </div>
 
         {/* Micro Tagline & Guiding Principle */}

@@ -7,25 +7,29 @@ export const HowItWorks: React.FC = () => {
       icon: Search,
       num: '01',
       title: 'Continuous Interface Discovery',
-      description: 'AutoFailover constantly polls network interfaces and OS carrier signals via native Netlink / sysfs.',
+      description:
+        'AutoFailover constantly polls network interfaces and OS carrier signals via native Netlink / sysfs.',
     },
     {
       icon: BarChart3,
       num: '02',
       title: 'High-Precision RFC 3550 Probing',
-      description: 'Every 50ms–200ms, each eligible path is probed to compute moving statistical jitter and round-trip latency.',
+      description:
+        'Every 50ms–200ms, each eligible path is probed to compute moving statistical jitter and round-trip latency.',
     },
     {
       icon: Shuffle,
       num: '03',
       title: 'Anti-Flap Policy Scoring',
-      description: 'The Policy Engine awards candidate scores. Promotion requires exceeding the active score by the 15-point takeover margin.',
+      description:
+        'The Policy Engine awards candidate scores. Promotion requires exceeding the active score by the 15-point takeover margin.',
     },
     {
       icon: ArrowRightLeft,
       num: '04',
       title: 'Atomic Route Switching',
-      description: 'When failover triggers, the OS default routing metric is swapped in under 10ms with zero desktop UI stalling.',
+      description:
+        'When failover triggers, the OS default routing metric is swapped in under 10ms with zero desktop UI stalling.',
     },
   ];
 
@@ -36,7 +40,8 @@ export const HowItWorks: React.FC = () => {
           How It Works Under the Hood
         </h2>
         <p className="text-slate-400 text-base sm:text-lg">
-          A 4-step real-time control loop running independently in the Python core.
+          A 4-step real-time control loop running independently in the Python
+          core.
         </p>
       </div>
 
@@ -56,8 +61,12 @@ export const HowItWorks: React.FC = () => {
                   <Icon className="w-5 h-5" />
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">{step.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{step.description}</p>
+              <h3 className="text-lg font-bold text-white mb-2">
+                {step.title}
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {step.description}
+              </p>
             </div>
           );
         })}

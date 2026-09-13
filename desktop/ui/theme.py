@@ -11,7 +11,7 @@ COCKPIT_THEME = {
     "bg_surface": "#121a2a",
     "border": "#1e293b",
     "border_highlight": "#334155",
-    
+
     # Technical Accent Palette
     "emerald": "#10b981",
     "emerald_glow": "#059669",
@@ -22,7 +22,7 @@ COCKPIT_THEME = {
     "text_primary": "#f8fafc",
     "text_secondary": "#94a3b8",
     "text_muted": "#64748b",
-    
+
     # State Colors
     "state_online": "#10b981",
     "state_ready": "#06b6d4",

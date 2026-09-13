@@ -33,9 +33,9 @@ _Windows • macOS (Apple Silicon & Intel) • Linux_
 
 AutoFailover 3.0 terdiri dari **DUA permukaan aplikasi mandiri** yang berbagi ekosistem produk yang sama:
 
-| Permukaan | Lokasi | Teknologi | Tanggung Jawab Utama |
-|---|---|---|---|
-| **A. Desktop Application** | `desktop/` | **Python 3**, **CustomTkinter**, Native OS HAL | **Produk Asli**: Monitoring probing RFC 3550, scoring 5-state, anti-flap takeover margin, Layer-3 route switching, dan headless CLI engine. |
+| Permukaan                   | Lokasi                   | Teknologi                                            | Tanggung Jawab Utama                                                                                                                                                       |
+| --------------------------- | ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. Desktop Application**  | `desktop/`               | **Python 3**, **CustomTkinter**, Native OS HAL       | **Produk Asli**: Monitoring probing RFC 3550, scoring 5-state, anti-flap takeover margin, Layer-3 route switching, dan headless CLI engine.                                |
 | **B. Public Website & Hub** | `website/` / `frontend/` | **React**, **TypeScript**, **Vite**, **TailwindCSS** | **Marketing & Edukasi**: Hero dengan logo 3D hidup, Download Hub dengan status verifikasi jujur, dokumentasi, FAQ, dan simulator cockpit interaktif di browser via Vercel. |
 
 ---

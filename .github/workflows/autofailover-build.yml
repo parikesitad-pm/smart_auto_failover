@@ -1,0 +1,306 @@
+name: AutoFailover Multi-Platform Build Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-lint:
+    name: Verify Codebase
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Python Core Tests
+        run: |
+          python -m unittest discover -s desktop/tests
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify Website Type-check & Build
+        run: |
+          npm --prefix website install
+          npm --prefix website run build
+
+  build-linux:
+    name: Build Linux (x86_64)
+    needs: test-and-lint
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Install Build Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller customtkinter pillow
+
+      - name: Package with PyInstaller Spec
+        run: |
+          pyinstaller --noconfirm desktop/autofailover.spec
+
+      - name: Archive Linux Package
+        run: |
+          VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
+          PACKAGE_DIR="AutoFailover 3.0"
+          ARCHIVE_NAME="AutoFailover-${VERSION}-Linux-x86_64.tar.gz"
+          
+          mkdir -p dist/packages
+          tar -czvf "dist/packages/${ARCHIVE_NAME}" -C dist "${PACKAGE_DIR}"
+          
+          cd dist/packages
+          sha256sum "${ARCHIVE_NAME}" > "${ARCHIVE_NAME}.sha256"
+
+      - name: Smoke Test Extracted Package
+        run: |
+          VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
+          ARCHIVE_NAME="AutoFailover-${VERSION}-Linux-x86_64.tar.gz"
+          TMP_DIR=$(mktemp -d)
+          tar -xzvf "dist/packages/${ARCHIVE_NAME}" -C "$TMP_DIR"
+          test -f "$TMP_DIR/AutoFailover 3.0/AutoFailover 3.0"
+          echo "SMOKE TEST PASS: Linux binary extracted and verified at $TMP_DIR"
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-linux
+          path: dist/packages/*
+
+  build-windows:
+    name: Build Windows (x64)
+    needs: test-and-lint
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Build Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller customtkinter pillow
+
+      - name: Package with PyInstaller Spec
+        run: |
+          pyinstaller --noconfirm desktop/autofailover.spec
+
+      - name: Archive Windows Package
+        shell: pwsh
+        run: |
+          $VERSION = (Get-Content desktop/VERSION).Trim()
+          $PACKAGE_NAME = "AutoFailover-$VERSION-Windows-x64.zip"
+          New-Item -ItemType Directory -Force -Path dist/packages
+          Compress-Archive -Path "dist/AutoFailover 3.0/*" -DestinationPath "dist/packages/$PACKAGE_NAME"
+          
+          cd dist/packages
+          $hash = (Get-FileHash -Path $PACKAGE_NAME -Algorithm SHA256).Hash
+          "$hash *$PACKAGE_NAME" | Out-File -FilePath "$PACKAGE_NAME.sha256" -Encoding ascii
+
+      - name: Smoke Test Extracted Package
+        shell: pwsh
+        run: |
+          $VERSION = (Get-Content desktop/VERSION).Trim()
+          $PACKAGE_NAME = "AutoFailover-$VERSION-Windows-x64.zip"
+          $TMP_DIR = New-Item -ItemType Directory -Path "$env:TEMP/af_smoke_test" -Force
+          Expand-Archive -Path "dist/packages/$PACKAGE_NAME" -DestinationPath $TMP_DIR.FullName
+          if (Test-Path "$($TMP_DIR.FullName)/AutoFailover 3.0.exe") {
+            Write-Host "SMOKE TEST PASS: Windows executable verified in isolated directory."
+          } else {
+            throw "Smoke test failed: AutoFailover 3.0.exe not found in archive."
+          }
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-windows
+          path: dist/packages/*
+
+  build-macos-arm64:
+    name: Build macOS (ARM64)
+    needs: test-and-lint
+    runs-on: macos-14
+    continue-on-error: true
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Build Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller customtkinter pillow
+
+      - name: Package with PyInstaller Spec
+        run: |
+          pyinstaller --noconfirm desktop/autofailover.spec
+
+      - name: Archive macOS ARM64 Package
+        run: |
+          VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
+          ARCHIVE_NAME="AutoFailover-${VERSION}-macOS-arm64.dmg"
+          mkdir -p dist/packages
+          
+          if command -v hdiutil >/dev/null 2>&1; then
+            hdiutil create -volname "AutoFailover 3.0" -srcfolder "dist/AutoFailover 3.0.app" -ov -format UDZO "dist/packages/${ARCHIVE_NAME}"
+          else
+            tar -czvf "dist/packages/AutoFailover-${VERSION}-macOS-arm64.tar.gz" -C dist "AutoFailover 3.0.app"
+          fi
+          
+          cd dist/packages
+          for f in *; do sha256sum "$f" > "${f}.sha256"; done
+
+      - name: Upload macOS ARM64 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-macos-arm64
+          path: dist/packages/*
+
+  build-macos-x64:
+    name: Build macOS (x64)
+    needs: test-and-lint
+    runs-on: macos-13
+    continue-on-error: true
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Build Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller customtkinter pillow
+
+      - name: Package with PyInstaller Spec
+        run: |
+          pyinstaller --noconfirm desktop/autofailover.spec
+
+      - name: Archive macOS x64 Package
+        run: |
+          VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
+          ARCHIVE_NAME="AutoFailover-${VERSION}-macOS-x64.dmg"
+          mkdir -p dist/packages
+          
+          if command -v hdiutil >/dev/null 2>&1; then
+            hdiutil create -volname "AutoFailover 3.0" -srcfolder "dist/AutoFailover 3.0.app" -ov -format UDZO "dist/packages/${ARCHIVE_NAME}"
+          else
+            tar -czvf "dist/packages/AutoFailover-${VERSION}-macOS-x64.tar.gz" -C dist "AutoFailover 3.0.app"
+          fi
+          
+          cd dist/packages
+          for f in *; do sha256sum "$f" > "${f}.sha256"; done
+
+      - name: Upload macOS x64 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-macos-x64
+          path: dist/packages/*
+
+  publish-release:
+    name: Publish Release or Preview
+    needs: [build-linux, build-windows, build-macos-arm64, build-macos-x64]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Download All Platform Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: Consolidate Artifacts & Compute SHA256SUMS.txt
+        run: |
+          mkdir -p release-assets
+          find downloaded-artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.dmg" \) -exec cp {} release-assets/ \;
+          
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Determine Release Metadata
+        id: meta
+        run: |
+          VERSION=$(cat desktop/VERSION | tr -d '[:space:]')
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${{ github.ref_name }}"
+            TITLE="AutoFailover ${VERSION}"
+            IS_PRERELEASE="false"
+            NOTES_FILE="RELEASE_NOTES.md"
+            python scripts/extract_changelog.py desktop/VERSION CHANGELOG.md > "$NOTES_FILE" || echo "AutoFailover ${VERSION} Release" > "$NOTES_FILE"
+          else
+            TAG="v${VERSION}-preview.${{ github.run_number }}"
+            TITLE="AutoFailover ${VERSION} Preview ${{ github.run_number }}"
+            IS_PRERELEASE="true"
+            NOTES_FILE="PREVIEW_NOTES.md"
+            cat <<EOF > "$NOTES_FILE"
+          # ${TITLE}
+          
+          **Channel**: Preview (Automated CI Build)  
+          **Version**: ${VERSION}  
+          **Commit**: ${SHORT_SHA}  
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+          
+          ### Available Native Packages
+          See published assets below. All downloads include matching cryptographic hashes in \`SHA256SUMS.txt\`.
+          
+          > ⚠️ **Validation Notice**: Preview artifacts are built on native runners. Real-host physical verification may still be in progress on specific platforms.
+          
+          ### Changelog
+          Refer to [CHANGELOG.md](https://github.com/parikesitad-pm/smart_auto_failover/blob/main/CHANGELOG.md) for full release history.
+          EOF
+          fi
+          
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "notes_file=$NOTES_FILE" >> $GITHUB_OUTPUT
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.title }}
+          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
+          body_path: ${{ steps.meta.outputs.notes_file }}
+          files: |
+            release-assets/*

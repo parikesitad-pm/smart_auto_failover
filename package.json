@@ -3,10 +3,10 @@
   "version": "3.0.0",
   "private": true,
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
-    "type-check": "npm --prefix frontend run type-check",
-    "preview": "npm --prefix frontend run preview"
+    "dev": "npm --prefix website run dev",
+    "build": "npm --prefix website run build",
+    "type-check": "npm --prefix website run type-check",
+    "preview": "npm --prefix website run preview"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1"

@@ -31,7 +31,7 @@ class WindowsPlatformBackend(PlatformBackend):
         interfaces: List[NetworkInterface] = []
         ps_cmd = "Get-NetAdapter | Select-Object Name, InterfaceDescription, InterfaceIndex, Status, LinkSpeed, MediaType | ConvertTo-Json"
         output = self._run_ps(ps_cmd)
-        
+
         if not output:
             return interfaces
 

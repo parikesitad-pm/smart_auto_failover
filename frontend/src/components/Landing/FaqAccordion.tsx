@@ -38,7 +38,8 @@ export const FaqAccordion: React.FC = () => {
           Frequently Asked Questions
         </h2>
         <p className="text-slate-400 text-base sm:text-lg">
-          Answers to common questions about routing, continuity, and system architecture.
+          Answers to common questions about routing, continuity, and system
+          architecture.
         </p>
       </div>
 
