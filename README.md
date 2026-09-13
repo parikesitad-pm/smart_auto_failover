@@ -65,6 +65,8 @@ cd website && npm install && npm run dev
 Detailed version history and changes are documented in [CHANGELOG.md](CHANGELOG.md).
 
 ### Recent Highlights
+- **Modular Speedtest & Bulk Queue**: Dedicated 4-provider benchmarking suite (Cloudflare, FAST.com, Ookla, nPerf) with sequential non-blocking execution, RFC 3550 jitter calculation, and audit history table.
+- **Dynamic Release Discovery**: Real-time resolution of latest desktop artifacts from GitHub Releases across all website surfaces without hardcoded version tags.
 - **Windows Subprocess Fix**: Eliminated PowerShell/netsh popup windows during adapter polling with Win32 hidden window flags and `psutil` in-process resolution.
 - **Cockpit Dashboard Hardening**: Clean interface matrix with immediate stale data clearing on disconnect, plus interactive inspector modals for Network Health Index, Adapter Details, and Speed Benchmarks.
 - **Autonomous Policy Engine**: RFC 3550 jitter calculation and multi-factor path scoring with 15-point anti-flap takeover protection.

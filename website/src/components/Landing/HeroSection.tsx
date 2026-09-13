@@ -1,14 +1,18 @@
 import React, { useRef, useState } from 'react';
 import { Shield, ArrowRight, Activity, Terminal, Download } from 'lucide-react';
 
+import { ResolvedRelease } from '../../types/releases';
+
 interface HeroSectionProps {
   onScrollToDownloads: () => void;
   onScrollToShowcase: () => void;
+  release?: ResolvedRelease | null;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onScrollToDownloads,
   onScrollToShowcase,
+  release,
 }) => {
   const logoCardRef = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
@@ -43,7 +47,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Top release badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold tracking-wider uppercase mb-8 backdrop-blur-md">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          AutoFailover 3.0 by Modula • light seamless and usefull
+          AutoFailover 3.0 by Modula • {release ? release.tagName : 'Preview Channel'} • light seamless and usefull
         </div>
 
         {/* Alive Breathing 3D Interactive Logo */}
@@ -106,7 +110,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
-            Download AutoFailover 3.0
+            Download AutoFailover {release ? `(${release.tagName})` : '3.0'}
           </button>
 
           <button

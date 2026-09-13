@@ -166,7 +166,11 @@ export async function getLatestAutoFailoverRelease(
   if (cachedRelease) {
     const pCached = parseReleaseTag(cachedRelease.tagName);
     const pFallback = parseReleaseTag(fallback.tagName);
-    if (pCached && pFallback && compareReleaseVersions(pCached, pFallback) >= 0) {
+    if (
+      pCached &&
+      pFallback &&
+      compareReleaseVersions(pCached, pFallback) >= 0
+    ) {
       // Background promise will still revalidate and call onUpdate if even newer
       return cachedRelease;
     }
@@ -188,7 +192,9 @@ export function resolveReleaseFromList(
       parsed: parseReleaseTag(r.tag_name),
     }))
     .filter(
-      (item): item is { release: GitHubRelease; parsed: ParsedReleaseVersion } =>
+      (
+        item
+      ): item is { release: GitHubRelease; parsed: ParsedReleaseVersion } =>
         item.parsed !== null
     );
 
@@ -246,7 +252,9 @@ export function resolveReleaseFromList(
       version: `AutoFailover 3.0 (${ver})`,
       channel,
       assetName: winAsset?.name || 'AutoFailover-3.0.0-Windows-x64.zip',
-      downloadUrl: winAsset?.browser_download_url || `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
+      downloadUrl:
+        winAsset?.browser_download_url ||
+        `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: winAsset ? formatBytes(winAsset.size) : undefined,
       validationStatus: 'Available for Testing',
       isRecommended: detected === 'windows',
@@ -261,7 +269,9 @@ export function resolveReleaseFromList(
       version: `AutoFailover 3.0 (${ver})`,
       channel,
       assetName: linuxAsset?.name || 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
-      downloadUrl: linuxAsset?.browser_download_url || `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
+      downloadUrl:
+        linuxAsset?.browser_download_url ||
+        `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: linuxAsset ? formatBytes(linuxAsset.size) : undefined,
       validationStatus: 'Real-Host Validated',
       isRecommended: detected === 'linux',
@@ -276,7 +286,9 @@ export function resolveReleaseFromList(
       version: `AutoFailover 3.0 (${ver})`,
       channel,
       assetName: macArmAsset?.name || 'AutoFailover-3.0.0-macOS-arm64.dmg',
-      downloadUrl: macArmAsset?.browser_download_url || `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
+      downloadUrl:
+        macArmAsset?.browser_download_url ||
+        `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: macArmAsset ? formatBytes(macArmAsset.size) : undefined,
       validationStatus: 'Available for Testing',
       isRecommended: detected === 'macos-arm64',
@@ -291,7 +303,9 @@ export function resolveReleaseFromList(
       version: `AutoFailover 3.0 (${ver})`,
       channel,
       assetName: macX64Asset?.name || 'AutoFailover-3.0.0-macOS-x64.dmg',
-      downloadUrl: macX64Asset?.browser_download_url || `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
+      downloadUrl:
+        macX64Asset?.browser_download_url ||
+        `${FALLBACK_RELEASES_URL}/tag/${selected.tag_name}`,
       sizeFormatted: macX64Asset ? formatBytes(macX64Asset.size) : undefined,
       validationStatus: 'Available for Testing',
       isRecommended: false,
@@ -314,17 +328,18 @@ export function resolveReleaseFromList(
 }
 
 export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
-  const latestPreview = 'v3.0.0-preview.20';
-  const ver = '3.0.0 (preview.20)';
+  const defaultTag = 'v3.0.0-preview';
+  const ver = '3.0.0 (preview)';
+  const releasesBase = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases`;
 
   return {
-    tagName: latestPreview,
-    releaseTitle: 'AutoFailover 3.0 Preview 20',
+    tagName: defaultTag,
+    releaseTitle: 'AutoFailover 3.0 Preview Channel',
     channel: 'PREVIEW',
     publishedAt: new Date().toISOString(),
-    htmlUrl: `${FALLBACK_RELEASES_URL}/tag/${latestPreview}`,
+    htmlUrl: releasesBase,
     releaseNotes:
-      'Real-time release discovery via GitHub API is currently loading or rate-limited.',
+      'Real-time release discovery via GitHub API is currently loading or rate-limited. Download packages directly from the releases repository.',
     isFallback: true,
     platforms: {
       windows: {
@@ -335,7 +350,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-Windows-x64.zip',
-        downloadUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestPreview}/AutoFailover-3.0.0-Windows-x64.zip`,
+        downloadUrl: `${releasesBase}/latest/download/AutoFailover-3.0.0-Windows-x64.zip`,
         validationStatus: 'Available for Testing',
         isRecommended: detected === 'windows',
         description: 'Native Windows executable package.',
@@ -348,7 +363,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-Linux-x86_64.tar.gz',
-        downloadUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestPreview}/AutoFailover-3.0.0-Linux-x86_64.tar.gz`,
+        downloadUrl: `${releasesBase}/latest/download/AutoFailover-3.0.0-Linux-x86_64.tar.gz`,
         validationStatus: 'Real-Host Validated',
         isRecommended: detected === 'linux',
         description: 'Native Linux standalone archive.',
@@ -361,7 +376,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-macOS-arm64.dmg',
-        downloadUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${latestPreview}/AutoFailover-3.0.0-macOS-arm64.dmg`,
+        downloadUrl: `${releasesBase}/latest/download/AutoFailover-3.0.0-macOS-arm64.dmg`,
         validationStatus: 'Available for Testing',
         isRecommended: detected === 'macos-arm64',
         description: 'Native Apple Silicon DMG package.',
@@ -374,7 +389,7 @@ export function createFallbackRelease(detected: PlatformId): ResolvedRelease {
         version: `AutoFailover ${ver}`,
         channel: 'PREVIEW',
         assetName: 'AutoFailover-3.0.0-macOS-x64.dmg',
-        downloadUrl: `${FALLBACK_RELEASES_URL}/tag/${latestPreview}`,
+        downloadUrl: releasesBase,
         validationStatus: 'Available for Testing',
         isRecommended: false,
         description: 'Native Intel Mac DMG package.',

@@ -10,8 +10,11 @@ import {
   LandingFooter,
 } from './components/Landing';
 import { Download, ExternalLink } from 'lucide-react';
+import { useLatestRelease } from './hooks/useLatestRelease';
 
 export const App: React.FC = () => {
+  const { release } = useLatestRelease();
+
   const handleScrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -86,7 +89,7 @@ export const App: React.FC = () => {
             className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            Download App
+            Download {release ? release.tagName : 'App'}
           </button>
         </div>
       </header>
@@ -96,10 +99,12 @@ export const App: React.FC = () => {
         <HeroSection
           onScrollToDownloads={() => handleScrollTo('downloads')}
           onScrollToShowcase={() => handleScrollTo('showcase')}
+          release={release}
         />
         <div id="showcase">
           <DesktopShowcase
             onScrollToDownloads={() => handleScrollTo('downloads')}
+            release={release}
           />
         </div>
         <div id="features">

@@ -1,21 +1,28 @@
+"""
+AutoFailover 3.0 Core - Speedtest Package Public API
+Author: parikesitad-pm
+© 2026
+"""
+
+from .providers.base import SpeedTestResult, BaseSpeedTestProvider
 from .runner import (
     SpeedtestRunner,
-    SpeedtestProvider,
-    SpeedtestMode,
-    SpeedtestResult,
     SpeedTestRunner,
+    SpeedtestResult,
+    SpeedtestProvider,
     SpeedTestProvider,
+    SpeedtestMode,
     SpeedTestMode,
-    SpeedTestResult,
 )
 
 __all__ = [
     "SpeedtestRunner",
-    "SpeedtestProvider",
-    "SpeedtestMode",
-    "SpeedtestResult",
     "SpeedTestRunner",
-    "SpeedTestProvider",
-    "SpeedTestMode",
+    "SpeedtestResult",
     "SpeedTestResult",
+    "BaseSpeedTestProvider",
+    "SpeedtestProvider",
+    "SpeedTestProvider",
+    "SpeedtestMode",
+    "SpeedTestMode",
 ]

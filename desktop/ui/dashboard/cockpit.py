@@ -77,6 +77,7 @@ class CockpitDashboard:
 
         # Speed test & event state
         self._latest_speedtest: Optional[SpeedTestResult] = None
+        self._speedtest_history: List[SpeedTestResult] = []
         self._last_health_breakdown: Dict[str, Any] = {}
         self._all_events: List[FailoverEvent] = []
         self._event_filter_severity = "ALL"
@@ -689,7 +690,7 @@ class CockpitDashboard:
 
     def _build_speedtest_tab(self, parent: Any):
         header_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        header_frame.pack(fill="x", padx=0, pady=(12, 10))
+        header_frame.pack(fill="x", padx=0, pady=(12, 8))
 
         title = ctk.CTkLabel(
             header_frame,
@@ -701,7 +702,7 @@ class CockpitDashboard:
 
         subtitle = ctk.CTkLabel(
             header_frame,
-            text="Passive on-demand throughput measurement across real-time providers (does not impact failover)",
+            text="Passive on-demand throughput measurement across real-time providers (isolated from failover decisions)",
             font=("Segoe UI", 11),
             text_color=COCKPIT_THEME["text_muted"],
         )
@@ -718,27 +719,47 @@ class CockpitDashboard:
 
         # Control row
         ctrl_frame = ctk.CTkFrame(card, fg_color="transparent")
-        ctrl_frame.pack(fill="x", padx=20, pady=16)
+        ctrl_frame.pack(fill="x", padx=16, pady=(12, 8))
 
         ctk.CTkLabel(
             ctrl_frame,
             text="Provider:",
             font=("Segoe UI", 11, "bold"),
             text_color=COCKPIT_THEME["text_muted"],
-        ).pack(side="left", padx=(0, 8))
+        ).pack(side="left", padx=(0, 6))
 
         self.provider_menu = ctk.CTkOptionMenu(
             ctrl_frame,
-            values=["cloudflare", "fast_com", "ookla", "nperf"],
+            values=["Cloudflare", "FAST.com", "Ookla Speedtest", "nPerf"],
             fg_color=COCKPIT_THEME["bg_surface"],
             button_color=COCKPIT_THEME["border_highlight"],
             text_color=COCKPIT_THEME["cyan"],
             font=("Segoe UI", 11),
-            width=130,
+            width=135,
             height=30,
         )
-        self.provider_menu.set("cloudflare")
+        self.provider_menu.set("Cloudflare")
         self.provider_menu.pack(side="left", padx=(0, 10))
+
+        ctk.CTkLabel(
+            ctrl_frame,
+            text="Interface:",
+            font=("Segoe UI", 11, "bold"),
+            text_color=COCKPIT_THEME["text_muted"],
+        ).pack(side="left", padx=(4, 6))
+
+        self.speedtest_iface_menu = ctk.CTkOptionMenu(
+            ctrl_frame,
+            values=["Active Outbound (Default)"],
+            fg_color=COCKPIT_THEME["bg_surface"],
+            button_color=COCKPIT_THEME["border_highlight"],
+            text_color=COCKPIT_THEME["text_primary"],
+            font=("Segoe UI", 11),
+            width=175,
+            height=30,
+        )
+        self.speedtest_iface_menu.set("Active Outbound (Default)")
+        self.speedtest_iface_menu.pack(side="left", padx=(0, 10))
 
         self.btn_run_test = ctk.CTkButton(
             ctrl_frame,
@@ -750,54 +771,127 @@ class CockpitDashboard:
             height=30,
             width=120,
         )
-        self.btn_run_test.pack(side="left", padx=4)
+        self.btn_run_test.pack(side="left", padx=3)
 
         self.btn_bulk_test = ctk.CTkButton(
             ctrl_frame,
-            text="Bulk Benchmark (All 4)",
+            text="Bulk Test (All 4)",
             command=self._start_bulk_test,
             font=("Segoe UI", 11),
             fg_color=COCKPIT_THEME["bg_surface"],
             hover_color=COCKPIT_THEME["border_highlight"],
             height=30,
-            width=160,
+            width=130,
         )
-        self.btn_bulk_test.pack(side="left", padx=4)
+        self.btn_bulk_test.pack(side="left", padx=3)
 
-        self.btn_detail_test = ctk.CTkButton(
+        self.btn_cancel_speedtest = ctk.CTkButton(
             ctrl_frame,
-            text="View Modal Details",
-            command=self._show_speedtest_detail_modal,
+            text="Cancel",
+            command=self._cancel_speed_test,
             font=("Segoe UI", 11),
             fg_color=COCKPIT_THEME["bg_surface"],
-            hover_color=COCKPIT_THEME["border_highlight"],
+            hover_color=COCKPIT_THEME["red"],
+            text_color=COCKPIT_THEME["text_muted"],
             height=30,
-            width=140,
+            width=70,
+            state="disabled",
         )
-        self.btn_detail_test.pack(side="left", padx=4)
+        self.btn_cancel_speedtest.pack(side="left", padx=3)
 
-        # Big Metrics Gauges Frame
+        self.btn_clear_speedtest = ctk.CTkButton(
+            ctrl_frame,
+            text="Clear",
+            command=self._clear_speedtest_history,
+            font=("Segoe UI", 11),
+            fg_color="transparent",
+            hover_color=COCKPIT_THEME["bg_surface"],
+            text_color=COCKPIT_THEME["text_muted"],
+            height=30,
+            width=60,
+        )
+        self.btn_clear_speedtest.pack(side="left", padx=3)
+
+        # Status & Progress banner
+        self.speed_status_frame = ctk.CTkFrame(card, fg_color=COCKPIT_THEME["bg_surface"], corner_radius=6)
+        self.speed_status_frame.pack(fill="x", padx=16, pady=(4, 8))
+
+        self.speed_readout_lbl = ctk.CTkLabel(
+            self.speed_status_frame,
+            text="Ready to benchmark active connection (passive measurement; does not alter failover decisions)",
+            font=("Consolas", 11),
+            text_color=COCKPIT_THEME["text_secondary"],
+            anchor="w",
+            padx=12,
+            pady=8,
+        )
+        self.speed_readout_lbl.pack(fill="x")
+
+        # Gauges Frame (4 gauges)
         gauges_frame = ctk.CTkFrame(card, fg_color="transparent")
-        gauges_frame.pack(fill="x", padx=20, pady=10)
+        gauges_frame.pack(fill="x", padx=16, pady=(0, 8))
 
-        for col in range(3):
-            gauges_frame.columnconfigure(col, weight=1, uniform="gauges")
+        for col in range(4):
+            gauges_frame.columnconfigure(col, weight=1, uniform="speed_gauges")
 
         self.gauge_dl = self._create_card(gauges_frame, 0, "DOWNLOAD SPEED", "-- Mbps", "Ready")
         self.gauge_ul = self._create_card(gauges_frame, 1, "UPLOAD SPEED", "-- Mbps", "Ready")
         self.gauge_ping = self._create_card(gauges_frame, 2, "SERVER PING", "-- ms", "Ready")
+        self.gauge_jitter = self._create_card(gauges_frame, 3, "RFC 3550 JITTER", "-- ms", "Ready")
 
-        # Full Readout Box
-        self.speed_readout_lbl = ctk.CTkLabel(
+        # Results History Table Container
+        hist_header = ctk.CTkFrame(card, fg_color="transparent")
+        hist_header.pack(fill="x", padx=16, pady=(4, 2))
+
+        ctk.CTkLabel(
+            hist_header,
+            text="BENCHMARK HISTORY & AUDIT TRAIL",
+            font=("Segoe UI", 11, "bold"),
+            text_color=COCKPIT_THEME["text_muted"],
+        ).pack(side="left")
+
+        # Table Column Headers
+        tbl_hdr_frame = ctk.CTkFrame(card, fg_color=COCKPIT_THEME["bg_surface"], height=28, corner_radius=4)
+        tbl_hdr_frame.pack(fill="x", padx=16, pady=(0, 2))
+        tbl_hdr_frame.pack_propagate(False)
+
+        headers = [
+            ("PROVIDER", 110, "w"),
+            ("INTERFACE", 130, "w"),
+            ("DOWNLOAD", 95, "e"),
+            ("UPLOAD", 95, "e"),
+            ("PING", 75, "e"),
+            ("JITTER", 75, "e"),
+            ("STATUS", 100, "c"),
+            ("DETAILS", 80, "c"),
+        ]
+        for title_text, col_width, align in headers:
+            col_lbl = ctk.CTkLabel(
+                tbl_hdr_frame,
+                text=title_text,
+                font=("Segoe UI", 10, "bold"),
+                text_color=COCKPIT_THEME["text_muted"],
+                width=col_width,
+                anchor=align,
+            )
+            col_lbl.pack(side="left", padx=4)
+
+        # Scrollable table body
+        self.speedtest_history_scroll = ctk.CTkScrollableFrame(
             card,
-            text="Ready to benchmark active connection (does not alter failover)",
-            font=("Consolas", 11),
-            text_color=COCKPIT_THEME["text_secondary"],
-            fg_color=COCKPIT_THEME["bg_surface"],
-            corner_radius=6,
-            pady=12,
+            fg_color="transparent",
+            scrollbar_button_color=COCKPIT_THEME["border"],
         )
-        self.speed_readout_lbl.pack(fill="x", padx=20, pady=16)
+        self.speedtest_history_scroll.pack(fill="both", expand=True, padx=16, pady=(2, 10))
+
+        self.speedtest_placeholder = ctk.CTkLabel(
+            self.speedtest_history_scroll,
+            text="No speed benchmarks run yet in this session. Select a provider and click Run Speed Test.",
+            font=("Segoe UI", 11, "italic"),
+            text_color=COCKPIT_THEME["text_muted"],
+            pady=24,
+        )
+        self.speedtest_placeholder.pack()
 
     # =========================================================================
     # EVENTS TAB
@@ -954,37 +1048,93 @@ class CockpitDashboard:
         self.orchestrator.policy_engine.config.workload_profile = selected
         self.card_workload["val"].configure(text=choice)
 
+    def _cancel_speed_test(self):
+        self.speedtest_runner.cancel()
+        self.speed_readout_lbl.configure(text="Cancelling speed benchmark... please wait for current request to abort.")
+        if hasattr(self, "btn_cancel_speedtest"):
+            self.btn_cancel_speedtest.configure(state="disabled", text_color=COCKPIT_THEME["text_muted"])
+
+    def _clear_speedtest_history(self):
+        self._speedtest_history.clear()
+        if hasattr(self, "speedtest_history_scroll"):
+            for child in self.speedtest_history_scroll.winfo_children():
+                child.destroy()
+            self.speedtest_placeholder = ctk.CTkLabel(
+                self.speedtest_history_scroll,
+                text="No speed benchmarks run yet in this session. Select a provider and click Run Speed Test.",
+                font=("Segoe UI", 11, "italic"),
+                text_color=COCKPIT_THEME["text_muted"],
+                pady=24,
+            )
+            self.speedtest_placeholder.pack()
+
     def _start_speed_test(self):
-        provider = self.provider_menu.get()
-        msg = f"Testing bandwidth via {provider.upper()}..."
+        provider_choice = self.provider_menu.get() if hasattr(self, "provider_menu") else "Cloudflare"
+        provider_map = {
+            "Cloudflare": "cloudflare",
+            "FAST.com": "fast",
+            "Ookla Speedtest": "ookla",
+            "nPerf": "nperf",
+            "cloudflare": "cloudflare",
+            "fast_com": "fast",
+            "ookla": "ookla",
+            "nperf": "nperf",
+        }
+        provider_key = provider_map.get(provider_choice, provider_choice.lower().replace(".com", ""))
+
+        target_iface_id = "default"
+        source_ip = None
+        iface_choice = self.speedtest_iface_menu.get() if hasattr(self, "speedtest_iface_menu") else "Active Outbound (Default)"
+
+        snapshot = self.orchestrator.get_snapshot() if hasattr(self.orchestrator, "get_snapshot") else None
+        if snapshot and iface_choice != "Active Outbound (Default)":
+            for iface in snapshot.interfaces:
+                if iface.friendly_name in iface_choice or iface.name in iface_choice:
+                    target_iface_id = iface.id
+                    source_ip = iface.ip_address
+                    break
+
+        msg = f"Testing bandwidth via {provider_choice.upper()} on {iface_choice}..."
         self.speed_readout_lbl.configure(text=msg)
         self.overview_speed_lbl.configure(text=msg)
-        self.btn_run_test.configure(state="disabled")
-        self.btn_overview_test.configure(state="disabled")
+
+        if hasattr(self, "btn_run_test"):
+            self.btn_run_test.configure(state="disabled")
+        if hasattr(self, "btn_bulk_test"):
+            self.btn_bulk_test.configure(state="disabled")
+        if hasattr(self, "btn_overview_test"):
+            self.btn_overview_test.configure(state="disabled")
+        if hasattr(self, "btn_cancel_speedtest"):
+            self.btn_cancel_speedtest.configure(state="normal", text_color=COCKPIT_THEME["red"])
 
         def _worker():
-            res = self.speedtest_runner.run_single_test(provider)
+            res = self.speedtest_runner.run_single_test(
+                provider_name=provider_key,
+                interface_id=target_iface_id,
+                source_ip=source_ip,
+            )
             self.parent.after(0, lambda: self._on_speed_test_done(res))
 
         threading.Thread(target=_worker, daemon=True).start()
 
     def _on_speed_test_done(self, res: SpeedTestResult):
-        self.btn_run_test.configure(state="normal")
-        self.btn_overview_test.configure(state="normal")
-        self._latest_speedtest = res
+        if hasattr(self, "btn_run_test"):
+            self.btn_run_test.configure(state="normal")
+        if hasattr(self, "btn_bulk_test"):
+            self.btn_bulk_test.configure(state="normal")
+        if hasattr(self, "btn_overview_test"):
+            self.btn_overview_test.configure(state="normal")
+        if hasattr(self, "btn_cancel_speedtest"):
+            self.btn_cancel_speedtest.configure(state="disabled", text_color=COCKPIT_THEME["text_muted"])
 
-        if res.error:
-            txt = f"Test error: {res.error}"
-            self.speed_readout_lbl.configure(text=txt)
-            self.overview_speed_lbl.configure(text=txt)
-        else:
+        self._latest_speedtest = res
+        self._add_speedtest_result_row(res)
+
+        if res.status == "SUCCESS":
             txt = (
                 f"Result ({res.provider}): DL: {res.download_mbps:.1f} Mbps | "
-                f"UL: {res.upload_mbps:.1f} Mbps | Ping: {res.latency_ms:.1f}ms"
+                f"UL: {res.upload_mbps:.1f} Mbps | Ping: {res.latency_ms:.1f} ms | Jitter: {res.jitter_ms:.1f} ms"
             )
-            self.speed_readout_lbl.configure(text=txt)
-            self.overview_speed_lbl.configure(text=txt)
-
             self.gauge_dl["val"].configure(text=f"{res.download_mbps:.1f} Mbps")
             self.gauge_dl["sub"].configure(text=f"Provider: {res.provider.upper()}")
 
@@ -992,28 +1142,241 @@ class CockpitDashboard:
             self.gauge_ul["sub"].configure(text=f"Provider: {res.provider.upper()}")
 
             self.gauge_ping["val"].configure(text=f"{res.latency_ms:.1f} ms")
-            self.gauge_ping["sub"].configure(text="ICMP / Socket Ping")
+            self.gauge_ping["sub"].configure(text="Server Ping")
+
+            if hasattr(self, "gauge_jitter"):
+                self.gauge_jitter["val"].configure(text=f"{res.jitter_ms:.1f} ms")
+                self.gauge_jitter["sub"].configure(text="RFC 3550")
+        elif res.status == "UNAVAILABLE":
+            txt = f"{res.provider.upper()} unavailable: {res.error}"
+            self.gauge_dl["val"].configure(text="N/A")
+            self.gauge_dl["sub"].configure(text="Unavailable")
+            self.gauge_ul["val"].configure(text="N/A")
+            self.gauge_ul["sub"].configure(text="Unavailable")
+        elif res.status == "CANCELLED":
+            txt = f"{res.provider.upper()} test cancelled."
+        else:
+            txt = f"Test error ({res.provider}): {res.error}"
+            self.gauge_dl["val"].configure(text="ERR")
+            self.gauge_dl["sub"].configure(text="Failed")
+
+        self.speed_readout_lbl.configure(text=txt)
+        self.overview_speed_lbl.configure(text=txt)
 
     def _start_bulk_test(self):
-        msg = "Running bulk benchmark across all 4 providers..."
+        target_iface_id = "default"
+        source_ip = None
+        iface_choice = self.speedtest_iface_menu.get() if hasattr(self, "speedtest_iface_menu") else "Active Outbound (Default)"
+
+        snapshot = self.orchestrator.get_snapshot() if hasattr(self.orchestrator, "get_snapshot") else None
+        if snapshot and iface_choice != "Active Outbound (Default)":
+            for iface in snapshot.interfaces:
+                if iface.friendly_name in iface_choice or iface.name in iface_choice:
+                    target_iface_id = iface.id
+                    source_ip = iface.ip_address
+                    break
+
+        msg = f"Starting bulk benchmark across 4 providers on {iface_choice}..."
         self.speed_readout_lbl.configure(text=msg)
         self.overview_speed_lbl.configure(text=msg)
-        self.btn_bulk_test.configure(state="disabled")
+
+        if hasattr(self, "btn_run_test"):
+            self.btn_run_test.configure(state="disabled")
+        if hasattr(self, "btn_bulk_test"):
+            self.btn_bulk_test.configure(state="disabled")
+        if hasattr(self, "btn_overview_test"):
+            self.btn_overview_test.configure(state="disabled")
+        if hasattr(self, "btn_cancel_speedtest"):
+            self.btn_cancel_speedtest.configure(state="normal", text_color=COCKPIT_THEME["red"])
+
+        statuses = {
+            "cloudflare": "QUEUED",
+            "fast": "QUEUED",
+            "ookla": "QUEUED",
+            "nperf": "QUEUED",
+        }
+
+        def _on_progress(idx: int, total: int, key: str, status: str, result: Optional[SpeedTestResult]):
+            statuses[key] = status
+            progress_msg = (
+                f"Bulk Test {idx}/{total}: "
+                f"Cloudflare [{statuses['cloudflare']}] | "
+                f"FAST.com [{statuses['fast']}] | "
+                f"Ookla [{statuses['ookla']}] | "
+                f"nPerf [{statuses['nperf']}]"
+            )
+            def _apply_ui():
+                self.speed_readout_lbl.configure(text=progress_msg)
+                self.overview_speed_lbl.configure(text=progress_msg)
+                if result:
+                    self._add_speedtest_result_row(result)
+                    if result.status == "SUCCESS":
+                        self.gauge_dl["val"].configure(text=f"{result.download_mbps:.1f} Mbps")
+                        self.gauge_dl["sub"].configure(text=f"Provider: {result.provider.upper()}")
+                        self.gauge_ul["val"].configure(text=f"{result.upload_mbps:.1f} Mbps")
+                        self.gauge_ul["sub"].configure(text=f"Provider: {result.provider.upper()}")
+                        self.gauge_ping["val"].configure(text=f"{result.latency_ms:.1f} ms")
+                        if hasattr(self, "gauge_jitter"):
+                            self.gauge_jitter["val"].configure(text=f"{result.jitter_ms:.1f} ms")
+
+            self.parent.after(0, _apply_ui)
 
         def _worker():
-            results = self.speedtest_runner.run_bulk_tests()
-            avg_dl = sum(r.download_mbps for r in results if not r.error) / max(1, len(results))
-            self.parent.after(0, lambda: self._on_bulk_test_done(avg_dl, len(results)))
+            results = self.speedtest_runner.run_bulk_tests(
+                interface_id=target_iface_id,
+                source_ip=source_ip,
+                on_progress=_on_progress,
+            )
+            self.parent.after(0, lambda: self._on_bulk_test_done(results))
 
         threading.Thread(target=_worker, daemon=True).start()
 
-    def _on_bulk_test_done(self, avg_dl: float, count: int):
-        self.btn_bulk_test.configure(state="normal")
-        txt = f"Bulk Complete ({count} providers): Avg DL: {avg_dl:.1f} Mbps"
+    def _on_bulk_test_done(self, results: List[SpeedTestResult]):
+        if hasattr(self, "btn_run_test"):
+            self.btn_run_test.configure(state="normal")
+        if hasattr(self, "btn_bulk_test"):
+            self.btn_bulk_test.configure(state="normal")
+        if hasattr(self, "btn_overview_test"):
+            self.btn_overview_test.configure(state="normal")
+        if hasattr(self, "btn_cancel_speedtest"):
+            self.btn_cancel_speedtest.configure(state="disabled", text_color=COCKPIT_THEME["text_muted"])
+
+        successful = [r for r in results if r.status == "SUCCESS"]
+        if successful:
+            avg_dl = sum(r.download_mbps for r in successful) / len(successful)
+            avg_ul = sum(r.upload_mbps for r in successful) / len(successful)
+            avg_ping = sum(r.latency_ms for r in successful) / len(successful)
+            txt = (
+                f"Bulk Complete: {len(successful)}/{len(results)} passed | "
+                f"Avg DL: {avg_dl:.1f} Mbps | Avg UL: {avg_ul:.1f} Mbps | Avg Ping: {avg_ping:.1f} ms"
+            )
+            self.gauge_dl["val"].configure(text=f"{avg_dl:.1f} Mbps")
+            self.gauge_dl["sub"].configure(text=f"Bulk Avg ({len(successful)} providers)")
+            self.gauge_ul["val"].configure(text=f"{avg_ul:.1f} Mbps")
+            self.gauge_ul["sub"].configure(text="Bulk Avg")
+            self.gauge_ping["val"].configure(text=f"{avg_ping:.1f} ms")
+            self.gauge_ping["sub"].configure(text="Bulk Avg")
+        else:
+            txt = f"Bulk benchmark finished: {len(results)} executed (check audit table below)"
+
         self.speed_readout_lbl.configure(text=txt)
         self.overview_speed_lbl.configure(text=txt)
-        self.gauge_dl["val"].configure(text=f"{avg_dl:.1f} Mbps")
-        self.gauge_dl["sub"].configure(text="Bulk Average")
+
+    def _add_speedtest_result_row(self, res: SpeedTestResult):
+        self._speedtest_history.insert(0, res)
+        if len(self._speedtest_history) > 50:
+            self._speedtest_history = self._speedtest_history[:50]
+
+        if not hasattr(self, "speedtest_history_scroll"):
+            return
+
+        # Clear placeholder if it exists
+        if hasattr(self, "speedtest_placeholder") and self.speedtest_placeholder.winfo_exists():
+            self.speedtest_placeholder.destroy()
+
+        row_frame = ctk.CTkFrame(
+            self.speedtest_history_scroll,
+            fg_color=COCKPIT_THEME["bg_surface"],
+            height=30,
+            corner_radius=4,
+        )
+        row_frame.pack(fill="x", pady=2)
+        row_frame.pack_propagate(False)
+
+        prov_lbl = ctk.CTkLabel(
+            row_frame,
+            text=res.provider.upper(),
+            font=("Segoe UI", 10, "bold"),
+            text_color=COCKPIT_THEME["text_primary"],
+            width=110,
+            anchor="w",
+        )
+        prov_lbl.pack(side="left", padx=4)
+
+        iface_name = res.interface if res.interface != "default" else "Active (Default)"
+        iface_lbl = ctk.CTkLabel(
+            row_frame,
+            text=iface_name[:18],
+            font=("Segoe UI", 10),
+            text_color=COCKPIT_THEME["text_muted"],
+            width=130,
+            anchor="w",
+        )
+        iface_lbl.pack(side="left", padx=4)
+
+        dl_str = f"{res.download_mbps:.1f} Mbps" if res.status == "SUCCESS" else "--"
+        dl_lbl = ctk.CTkLabel(
+            row_frame,
+            text=dl_str,
+            font=("Consolas", 10, "bold"),
+            text_color=COCKPIT_THEME["emerald"] if res.status == "SUCCESS" else COCKPIT_THEME["text_muted"],
+            width=95,
+            anchor="e",
+        )
+        dl_lbl.pack(side="left", padx=4)
+
+        ul_str = f"{res.upload_mbps:.1f} Mbps" if res.status == "SUCCESS" else "--"
+        ul_lbl = ctk.CTkLabel(
+            row_frame,
+            text=ul_str,
+            font=("Consolas", 10),
+            text_color=COCKPIT_THEME["text_primary"] if res.status == "SUCCESS" else COCKPIT_THEME["text_muted"],
+            width=95,
+            anchor="e",
+        )
+        ul_lbl.pack(side="left", padx=4)
+
+        ping_str = f"{res.latency_ms:.1f} ms" if res.status == "SUCCESS" else "--"
+        ping_lbl = ctk.CTkLabel(
+            row_frame,
+            text=ping_str,
+            font=("Consolas", 10),
+            text_color=COCKPIT_THEME["cyan"] if res.status == "SUCCESS" else COCKPIT_THEME["text_muted"],
+            width=75,
+            anchor="e",
+        )
+        ping_lbl.pack(side="left", padx=4)
+
+        jit_str = f"{res.jitter_ms:.1f} ms" if res.status == "SUCCESS" else "--"
+        jit_lbl = ctk.CTkLabel(
+            row_frame,
+            text=jit_str,
+            font=("Consolas", 10),
+            text_color=COCKPIT_THEME["text_secondary"] if res.status == "SUCCESS" else COCKPIT_THEME["text_muted"],
+            width=75,
+            anchor="e",
+        )
+        jit_lbl.pack(side="left", padx=4)
+
+        status_colors = {
+            "SUCCESS": COCKPIT_THEME["emerald"],
+            "FAILED": COCKPIT_THEME["red"],
+            "UNAVAILABLE": COCKPIT_THEME["amber"],
+            "CANCELLED": COCKPIT_THEME["text_muted"],
+            "RUNNING": COCKPIT_THEME["cyan"],
+        }
+        st_color = status_colors.get(res.status, COCKPIT_THEME["text_muted"])
+        st_lbl = ctk.CTkLabel(
+            row_frame,
+            text=res.status,
+            font=("Segoe UI", 9, "bold"),
+            text_color=st_color,
+            width=100,
+            anchor="c",
+        )
+        st_lbl.pack(side="left", padx=4)
+
+        btn_det = ctk.CTkButton(
+            row_frame,
+            text="Details",
+            command=lambda r=res: self._show_speedtest_detail_modal(r),
+            font=("Segoe UI", 10),
+            fg_color=COCKPIT_THEME["bg_card"],
+            hover_color=COCKPIT_THEME["border_highlight"],
+            width=70,
+            height=22,
+        )
+        btn_det.pack(side="left", padx=4)
 
     # =========================================================================
     # EVENT DISPATCH & RENDERING
@@ -1093,6 +1456,18 @@ class CockpitDashboard:
         active_if = snapshot.active_interface
         standby_if = snapshot.standby_interface
         standby_name = standby_if.friendly_name if standby_if else "None"
+
+        # Dynamically sync speedtest interface dropdown if interfaces changed
+        if hasattr(self, "speedtest_iface_menu") and snapshot.interfaces:
+            avail_ifaces = ["Active Outbound (Default)"] + [
+                f"{i.friendly_name} ({i.name})" for i in snapshot.interfaces if i.carrier or i.admin_enabled
+            ]
+            if getattr(self, "_cached_speedtest_ifaces", None) != avail_ifaces:
+                self._cached_speedtest_ifaces = avail_ifaces
+                curr_sel = self.speedtest_iface_menu.get()
+                self.speedtest_iface_menu.configure(values=avail_ifaces)
+                if curr_sel not in avail_ifaces:
+                    self.speedtest_iface_menu.set("Active Outbound (Default)")
 
         # 1. Update Active Connection Header
         if active_if:
@@ -1622,64 +1997,91 @@ class CockpitDashboard:
             width=80,
         ).pack(pady=(0, 14))
 
-    def _show_speedtest_detail_modal(self):
+    def _show_speedtest_detail_modal(self, target_result: Optional[SpeedTestResult] = None):
         """Opens interactive Speed Benchmark detail modal."""
         if not HAS_CTK:
             return
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Bandwidth & Speed Benchmark Details")
-        dialog.geometry("460x340")
+        dialog.geometry("520x460")
         dialog.configure(fg_color=COCKPIT_THEME["bg_dark"])
         dialog.transient(self.parent)
         dialog.grab_set()
 
-        res = self._latest_speedtest
+        res = target_result if target_result is not None else self._latest_speedtest
 
         title_lbl = ctk.CTkLabel(
             dialog,
-            text="SPEED BENCHMARK RESULT",
-            font=("Segoe UI", 14, "bold"),
+            text="BANDWIDTH & SPEED BENCHMARK AUDIT",
+            font=("Segoe UI", 13, "bold"),
             text_color=COCKPIT_THEME["cyan"],
         )
-        title_lbl.pack(pady=(18, 10))
+        title_lbl.pack(pady=(16, 8))
 
         content_frame = ctk.CTkFrame(dialog, fg_color=COCKPIT_THEME["bg_card"], corner_radius=6)
-        content_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        content_frame.pack(fill="both", expand=True, padx=16, pady=8)
 
         active = self.orchestrator.active_interface
-        active_str = active.friendly_name if active else "Default Route"
+        active_str = active.friendly_name if active else "Default Outbound Route"
 
         if res:
+            ts_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(res.timestamp)) if res.timestamp else "N/A"
+            dur_str = f"{res.duration:.2f} s" if res.duration > 0 else "N/A"
             items = [
                 ("Provider:", res.provider.upper()),
-                ("Tested Interface:", active_str),
-                ("Download Speed:", f"{res.download_mbps:.1f} Mbps"),
-                ("Upload Speed:", f"{res.upload_mbps:.1f} Mbps"),
-                ("Ping / Latency:", f"{res.latency_ms:.1f} ms"),
-                ("Status:", "Success" if not res.error else f"Error: {res.error}"),
+                ("Tested Interface:", res.interface if res.interface != "default" else active_str),
+                ("Download Speed:", f"{res.download_mbps:.1f} Mbps" if res.status == "SUCCESS" else "N/A"),
+                ("Upload Speed:", f"{res.upload_mbps:.1f} Mbps" if res.status == "SUCCESS" else "N/A"),
+                ("Server Latency (Ping):", f"{res.latency_ms:.1f} ms" if res.status == "SUCCESS" else "N/A"),
+                ("RFC 3550 Jitter:", f"{res.jitter_ms:.1f} ms" if res.status == "SUCCESS" else "N/A"),
+                ("Benchmark Duration:", dur_str),
+                ("Timestamp:", ts_str),
+                ("Execution Status:", res.status),
             ]
         else:
             items = [
-                ("Provider:", self.provider_menu.get().upper()),
+                ("Provider:", self.provider_menu.get().upper() if hasattr(self, "provider_menu") else "CLOUDFLARE"),
                 ("Tested Interface:", active_str),
-                ("Status:", "No benchmark run yet in this session"),
+                ("Execution Status:", "No benchmark run yet in this session"),
             ]
 
         for label, val in items:
             r_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
-            r_frame.pack(fill="x", padx=14, pady=5)
-            ctk.CTkLabel(r_frame, text=label, font=("Segoe UI", 11), text_color=COCKPIT_THEME["text_muted"]).pack(side="left")
-            ctk.CTkLabel(r_frame, text=val, font=("Segoe UI", 11, "bold"), text_color=COCKPIT_THEME["text_primary"]).pack(side="right")
+            r_frame.pack(fill="x", padx=14, pady=3)
+            ctk.CTkLabel(r_frame, text=label, font=("Segoe UI", 10), text_color=COCKPIT_THEME["text_muted"]).pack(side="left")
+            val_color = COCKPIT_THEME["text_primary"]
+            if label == "Execution Status:":
+                if val == "SUCCESS":
+                    val_color = COCKPIT_THEME["emerald"]
+                elif val == "UNAVAILABLE":
+                    val_color = COCKPIT_THEME["amber"]
+                elif val == "FAILED":
+                    val_color = COCKPIT_THEME["red"]
+            ctk.CTkLabel(r_frame, text=val, font=("Segoe UI", 10, "bold"), text_color=val_color).pack(side="right")
+
+        if res and res.error:
+            err_box = ctk.CTkFrame(content_frame, fg_color=COCKPIT_THEME["bg_surface"], corner_radius=4)
+            err_box.pack(fill="x", padx=14, pady=6)
+            ctk.CTkLabel(
+                err_box,
+                text=f"Notice: {res.error}",
+                font=("Consolas", 9),
+                text_color=COCKPIT_THEME["amber"] if res.status == "UNAVAILABLE" else COCKPIT_THEME["red"],
+                wraplength=450,
+                justify="left",
+                padx=8,
+                pady=6,
+            ).pack(anchor="w")
 
         note_lbl = ctk.CTkLabel(
             dialog,
-            text="Note: Speed benchmarks are run on-demand and do not control failover decisions.",
-            font=("Segoe UI", 10, "italic"),
+            text="Note: Speed benchmarks are isolated on-demand measurements and do NOT alter failover policy decisions.\nAutoFailover 3.0 complies with vendor APIs & licensing without scraping.",
+            font=("Segoe UI", 9, "italic"),
             text_color=COCKPIT_THEME["text_muted"],
-            wraplength=420,
+            wraplength=480,
             justify="center",
         )
-        note_lbl.pack(pady=(4, 10))
+        note_lbl.pack(pady=(2, 8))
 
         ctk.CTkButton(
             dialog,
@@ -1687,8 +2089,9 @@ class CockpitDashboard:
             command=dialog.destroy,
             fg_color=COCKPIT_THEME["bg_surface"],
             hover_color=COCKPIT_THEME["border_highlight"],
-            width=80,
-        ).pack(pady=(0, 14))
+            width=90,
+            height=28,
+        ).pack(pady=(0, 12))
 
     def _show_interface_detail_modal(self, iface: NetworkInterface):
         """Opens comprehensive technical details modal."""

@@ -8,12 +8,16 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
+import { ResolvedRelease } from '../../types/releases';
+
 interface DesktopShowcaseProps {
   onScrollToDownloads: () => void;
+  release?: ResolvedRelease | null;
 }
 
 export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
   onScrollToDownloads,
+  release,
 }) => {
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/80">
@@ -118,7 +122,7 @@ export const DesktopShowcase: React.FC<DesktopShowcaseProps> = ({
           className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <Download className="w-4 h-4" />
-          Download AutoFailover Desktop App
+          Download AutoFailover Desktop App {release ? `(${release.tagName})` : ''}
         </button>
 
         <a
